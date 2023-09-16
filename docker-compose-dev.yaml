@@ -1,0 +1,7 @@
+name: tp0
+services:
+  hello:
+    container_name: hello
+    image: hello:latest
+    entrypoint: /hello
+    

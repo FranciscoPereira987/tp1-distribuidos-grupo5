@@ -10,7 +10,7 @@
 
 ### Sistema
 
-![fotoSistema](img/DiagramaSistema.png)
+![fotoSistema](img/DiagramaRobustez.png)
 
 ### Actividades
 

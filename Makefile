@@ -20,6 +20,10 @@ fmt:
 	go fmt $(PWD)/...
 .PHONY: fmt
 
+test:
+	go test $(PWD)/...
+.PHONY: test
+
 docker-compose-up: build-image
 	# Hay que agregar la creacion de todas las imagenes
 	# Supongo que estan creadas

@@ -23,15 +23,15 @@ func (f *FloatType) TypeNumber() byte {
 
 func (f *FloatType) Serialize() []byte {
 	bits := math.Float64bits(f.Value)
-	return binary.BigEndian.AppendUint64(getHeader(f), bits)
+	return binary.BigEndian.AppendUint64(GetHeader(f), bits)
 }
 
 func (f *FloatType) Deserialize(stream []byte) error {
-	if err := checkHeader(f, stream); err != nil {
+	if err := CheckHeader(f, stream); err != nil {
 		return err
 	}
 
-	if err := checkTypeLength(f.length(), stream); err != nil {
+	if err := CheckTypeLength(f.length(), stream); err != nil {
 		return err
 	}
 

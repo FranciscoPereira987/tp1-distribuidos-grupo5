@@ -4,8 +4,7 @@ var (
 	HELLO_OP_CODE = byte(0x01)
 )
 
-type HelloMessage struct {
-}
+type HelloMessage struct{}
 
 func (hello *HelloMessage) Marshall() []byte {
 	return nil

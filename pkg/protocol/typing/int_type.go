@@ -19,14 +19,14 @@ func (intType *IntType) TypeNumber() byte {
 }
 
 func (intType *IntType) Serialize() []byte {
-	return binary.BigEndian.AppendUint32(getHeader(intType), intType.Value)
+	return binary.BigEndian.AppendUint32(GetHeader(intType), intType.Value)
 }
 
 func (intType *IntType) Deserialize(stream []byte) error {
-	if err := checkHeader(intType, stream); err != nil {
+	if err := CheckHeader(intType, stream); err != nil {
 		return err
 	}
-	if err := checkTypeLength(intType.length(), stream); err != nil {
+	if err := CheckTypeLength(intType.length(), stream); err != nil {
 		return err
 	}
 	intType.Value = binary.BigEndian.Uint32(stream[1:])

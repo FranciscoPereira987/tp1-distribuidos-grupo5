@@ -8,7 +8,7 @@ type Type interface {
 	Deserialize([]byte) error
 }
 
-func checkHeader(value Type, stream []byte) error {
+func CheckHeader(value Type, stream []byte) error {
 	if value.TypeNumber() != stream[0] {
 		return errors.New("not same Type")
 	}
@@ -16,11 +16,11 @@ func checkHeader(value Type, stream []byte) error {
 	return nil
 }
 
-func getHeader(value Type) []byte {
+func GetHeader(value Type) []byte {
 	return []byte{value.TypeNumber()}
 }
 
-func checkTypeLength(typeLength int, stream []byte) error {
+func CheckTypeLength(typeLength int, stream []byte) error {
 	if typeLength != len(stream) {
 		return errors.New("type length does not match")
 	}

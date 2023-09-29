@@ -43,8 +43,8 @@ func (str StrType) getValueLength(stream []byte) (int, error) {
 
 func (str *StrType) deserializeValue(stream []byte, strLength int) error {
 
-	if len(stream) != strLength {
-		return errors.New("string length does not match stream length")
+	if err := CheckTypeLength(strLength, stream); err != nil {
+		return err
 	}
 
 	str.value = string(stream)
@@ -56,14 +56,14 @@ func (str *StrType) TypeNumber() byte {
 }
 
 func (str *StrType) Serialize() []byte {
-	header := getHeader(str)
+	header := GetHeader(str)
 	header = binary.BigEndian.AppendUint16(header, uint16(str.length()))
 
 	return append(header, []byte(str.value)...)
 }
 
 func (str *StrType) Deserialize(stream []byte) error {
-	if err := checkHeader(str, stream); err != nil {
+	if err := CheckHeader(str, stream); err != nil {
 		return err
 	}
 	strLength, err := str.getValueLength(stream)

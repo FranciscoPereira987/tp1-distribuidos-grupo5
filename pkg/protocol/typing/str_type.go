@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"math"
+
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
 var (
@@ -51,19 +53,19 @@ func (str *StrType) deserializeValue(stream []byte, strLength int) error {
 	return nil
 }
 
-func (str *StrType) TypeNumber() byte {
+func (str *StrType) Number() byte {
 	return STR_TYPE_NUMBER
 }
 
 func (str *StrType) Serialize() []byte {
-	header := GetHeader(str)
+	header := utils.GetHeader(str)
 	header = binary.BigEndian.AppendUint16(header, uint16(str.length()))
 
 	return append(header, []byte(str.value)...)
 }
 
 func (str *StrType) Deserialize(stream []byte) error {
-	if err := CheckHeader(str, stream); err != nil {
+	if err := utils.CheckHeader(str, stream); err != nil {
 		return err
 	}
 	strLength, err := str.getValueLength(stream)

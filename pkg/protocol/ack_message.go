@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ACK_OP_CODE = byte(0x01)
+	ACK_OP_CODE = byte(0x02)
 )
 
 type AckMessage struct {

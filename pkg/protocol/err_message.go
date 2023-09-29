@@ -1,7 +1,7 @@
 package protocol
 
 var (
-	ERR_OP_CODE = byte(0x01)
+	ERR_OP_CODE = byte(0x04)
 )
 
 type ErrMessage struct {

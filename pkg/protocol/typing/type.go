@@ -1,23 +1,15 @@
 package typing
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
+)
 
 type Type interface {
-	TypeNumber() byte
+	utils.Numbered
 	Serialize() []byte
 	Deserialize([]byte) error
-}
-
-func CheckHeader(value Type, stream []byte) error {
-	if value.TypeNumber() != stream[0] {
-		return errors.New("not same Type")
-	}
-
-	return nil
-}
-
-func GetHeader(value Type) []byte {
-	return []byte{value.TypeNumber()}
 }
 
 func CheckTypeLength(typeLength int, stream []byte) error {

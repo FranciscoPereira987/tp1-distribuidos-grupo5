@@ -1,7 +1,7 @@
 package protocol
 
 var (
-	FIN_OP_CODE = byte(0x01)
+	FIN_OP_CODE = byte(0xff)
 )
 
 type FinMessage struct {

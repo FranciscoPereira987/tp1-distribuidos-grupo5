@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/binary"
-	"errors"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -31,10 +30,11 @@ func (hello *DataMessage) UnMarshall(stream []byte) error {
 	if err := utils.CheckHeader(hello, stream); err != nil {
 		return err
 	}
-	if len(stream) < 5 {
-		return errors.New("message too short")
+
+	type_size, err := CheckMessageLength(stream)
+	if err != nil {
+		return err
 	}
-	type_size := binary.BigEndian.Uint32(stream[1:5])
 	if err := typing.CheckTypeLength(int(type_size), stream[5:]); err != nil {
 		return err
 	}

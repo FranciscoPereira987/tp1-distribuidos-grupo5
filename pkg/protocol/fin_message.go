@@ -1,7 +1,9 @@
 package protocol
 
 import (
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"encoding/binary"
+	"errors"
+
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -17,15 +19,21 @@ func (fin *FinMessage) Number() byte {
 }
 
 func (fin *FinMessage) Marshall() []byte {
-	return utils.GetHeader(fin)
+	header := utils.GetHeader(fin)
+	header = binary.BigEndian.AppendUint32(header, 0)
+	return header
 }
 
 func (fin *FinMessage) UnMarshall(stream []byte) error {
 	if err := utils.CheckHeader(fin, stream); err != nil {
 		return err
 	}
-	if err := typing.CheckTypeLength(1, stream); err != nil {
+	body_length, err := CheckMessageLength(stream)
+	if err != nil {
 		return err
+	}
+	if body_length > 0 {
+		return errors.New("invalid err message")
 	}
 	return nil
 }

@@ -2,13 +2,9 @@ package protocol
 
 import (
 	"errors"
-	"io"
-)
 
-type Conn interface {
-	io.Reader
-	io.Writer
-}
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+)
 
 /*
 |OP_CODE| => 1 byte
@@ -17,11 +13,11 @@ type Conn interface {
 */
 type Protocol struct {
 	registry  *Registry
-	source    Conn
+	source    conection.Conn
 	connected bool
 }
 
-func NewProtocol(conn Conn) *Protocol {
+func NewProtocol(conn conection.Conn) *Protocol {
 	return &Protocol{
 		registry:  NewRegistry(),
 		source:    conn,

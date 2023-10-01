@@ -1,7 +1,7 @@
 package ack_types
 
 import (
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -11,6 +11,11 @@ var (
 
 type HelloAckType struct {
 	clientId typing.IntType
+}
+
+func (data *HelloAckType) IsAckFrom(ack typing.Type) bool {
+	_, ok := ack.(*HelloAckType)
+	return ok
 }
 
 func (hello *HelloAckType) ClientId() uint32 {

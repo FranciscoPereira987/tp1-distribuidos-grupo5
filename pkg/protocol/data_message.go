@@ -3,7 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -13,6 +13,20 @@ var (
 
 type DataMessage struct {
 	data_type typing.Type
+}
+
+func NewDataMessage(value typing.Type) *DataMessage {
+	return &DataMessage{
+		value,
+	}
+}
+
+func (data DataMessage) Type() typing.Type {
+	return data.data_type
+}
+
+func (errMes *DataMessage) IsResponseFrom(message Message) bool {
+	return false
 }
 
 func (hello *DataMessage) Number() byte {

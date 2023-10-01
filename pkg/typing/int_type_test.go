@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 func TestIntSerialization(t *testing.T) {

@@ -12,6 +12,7 @@ type Message interface {
 	Marshall() []byte
 	UnMarshall([]byte) error
 	Response() Message
+	IsResponseFrom(message Message) bool
 }
 
 func CheckMessageLength(stream []byte) (int, error) {

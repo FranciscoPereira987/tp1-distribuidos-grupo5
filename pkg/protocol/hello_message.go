@@ -22,6 +22,10 @@ func NewHelloMessage(client_id uint32) *HelloMessage {
 	}
 }
 
+func (hello *HelloMessage) IsResponseFrom(message Message) bool {
+	return false
+}
+
 func (hello *HelloMessage) Number() byte {
 	return HELLO_OP_CODE
 }

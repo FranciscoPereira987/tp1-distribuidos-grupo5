@@ -3,7 +3,7 @@ package ack_types_test
 import (
 	"testing"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/ack_types"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/ack_types"
 )
 
 func TestAckDeserialization(t *testing.T) {

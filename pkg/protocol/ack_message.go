@@ -3,13 +3,14 @@ package protocol
 import (
 	"encoding/binary"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/ack_types"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/ack_types"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
 var (
 	ACK_OP_CODE = byte(0x02)
+	TYPE_INDEX  = 5
 )
 
 type AckMessage struct {
@@ -19,7 +20,11 @@ type AckMessage struct {
 			1. The Ack Type
 			2. Extra information the Ack needs
 	*/
-	ack_body typing.Type
+	ack_body ack_types.AckType
+}
+
+func (ack AckMessage) bodyNumber() byte {
+	return ack.ack_body.Number()
 }
 
 func NewHelloAckMessage(client_id uint32) Message {
@@ -38,6 +43,14 @@ func NewFinAckMessage() Message {
 	return &AckMessage{
 		ack_body: &ack_types.FinAckType{},
 	}
+}
+
+func (hello *AckMessage) IsResponseFrom(message Message) bool {
+	otherAck, ok := message.Response().(*AckMessage)
+	if ok {
+		ok = otherAck.ack_body.IsAckFrom(hello.ack_body)
+	}
+	return ok
 }
 
 func (hello *AckMessage) Number() byte {
@@ -61,13 +74,13 @@ func (hello *AckMessage) UnMarshall(stream []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := typing.CheckTypeLength(body_length, stream[3:]); err != nil {
+	if err := typing.CheckTypeLength(body_length, stream[5:]); err != nil {
 		return err
 	}
 
-	return hello.ack_body.Deserialize(stream[3:])
+	return hello.ack_body.Deserialize(stream[5:])
 }
 
 func (hello *AckMessage) Response() Message {
-	return &AckMessage{}
+	return nil
 }

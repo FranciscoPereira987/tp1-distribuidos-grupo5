@@ -1,6 +1,7 @@
 package ack_types
 
 import (
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -9,6 +10,11 @@ var (
 )
 
 type DataAckType struct {
+}
+
+func (data *DataAckType) IsAckFrom(ack typing.Type) bool {
+	_, ok := ack.(*DataAckType)
+	return ok
 }
 
 func (data *DataAckType) Number() byte {

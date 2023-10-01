@@ -1,6 +1,7 @@
 package ack_types
 
 import (
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -9,6 +10,11 @@ var (
 )
 
 type FinAckType struct{}
+
+func (data *FinAckType) IsAckFrom(ack typing.Type) bool {
+	_, ok := ack.(*FinAckType)
+	return ok
+}
 
 func (fin *FinAckType) Number() byte {
 	return FINACK_TYPE_NUMBER

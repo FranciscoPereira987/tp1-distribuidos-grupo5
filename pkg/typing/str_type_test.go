@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/typing"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 func TestStrSerialization(t *testing.T) {

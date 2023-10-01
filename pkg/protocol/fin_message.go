@@ -14,6 +14,10 @@ var (
 type FinMessage struct {
 }
 
+func (fin *FinMessage) IsResponseFrom(message Message) bool {
+	return false
+}
+
 func (fin *FinMessage) Number() byte {
 	return FIN_OP_CODE
 }

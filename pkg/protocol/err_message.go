@@ -14,6 +14,10 @@ var (
 type ErrMessage struct {
 }
 
+func (errMes *ErrMessage) IsResponseFrom(message Message) bool {
+	return false
+}
+
 func (errMes *ErrMessage) Number() byte {
 	return ERR_OP_CODE
 }

@@ -129,6 +129,8 @@ func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 		proto.connected = false
 		return errors.New("connection closed")
 	}
+
+	proto.sendMessage(&ErrMessage{})
 	
 	return err
 }

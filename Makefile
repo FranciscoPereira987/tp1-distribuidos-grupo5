@@ -21,7 +21,7 @@ fmt:
 .PHONY: fmt
 
 test:
-	go test $(PWD)/...
+	go test $(PWD)/... -timeout 10s
 .PHONY: test
 
 docker-compose-up: build-image

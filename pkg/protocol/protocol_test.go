@@ -1,6 +1,7 @@
 package protocol_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
@@ -94,4 +95,49 @@ func TestUnconnectedCannotRecieveMessaged(t *testing.T) {
 	if err := connector.Recover(message); err == nil {
 		t.Fatal("could recover a message without being connected")
 	}
+}
+
+func TestClosingConnectionFromServerPOV(t *testing.T) {
+	connection := dummies.NewDummyConnector()
+	defer connection.Close()
+	client := protocol.NewProtocol(connection)
+	server := protocol.NewProtocol(connection)
+	dataDummy := protocol.NewDataMessage(&typing.FloatType{Value: 0.0})
+	go func () {
+		client.Connect()
+		client.Close()
+	}()
+
+	if err := server.Accept(); err != nil {
+		t.Fatalf("failed to accept connection: %s", err)
+	}
+
+	err := server.Recover(dataDummy)
+	if err == nil {
+		t.Fatalf("server recovered data on closing connection")
+	}
+
+	if err.Error() !=  errors.New("connection closed").Error() {
+		t.Fatalf("recieved unexpected error: %s", err)
+	}
+
+}
+
+func TestClosingConnectionFromClientPOV(t *testing.T) {
+	connection := dummies.NewDummyConnector()
+	defer connection.Close()
+	client := protocol.NewProtocol(connection)
+	server := protocol.NewProtocol(connection)
+	dataDummy := protocol.NewDataMessage(&typing.FloatType{0.0})
+	go func () {
+		server.Accept()
+		server.Recover(dataDummy)
+	}()
+
+	if err := client.Connect(); err != nil {
+		t.Fatalf("failed to accept connection: %s", err)
+	}
+
+	client.Close()
+
 }

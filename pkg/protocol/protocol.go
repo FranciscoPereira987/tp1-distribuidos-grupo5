@@ -43,6 +43,12 @@ func (proto *Protocol) readMessage() ([]byte, error) {
 
 func (proto *Protocol) manageResponse(message Message, sent Message) error {
 	if !message.IsResponseFrom(sent) {
+		
+		if _, ok := message.(*FinMessage); ok {
+			proto.sendMessage(NewFinAckMessage())
+			return errors.New("connection closed")
+		}
+		
 		proto.sendMessage(&ErrMessage{})
 		return errors.New("got unexpected message from stream")
 	}
@@ -111,6 +117,21 @@ func (proto *Protocol) sendMessage(message Message) error {
 	_, err := proto.source.Write(message.Marshall())
 	return err
 }
+
+/*
+	Need to check just for a Fin Message. Otherwise its an invalid message
+*/
+func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
+	fin, _ := proto.registry.GetMessage(stream)
+	
+	if finM, ok := fin.(*FinMessage); ok {
+		proto.sendMessage(finM.Response())
+		proto.connected = false
+		return errors.New("connection closed")
+	}
+	
+	return err
+}
 func (proto *Protocol) Recover(data *DataMessage) error {
 	if err := proto.checkConnected(); err != nil {
 		return err
@@ -121,7 +142,8 @@ func (proto *Protocol) Recover(data *DataMessage) error {
 	}
 
 	if err := data.UnMarshall(stream); err != nil {
-		return err
+		
+		return proto.manageInvalidData(stream, err)
 	}
 	response := data.Response()
 
@@ -147,4 +169,24 @@ func (proto *Protocol) Send(data *DataMessage) error {
 		return err
 	}
 	return proto.manageResponse(recovered, data)
+}
+
+/*
+	Should not be think of as closing underlying resource (source)
+*/
+func (proto *Protocol) Close() {
+	if proto.checkConnected() != nil {
+		return
+	}
+	fin := &FinMessage{}
+	if err := proto.sendMessage(fin); err != nil {
+		proto.connected = false
+		return
+	}
+
+	_, _ = proto.readMessage()
+	
+
+	proto.connected = false
+	return
 }

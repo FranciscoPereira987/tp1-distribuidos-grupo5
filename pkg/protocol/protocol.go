@@ -16,14 +16,16 @@ type Conn interface {
 |Body| => N bytes
 */
 type Protocol struct {
-	registry *Registry
-	source   Conn
+	registry  *Registry
+	source    Conn
+	connected bool
 }
 
 func NewProtocol(conn Conn) *Protocol {
 	return &Protocol{
-		registry: NewRegistry(),
-		source:   conn,
+		registry:  NewRegistry(),
+		source:    conn,
+		connected: false,
 	}
 }
 
@@ -51,6 +53,13 @@ func (proto *Protocol) manageResponse(message Message, sent Message) error {
 	return nil
 }
 
+func (proto Protocol) checkConnected() (err error) {
+	if !proto.connected {
+		err = errors.New("not connected")
+	}
+	return
+}
+
 /*
 Send a Hello Message and waits for an answer
 if the answer is not HelloAck, then returns error
@@ -72,7 +81,11 @@ func (proto *Protocol) Connect() error {
 	if err := recovered.UnMarshall(stream); err != nil {
 		return err
 	}
-	return proto.manageResponse(recovered, hello)
+	if err := proto.manageResponse(recovered, hello); err != nil {
+		return err
+	}
+	proto.connected = true
+	return nil
 
 }
 
@@ -90,7 +103,11 @@ func (proto *Protocol) Accept() error {
 		return err
 	}
 	response := NewHelloAckMessage(0) //Todo, define the user id (va a servir para multiples clientes)
-	return proto.sendMessage(response)
+	if err := proto.sendMessage(response); err != nil {
+		return err
+	}
+	proto.connected = true
+	return nil
 }
 
 // Protocol.source should be safe to write to (not producing short writes)
@@ -99,6 +116,9 @@ func (proto *Protocol) sendMessage(message Message) error {
 	return err
 }
 func (proto *Protocol) Recover(data *DataMessage) error {
+	if err := proto.checkConnected(); err != nil {
+		return err
+	}
 	stream, err := proto.readMessage()
 	if err != nil {
 		return err
@@ -113,6 +133,9 @@ func (proto *Protocol) Recover(data *DataMessage) error {
 }
 
 func (proto *Protocol) Send(data *DataMessage) error {
+	if err := proto.checkConnected(); err != nil {
+		return err
+	}
 	if err := proto.sendMessage(data); err != nil {
 		return err
 	}

@@ -67,3 +67,31 @@ func TestDataTransferFromClientPOV(t *testing.T) {
 		t.Fatalf("issue while recovering data: %s", err)
 	}
 }
+
+func TestUnconnectedCannotSendMessages(t *testing.T) {
+
+	connection := dummies.NewDummyConnector()
+	defer connection.Close()
+	connector := protocol.NewProtocol(connection)
+
+	data := &typing.FloatType{8.9}
+
+	message := protocol.NewDataMessage(data)
+
+	if err := connector.Send(message); err == nil {
+		t.Fatal("could send message without connecting")
+	}
+}
+
+func TestUnconnectedCannotRecieveMessaged(t *testing.T) {
+	connection := dummies.NewDummyConnector()
+	defer connection.Close()
+	connector := protocol.NewProtocol(connection)
+
+	data, _ := typing.NewStr("")
+	message := protocol.NewDataMessage(data)
+
+	if err := connector.Recover(message); err == nil {
+		t.Fatal("could recover a message without being connected")
+	}
+}

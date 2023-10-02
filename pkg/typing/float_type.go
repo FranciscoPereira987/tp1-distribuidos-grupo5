@@ -9,6 +9,7 @@ import (
 
 var (
 	FLOAT_TYPE_NUMBER = byte(0x02)
+	FLOAT_TYPE_LENGTH = 9
 )
 
 type FloatType struct {
@@ -16,7 +17,7 @@ type FloatType struct {
 }
 
 func (f *FloatType) length() int {
-	return 9
+	return FLOAT_TYPE_LENGTH
 }
 
 func (f *FloatType) Number() byte {

@@ -43,11 +43,12 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(coord, stream); err != nil {
 		return err
 	}
-	if err := coord.Lat.Deserialize(stream[1:1+typing.FLOAT_TYPE_LENGTH]); err != nil {
+	lat, long := typing.GetTypeFromStream(&coord.Lat, stream[1:])
+	if err := coord.Lat.Deserialize(lat); err != nil {
 		return err
 	}
 
-	if err := coord.Long.Deserialize(stream[1+typing.FLOAT_TYPE_LENGTH:]); err != nil {
+	if err := coord.Long.Deserialize(long); err != nil {
 		return err
 	}
 

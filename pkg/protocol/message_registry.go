@@ -1,6 +1,8 @@
 package protocol
 
-import "errors"
+import (
+	"errors"
+)
 
 type Registry struct {
 	registry map[byte]Message

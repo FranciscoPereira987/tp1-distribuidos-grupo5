@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/binary"
+	"errors"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -11,8 +12,65 @@ var (
 	DATA_OP_CODE = byte(0x03)
 )
 
+type Data interface {
+	Message
+	Type() typing.Type
+}
+
 type DataMessage struct {
 	data_type typing.Type
+}
+
+type MultiData struct {
+	data map[byte]*DataMessage
+	last *DataMessage
+}
+
+func NewMultiData() *MultiData {
+	return &MultiData{
+		data: make(map[byte]*DataMessage),
+	}
+}
+
+func (multi *MultiData) Register(args ...*DataMessage) {
+	for _, dataM := range args {
+		multi.data[dataM.Type().Number()] = dataM
+		multi.last = dataM
+	}
+}
+
+func (multi *MultiData) IsResponseFrom(mess Message) bool {
+	return multi.last.IsResponseFrom(mess)
+}
+
+func (multi *MultiData) Type() typing.Type {
+	return multi.last.Type()
+}
+
+func (multi *MultiData) Number() byte {
+	return DATA_OP_CODE
+}
+
+func (multi *MultiData) Marshall() []byte {
+	return multi.last.Marshall()
+}
+
+func (multi *MultiData) UnMarshall(stream []byte) error {
+	if len(stream) < 5 {
+		return errors.New("invalid data message")
+	}
+	key := stream[5]
+	if _, ok := multi.data[key]; !ok {
+		return errors.New("unknown data message")
+	}
+
+	multi.last = multi.data[key]
+
+	return multi.last.UnMarshall(stream)
+}
+
+func (multi *MultiData) Response() Message {
+	return multi.last.Response()
 }
 
 func NewDataMessage(value typing.Type) *DataMessage {

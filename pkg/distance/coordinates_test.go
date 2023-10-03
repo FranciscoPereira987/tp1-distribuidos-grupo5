@@ -19,15 +19,15 @@ func TestCoordinatesSerializationAndDeserialization(t *testing.T) {
 		Lon: 0,
 	}
 	otherData := distance.IntoData(*resultCoords)
-	
+
 	if err := otherData.UnMarshall(marshalled); err != nil {
 		t.Fatalf("error on unmarshalling: %s", err)
 	}
 
-	resultCoords, _ = distance.FromData(otherData)
+	resultCoords, _ = distance.CoordsFromData(otherData)
 
 	if (*resultCoords) != coords {
 		t.Fatalf("expected: %f, %f\ngot: %f, %f", resultCoords.Lat, resultCoords.Lon, coords.Lat, coords.Lon)
 	}
-	
+
 }

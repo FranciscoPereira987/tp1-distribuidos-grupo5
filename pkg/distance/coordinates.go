@@ -9,15 +9,16 @@ import (
 	"github.com/umahmood/haversine"
 )
 
-type Coordinates  = haversine.Coord
+type Coordinates = haversine.Coord
 
 var (
 	COORD_TYPE_NUMBER = byte(0x06)
 )
 
 type CoordWrapper struct {
-	Lat typing.FloatType
-	Long typing.FloatType
+	Name *typing.StrType
+	Lat  *typing.FloatType
+	Long *typing.FloatType
 }
 
 func (coord *CoordWrapper) Number() byte {
@@ -26,14 +27,15 @@ func (coord *CoordWrapper) Number() byte {
 
 func (coord *CoordWrapper) Serialize() []byte {
 	buf := []byte{COORD_TYPE_NUMBER}
+	buf = append(buf, coord.Name.Serialize()...)
 	buf = append(buf, coord.Lat.Serialize()...)
-	
+
 	return append(buf, coord.Long.Serialize()...)
 }
 
 func (coord *CoordWrapper) Trim(stream []byte) []byte {
 	if err := utils.CheckHeader(coord, stream); err != nil {
-		return stream	
+		return stream
 	}
 	stream = coord.Lat.Trim(stream[1:])
 	return coord.Long.Trim(stream)
@@ -43,7 +45,8 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(coord, stream); err != nil {
 		return err
 	}
-	lat, long := typing.GetTypeFromStream(&coord.Lat, stream[1:])
+	name, rest := typing.GetTypeFromStream(coord.Name, stream[1:])
+	lat, long := typing.GetTypeFromStream(coord.Lat, rest)
 	if err := coord.Lat.Deserialize(lat); err != nil {
 		return err
 	}
@@ -52,15 +55,19 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 		return err
 	}
 
+	if err := coord.Name.Deserialize(name); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func IntoData(coord Coordinates) *protocol.DataMessage {
 	wrapper := &CoordWrapper{
-		Lat: typing.FloatType{
+		Lat: &typing.FloatType{
 			Value: coord.Lat,
 		},
-		Long: typing.FloatType{
+		Long: &typing.FloatType{
 			Value: coord.Lon,
 		},
 	}
@@ -69,7 +76,7 @@ func IntoData(coord Coordinates) *protocol.DataMessage {
 	return message
 }
 
-func FromData(data *protocol.DataMessage) (*Coordinates, error) {
+func CoordsFromData(data protocol.Data) (*Coordinates, error) {
 	wrapper, ok := data.Type().(*CoordWrapper)
 	if !ok {
 		return nil, errors.New("invalid data message")
@@ -80,4 +87,3 @@ func FromData(data *protocol.DataMessage) (*Coordinates, error) {
 	}
 	return coords, nil
 }
-

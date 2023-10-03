@@ -1,6 +1,9 @@
 package distance
 
 import (
+	"errors"
+
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -82,4 +85,12 @@ func (data *AirportDataType) Trim(stream []byte) []byte {
 	rest = data.origin.Trim(rest)
 	rest = data.destination.Trim(rest)
 	return data.totalDistance.Trim(rest)
+}
+
+func AirportFromData(data protocol.Data) (*AirportDataType, error) {
+	unwrapped, ok := data.Type().(*AirportDataType)
+	if !ok {
+		return nil, errors.New("not an airport data type")
+	}
+	return unwrapped, nil
 }

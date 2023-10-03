@@ -8,6 +8,7 @@ import (
 type Conn interface {
 	io.Reader
 	io.Writer
+	Close()
 }
 
 
@@ -62,4 +63,8 @@ func (s *socket) Write(buf []byte) (writen int, err error) {
 	}
 
 	return
+}
+
+func (s *socket) Close() {
+	s.dial.Close()
 }

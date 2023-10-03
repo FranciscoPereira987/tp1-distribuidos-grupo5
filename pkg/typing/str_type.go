@@ -64,6 +64,17 @@ func (str *StrType) Serialize() []byte {
 	return append(header, []byte(str.value)...)
 }
 
+func (str *StrType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(str, stream); err != nil {
+		return stream
+	}
+	strLength, err := str.getValueLength(stream)
+	if err != nil {
+		return stream
+	}
+	return stream[strLength:]
+}
+
 func (str *StrType) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(str, stream); err != nil {
 		return err

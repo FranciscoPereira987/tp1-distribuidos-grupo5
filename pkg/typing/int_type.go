@@ -22,6 +22,13 @@ func (intType *IntType) Number() byte {
 	return INT_TYPE_NUMBER
 }
 
+func (intType *IntType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(intType, stream); err != nil {
+		return stream
+	} 
+	return stream[intType.length():]
+}
+
 func (intType *IntType) Serialize() []byte {
 	return binary.BigEndian.AppendUint32(utils.GetHeader(intType), intType.Value)
 }

@@ -31,6 +31,14 @@ func (coord *CoordWrapper) Serialize() []byte {
 	return append(buf, coord.Long.Serialize()...)
 }
 
+func (coord *CoordWrapper) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(coord, stream); err != nil {
+		return stream	
+	}
+	stream = coord.Lat.Trim(stream[1:])
+	return coord.Long.Trim(stream)
+}
+
 func (coord *CoordWrapper) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(coord, stream); err != nil {
 		return err

@@ -21,6 +21,13 @@ func (data *DataAckType) Number() byte {
 	return DATAACK_TYPE_NUMBER
 }
 
+func (data *DataAckType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(data, stream); err != nil {
+		return stream
+	}
+	return stream[1:]
+}
+
 func (data *DataAckType) Serialize() []byte {
 	return utils.GetHeader(data)
 }

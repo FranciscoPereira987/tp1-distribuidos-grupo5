@@ -10,6 +10,7 @@ type Type interface {
 	utils.Numbered
 	Serialize() []byte
 	Deserialize([]byte) error
+	Trim([]byte) []byte
 }
 
 func CheckTypeLength(typeLength int, stream []byte) error {

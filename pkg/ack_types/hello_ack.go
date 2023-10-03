@@ -18,6 +18,13 @@ func (data *HelloAckType) IsAckFrom(ack typing.Type) bool {
 	return ok
 }
 
+func (hello *HelloAckType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(hello, stream); err != nil {
+		return stream
+	}
+	return hello.clientId.Trim(stream[1:])
+}
+
 func (hello *HelloAckType) ClientId() uint32 {
 	return hello.clientId.Value
 }

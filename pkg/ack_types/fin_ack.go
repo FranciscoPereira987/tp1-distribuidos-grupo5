@@ -16,6 +16,13 @@ func (data *FinAckType) IsAckFrom(ack typing.Type) bool {
 	return ok
 }
 
+func (fin *FinAckType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(fin, stream); err != nil {
+		return stream
+	}
+	return stream[1:]
+}
+
 func (fin *FinAckType) Number() byte {
 	return FINACK_TYPE_NUMBER
 }

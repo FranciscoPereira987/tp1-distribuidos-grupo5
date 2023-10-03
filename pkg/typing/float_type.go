@@ -29,6 +29,13 @@ func (f *FloatType) Serialize() []byte {
 	return binary.BigEndian.AppendUint64(utils.GetHeader(f), bits)
 }
 
+func (f *FloatType) Trim(stream []byte) []byte {
+	if err := utils.CheckHeader(f, stream); err != nil {
+		return stream
+	}
+	return stream[f.length():]
+}
+
 func (f *FloatType) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(f, stream); err != nil {
 		return err

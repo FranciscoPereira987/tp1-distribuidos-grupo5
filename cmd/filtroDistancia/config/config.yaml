@@ -1,0 +1,9 @@
+times: 4
+
+data: 
+  addr: "127.0.0.1"
+  port: "6666"
+
+result: 
+  addr: "127.0.0.1"
+  port: "6667"

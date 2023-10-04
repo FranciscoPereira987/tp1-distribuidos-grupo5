@@ -4,9 +4,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia/lib"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"

@@ -1,89 +1,65 @@
 package main
 
 import (
-	"io"
-	"log"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia/lib"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol/dummies"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
+)
+
+var (
+	TIMES       = "times"
+	DATA_ADDR   = "data.addr"
+	DATA_PORT   = "data.port"
+	RESULT_ADDR = "result.addr"
+	RESULT_PORT = "result.port"
+
+	CONFIG_VARS = []string{
+		TIMES,
+		DATA_ADDR,
+		DATA_PORT,
+		RESULT_ADDR,
+		RESULT_PORT,
+	}
 )
 
 /*
 Agregar como parametro, para que se pueda configurar las N veces mayor que la
 directa que deberia tener el filtro.
 */
-func runClient(sender *protocol.Protocol) {
-	if err := sender.Accept(); err != nil {
-		return
-	}
-	valueR, err := reader.NewCoordinatesReader("./data/airports-codepublic.csv")
-	if err != nil {
-		return
-	}
 
-	for {
-		data, err := valueR.ReadData()
-		if err != nil {
-			break
-		}
-		sender.Send(data)
-	}
-	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
-
-	valueR.Close()
-	valueR, err = reader.NewDataReader("./data/test.csv")
+func connecTo(addr string, port string) conection.Conn {
+	conn, err := conection.NewSocketConnection(addr + ":" + port)
 	if err != nil {
-		return
+		panic(err.Error())
 	}
-	sent := 0
-	for {
-		data, err := valueR.ReadData()
-		if err != nil {
-			log.Printf("error: %s", err)
-			if err.Error() == io.EOF.Error() {
-				break
-			}
-			continue
-		}
-		sent++
-		data = protocol.NewDataMessage(data.Type().(*reader.FlightDataType).IntoDistanceData())
-		sender.Send(data)
-	}
-	log.Printf("Sent: %d flights", sent)
-	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
-	sender.Close()
+	return conn
 }
+
+func getConfig(v *viper.Viper) (config lib.WorkerConfig) {
+	config.Times = v.GetInt(TIMES)
+	config.DataConn = connecTo(v.GetString(DATA_ADDR), v.GetString(DATA_PORT))
+	config.ResultConn = connecTo(v.GetString(RESULT_ADDR), v.GetString(RESULT_PORT))
+	return
+}
+
 func main() {
-	sender := dummies.NewDummyConnector()
-	reciever := dummies.NewDummyConnector()
-
-	clientConnector := protocol.NewProtocol(sender)
-	go runClient(clientConnector)
-
-	recieverConnector := protocol.NewProtocol(reciever)
-	go recieverConnector.Accept()
-	worker, err := lib.NewWorker(lib.WorkerConfig{
-		DataConn:   sender,
-		ResultConn: reciever,
-		Times:      4,
-	})
+	utils.DefaultLogger()
+	v, err := utils.InitConfig("./cmd/filtroDistancia/config/config.yaml", CONFIG_VARS...)
 	if err != nil {
-		log.Fatalf("could not create worker")
+		log.Fatalf("could not initialize config: %s", err)
 	}
-	go worker.Run()
+	utils.PrintConfig(v, CONFIG_VARS...)
 
-	results := make([]distance.AirportDataType, 0)
-	dataType, err := distance.NewAirportData("", "", "", 0)
+	config := getConfig(v)
+	worker, err := lib.NewWorker(config)
 	if err != nil {
-		log.Fatalf("Failed at creating data: %s", err)
+		log.Fatalf("error at creating worker: %s", err)
 	}
-	data := protocol.NewDataMessage(dataType)
-	for recieverConnector.Recover(data) == nil {
-
-		results = append(results, *data.Type().(*distance.AirportDataType))
+	if err := worker.Run(); err != nil {
+		log.Fatalf("error during run: %s", err)
 	}
-	log.Printf("Results: %d", len(results))
+	worker.Shutdown()
 }

@@ -7,65 +7,98 @@ import (
 )
 
 type WorkerConfig struct {
-	Addr string
+	DataConn   conection.Conn
+	ResultConn conection.Conn
+	Times      int
 }
 
 type Worker struct {
-	protocol   *protocol.Protocol
-	connection conection.Conn
+	config  WorkerConfig
+	data    *protocol.Protocol
+	results *protocol.Protocol
 
 	computer     *distance.DistanceComputer
 	finishedLoad bool
-	unobtained   []distance.AirportDataType
 }
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
-	conection, err := conection.NewSocketConnection(config.Addr)
 
-	if err != nil {
+	data := protocol.NewProtocol(config.DataConn)
+	if err := data.Connect(); err != nil {
 		return nil, err
 	}
 
-	protocol := protocol.NewProtocol(conection)
+	results := protocol.NewProtocol(config.ResultConn)
+	if err := results.Connect(); err != nil {
+		return nil, err
+	}
 
 	computer := distance.NewComputer()
 
 	return &Worker{
-		protocol:     protocol,
-		connection:   conection,
+		config:       config,
+		data:         data,
+		results:      results,
 		computer:     computer,
 		finishedLoad: false,
-		unobtained:   nil,
 	}, nil
 }
 
 func (worker *Worker) Shutdown() {
-	worker.protocol.Close()
-	worker.connection.Close()
+	worker.data.Close()
+	worker.results.Close()
+	worker.config.DataConn.Close()
+	worker.config.ResultConn.Close()
 }
 
-func (worker *Worker) Run() error {
+func getMultiData() *protocol.MultiData {
 	coords := distance.IntoData(distance.Coordinates{})
 	airport, _ := distance.NewAirportData("", "", "", 0)
 	coordsEnd := &distance.CoordFin{}
 	multi := protocol.NewMultiData()
 	multi.Register(coords, protocol.NewDataMessage(airport), protocol.NewDataMessage(coordsEnd))
+	return multi
+}
+
+func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.Data) {
+	coords, _ := distance.CoordsFromData(data)
+	worker.computer.AddAirport(value.Name.Value(), *coords)
+}
+
+func (worker *Worker) handleFilter(value *distance.AirportDataType, data protocol.Data) {
+	greaterThanX, err := value.GreaterThanXTimes(worker.config.Times, *worker.computer)
+	if err != nil {
+		//log error and return
+		return
+	}
+	if greaterThanX {
+		//Send result downstream
+		worker.results.Send(data)
+	}
+}
+
+func (worker *Worker) handleFinData(value *distance.CoordFin, data protocol.Data) {
+	if worker.finishedLoad {
+		worker.results.Send(data)
+	} else {
+		worker.finishedLoad = true
+	}
+
+}
+
+func (worker *Worker) Run() error {
+	multi := getMultiData()
 	for {
-		if err := worker.protocol.Recover(multi); err != nil {
+		if err := worker.data.Recover(multi); err != nil {
 			return err
 		}
 		recovered := multi.Type()
 		if value, ok := recovered.(*distance.CoordWrapper); ok {
-			coords, _ := distance.CoordsFromData(multi)
-			worker.computer.AddAirport(value.Name.Value(), *coords)
+			worker.handleCoords(value, multi)
 		} else if value, ok := recovered.(*distance.AirportDataType); ok {
-			if worker.finishedLoad {
-				//Calculate the query and send the result
-			} else {
-				worker.unobtained = append(worker.unobtained, *value)
-			}
-		} else if _, ok := recovered.(*distance.CoordFin); ok {
-			worker.finishedLoad = true
+			worker.handleFilter(value, multi)
+		} else if value, ok := recovered.(*distance.CoordFin); ok {
+			worker.handleFinData(value, multi)
 		}
 	}
 

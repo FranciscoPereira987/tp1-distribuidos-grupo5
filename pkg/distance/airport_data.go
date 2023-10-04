@@ -94,3 +94,15 @@ func AirportFromData(data protocol.Data) (*AirportDataType, error) {
 	}
 	return unwrapped, nil
 }
+
+func (data AirportDataType) calculateDistance(computer DistanceComputer) (float64, error) {
+	return computer.CalculateDistance(data.origin.Value(), data.destination.Value())
+}
+
+func (data AirportDataType) GreaterThanXTimes(x int, computer DistanceComputer) (bool, error) {
+	distance, err := data.calculateDistance(computer)
+	if err != nil {
+		return false, err
+	}
+	return data.totalDistance.Value > float64(x) * distance, nil
+}

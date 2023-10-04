@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"

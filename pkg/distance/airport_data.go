@@ -2,6 +2,7 @@ package distance
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -17,10 +18,14 @@ type AirportDataType struct {
 	origin      *typing.StrType
 	destination *typing.StrType
 
-	totalDistance *typing.FloatType
+	totalDistance *typing.IntType
 }
 
-func NewAirportData(id string, origin string, destination string, distance float64) (*AirportDataType, error) {
+func (airport *AirportDataType) Type() []string {
+	return []string{airport.id.Value(), airport.origin.Value(), airport.destination.Value(), fmt.Sprint(airport.totalDistance.Value)}
+}
+
+func NewAirportData(id string, origin string, destination string, distance uint32) (*AirportDataType, error) {
 	dataId, err := typing.NewStr(id)
 	if err != nil {
 		return nil, err
@@ -33,7 +38,7 @@ func NewAirportData(id string, origin string, destination string, distance float
 	if err != nil {
 		return nil, err
 	}
-	distanceData := &typing.FloatType{Value: distance}
+	distanceData := &typing.IntType{Value: distance}
 
 	return &AirportDataType{
 		id:            dataId,
@@ -104,5 +109,5 @@ func (data AirportDataType) GreaterThanXTimes(x int, computer DistanceComputer) 
 	if err != nil {
 		return false, err
 	}
-	return data.totalDistance.Value > float64(x) * distance, nil
+	return float64(data.totalDistance.Value) > float64(x)*distance, nil
 }

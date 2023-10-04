@@ -12,13 +12,13 @@ func TestCoordinatesSerializationAndDeserialization(t *testing.T) {
 		Lon: 12.2,
 	}
 
-	data := distance.IntoData(coords)
+	data := distance.IntoData(coords, "AEX")
 	marshalled := data.Marshall()
 	resultCoords := &distance.Coordinates{
 		Lat: 0,
 		Lon: 0,
 	}
-	otherData := distance.IntoData(*resultCoords)
+	otherData := distance.IntoData(*resultCoords, "")
 
 	if err := otherData.UnMarshall(marshalled); err != nil {
 		t.Fatalf("error on unmarshalling: %s", err)

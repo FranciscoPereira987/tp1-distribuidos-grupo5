@@ -62,8 +62,10 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 	return nil
 }
 
-func IntoData(coord Coordinates) *protocol.DataMessage {
+func IntoData(coord Coordinates, name string) *protocol.DataMessage {
+	nameStr, _ := typing.NewStr(name)
 	wrapper := &CoordWrapper{
+		Name: nameStr,
 		Lat: &typing.FloatType{
 			Value: coord.Lat,
 		},

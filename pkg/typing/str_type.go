@@ -72,7 +72,7 @@ func (str *StrType) Trim(stream []byte) []byte {
 	if err != nil {
 		return stream
 	}
-	return stream[strLength:]
+	return stream[strLength+3:]
 }
 
 func (str *StrType) Deserialize(stream []byte) error {

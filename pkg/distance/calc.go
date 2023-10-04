@@ -7,9 +7,6 @@ import (
 	"github.com/umahmood/haversine"
 )
 
-
-
-
 type DistanceComputer struct {
 	coordinates map[string]Coordinates
 }
@@ -37,6 +34,6 @@ func (comp DistanceComputer) CalculateDistance(origin string, destination string
 	if err != nil {
 		return 0, err
 	}
-	_, distance := haversine.Distance(originCoor, destinationCoor)
+	distance, _ := haversine.Distance(originCoor, destinationCoor)
 	return distance, nil
 }

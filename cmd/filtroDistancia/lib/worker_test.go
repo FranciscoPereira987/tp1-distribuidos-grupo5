@@ -1,8 +1,12 @@
-package main
+package lib_test
 
 import (
+	"encoding/csv"
+	"fmt"
 	"io"
 	"log"
+	"os"
+	"testing"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia/lib"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
@@ -11,16 +15,14 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 )
 
-/*
-Agregar como parametro, para que se pueda configurar las N veces mayor que la
-directa que deberia tener el filtro.
-*/
 func runClient(sender *protocol.Protocol) {
 	if err := sender.Accept(); err != nil {
 		return
 	}
-	valueR, err := reader.NewCoordinatesReader("./data/airports-codepublic.csv")
+	valueR, err := reader.NewCoordinatesReader("/home/fran/Documents/distribuidos/tp1/data/airports-codepublic.csv")
 	if err != nil {
+		wd, _ := os.Getwd()
+		panic(fmt.Sprintf("Error hier: %s", wd))
 		return
 	}
 
@@ -34,7 +36,7 @@ func runClient(sender *protocol.Protocol) {
 	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
 
 	valueR.Close()
-	valueR, err = reader.NewDataReader("./data/test.csv")
+	valueR, err = reader.NewDataReader("/home/fran/Documents/distribuidos/tp1/data/test.csv")
 	if err != nil {
 		return
 	}
@@ -56,7 +58,21 @@ func runClient(sender *protocol.Protocol) {
 	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
 	sender.Close()
 }
-func main() {
+func getResults() map[string]bool {
+	file, _ := os.Open("/home/fran/Documents/distribuidos/tp1/data/query2_result.csv")
+	reader := csv.NewReader(file)
+	results := make(map[string]bool)
+	for {
+		line, err := reader.Read()
+		if err != nil {
+			break
+		}
+		results[line[1]] = true
+	}
+	return results
+}
+
+func TestProcessingWithOneWorker(t *testing.T) {
 	sender := dummies.NewDummyConnector()
 	reciever := dummies.NewDummyConnector()
 
@@ -85,5 +101,10 @@ func main() {
 
 		results = append(results, *data.Type().(*distance.AirportDataType))
 	}
-	log.Printf("Results: %d", len(results))
+	expected := getResults()
+	for _, result := range results {
+		if _, ok := expected[result.Type()[0]]; !ok {
+			t.Fatalf("result: %s not found in expected", result.Type()[0])
+		}
+	}
 }

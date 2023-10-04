@@ -1,6 +1,8 @@
 package lib
 
 import (
+	"log"
+
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
@@ -19,6 +21,7 @@ type Worker struct {
 
 	computer     *distance.DistanceComputer
 	finishedLoad bool
+	finished     bool
 }
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
@@ -41,6 +44,7 @@ func NewWorker(config WorkerConfig) (*Worker, error) {
 		results:      results,
 		computer:     computer,
 		finishedLoad: false,
+		finished:     false,
 	}, nil
 }
 
@@ -52,7 +56,7 @@ func (worker *Worker) Shutdown() {
 }
 
 func getMultiData() *protocol.MultiData {
-	coords := distance.IntoData(distance.Coordinates{})
+	coords := distance.IntoData(distance.Coordinates{}, "")
 	airport, _ := distance.NewAirportData("", "", "", 0)
 	coordsEnd := &distance.CoordFin{}
 	multi := protocol.NewMultiData()
@@ -62,17 +66,17 @@ func getMultiData() *protocol.MultiData {
 
 func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.Data) {
 	coords, _ := distance.CoordsFromData(data)
+	log.Printf("Adding airport: %s", value.Name.Value())
 	worker.computer.AddAirport(value.Name.Value(), *coords)
 }
 
 func (worker *Worker) handleFilter(value *distance.AirportDataType, data protocol.Data) {
 	greaterThanX, err := value.GreaterThanXTimes(worker.config.Times, *worker.computer)
 	if err != nil {
-		//log error and return
+		log.Printf("error processing data: %s", err)
 		return
 	}
 	if greaterThanX {
-		//Send result downstream
 		worker.results.Send(data)
 	}
 }
@@ -80,6 +84,7 @@ func (worker *Worker) handleFilter(value *distance.AirportDataType, data protoco
 func (worker *Worker) handleFinData(value *distance.CoordFin, data protocol.Data) {
 	if worker.finishedLoad {
 		worker.results.Send(data)
+		worker.finished = true
 	} else {
 		worker.finishedLoad = true
 	}
@@ -88,8 +93,9 @@ func (worker *Worker) handleFinData(value *distance.CoordFin, data protocol.Data
 
 func (worker *Worker) Run() error {
 	multi := getMultiData()
-	for {
+	for !worker.finished {
 		if err := worker.data.Recover(multi); err != nil {
+			log.Printf("failed recovering data: %s", err)
 			return err
 		}
 		recovered := multi.Type()

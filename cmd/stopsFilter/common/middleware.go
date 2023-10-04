@@ -29,13 +29,8 @@ func (m *Middleware) Connect() error {
 func (m *Middleware) Close() error {
 	errFlush := m.Flush()
 	errClose := m.conn.Close()
-	if errFlush != nil && errClose != nil {
-		return fmt.Errorf("Flush: %w, Close: %w", errFlush, errClose)
-	}
-	if errFlush != nil {
-		return errFlush
-	}
-	return errClose
+
+	return errors.Join(errFlush, errClose)
 }
 
 func (m *Middleware) Flush() error {

@@ -2,6 +2,7 @@ package typing
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -25,7 +26,7 @@ func (intType *IntType) Number() byte {
 func (intType *IntType) Trim(stream []byte) []byte {
 	if err := utils.CheckHeader(intType, stream); err != nil {
 		return stream
-	} 
+	}
 	return stream[intType.length():]
 }
 
@@ -42,4 +43,8 @@ func (intType *IntType) Deserialize(stream []byte) error {
 	}
 	intType.Value = binary.BigEndian.Uint32(stream[1:])
 	return nil
+}
+
+func (intType *IntType) AsRecord() []string {
+	return []string{fmt.Sprint(intType.Value)}
 }

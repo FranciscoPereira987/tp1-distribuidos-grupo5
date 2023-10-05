@@ -111,3 +111,10 @@ func (data AirportDataType) GreaterThanXTimes(x int, computer DistanceComputer) 
 	}
 	return float64(data.totalDistance.Value) > float64(x)*distance, nil
 }
+
+func (data *AirportDataType) AsRecord() []string {
+	record := data.id.AsRecord()
+	record = append(record, data.origin.AsRecord()...)
+	record = append(record, data.destination.AsRecord()...)
+	return append(record, data.totalDistance.AsRecord()...)
+}

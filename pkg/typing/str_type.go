@@ -85,3 +85,7 @@ func (str *StrType) Deserialize(stream []byte) error {
 	}
 	return str.deserializeValue(stream[3:], strLength)
 }
+
+func (str *StrType) AsRecord() []string {
+	return []string{str.value}
+}

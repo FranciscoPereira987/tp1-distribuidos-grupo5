@@ -8,6 +8,7 @@ import (
 
 type Type interface {
 	utils.Numbered
+	utils.Recorder
 	Serialize() []byte
 	Deserialize([]byte) error
 	Trim([]byte) []byte

@@ -62,6 +62,12 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 	return nil
 }
 
+func (coord *CoordWrapper) AsRecord() []string {
+	record := coord.Name.AsRecord()
+	record = append(record, coord.Name.AsRecord()...)
+	return append(record, coord.Long.AsRecord()...)
+}
+
 func IntoData(coord Coordinates, name string) *protocol.DataMessage {
 	nameStr, _ := typing.NewStr(name)
 	wrapper := &CoordWrapper{

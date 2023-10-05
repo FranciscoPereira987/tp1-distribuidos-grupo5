@@ -5,12 +5,11 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-var(
+var (
 	COORD_FIN_TYPE_NUMBER = byte(0x07)
 )
 
-type CoordFin struct {}
-
+type CoordFin struct{}
 
 func (coord *CoordFin) Number() byte {
 	return COORD_FIN_TYPE_NUMBER
@@ -35,4 +34,8 @@ func (coord *CoordFin) Deserialize(stream []byte) error {
 
 func (coord *CoordFin) Serialize() []byte {
 	return utils.GetHeader(coord)
+}
+
+func (coord *CoordFin) AsRecord() []string {
+	return []string{}
 }

@@ -133,6 +133,16 @@ func (flight *FlightDataType) Trim(stream []byte) (trimed []byte) {
 	return
 }
 
+func (flight *FlightDataType) AsRecord() []string {
+	record := flight.id.AsRecord()
+	record = append(record, flight.origin.AsRecord()...)
+	record = append(record, flight.destination.AsRecord()...)
+	record = append(record, flight.duration.AsRecord()...)
+	record = append(record, flight.fare.AsRecord()...)
+	record = append(record, flight.distance.AsRecord()...)
+	return append(record, flight.stops.AsRecord()...)
+}
+
 func (flight *FlightDataType) IntoDistanceData() typing.Type {
 	data, _ := distance.NewAirportData(flight.id.Value(), flight.origin.Value(), flight.destination.Value(), flight.distance.Value)
 	return data

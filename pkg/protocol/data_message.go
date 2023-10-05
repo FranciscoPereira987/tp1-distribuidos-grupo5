@@ -14,6 +14,7 @@ var (
 
 type Data interface {
 	Message
+	utils.Recorder
 	Type() typing.Type
 }
 
@@ -73,6 +74,10 @@ func (multi *MultiData) Response() Message {
 	return multi.last.Response()
 }
 
+func (multi *MultiData) AsRecord() []string {
+	return multi.last.AsRecord()
+}
+
 func NewDataMessage(value typing.Type) *DataMessage {
 	return &DataMessage{
 		value,
@@ -118,4 +123,8 @@ func (hello *DataMessage) UnMarshall(stream []byte) error {
 
 func (hello *DataMessage) Response() Message {
 	return NewDataAckMessage()
+}
+
+func (data *DataMessage) AsRecord() []string {
+	return data.Type().AsRecord()
 }

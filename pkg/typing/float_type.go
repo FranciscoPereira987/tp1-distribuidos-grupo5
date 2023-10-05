@@ -2,6 +2,7 @@ package typing
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -49,4 +50,8 @@ func (f *FloatType) Deserialize(stream []byte) error {
 	f.Value = math.Float64frombits(bits)
 
 	return nil
+}
+
+func (float *FloatType) AsRecord() []string {
+	return []string{fmt.Sprint(float)}
 }

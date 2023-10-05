@@ -37,3 +37,7 @@ func (fin *FinAckType) Deserialize(stream []byte) error {
 	}
 	return nil
 }
+
+func (fin *FinAckType) AsRecord() []string {
+	return []string{}
+}

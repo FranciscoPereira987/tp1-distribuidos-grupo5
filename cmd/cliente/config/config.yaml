@@ -1,0 +1,12 @@
+results:
+  dir: "./results/"
+  second: "second.csv"
+
+datafile: "./data/test.csv"
+
+coordsfile: "./data/airports-codepublic.csv"
+
+server:
+  addr: "127.0.0.1"
+  data: "6666"
+  results: "6667"

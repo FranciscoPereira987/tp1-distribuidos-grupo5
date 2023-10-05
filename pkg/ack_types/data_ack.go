@@ -39,3 +39,7 @@ func (data *DataAckType) Deserialize(stream []byte) error {
 
 	return nil
 }
+
+func (data *DataAckType) AsRecord() []string {
+	return []string{}
+}

@@ -56,3 +56,7 @@ func (helloAck *HelloAckType) Deserialize(stream []byte) error {
 	}
 	return nil
 }
+
+func (ack *HelloAckType) AsRecord() []string {
+	return []string{}
+}

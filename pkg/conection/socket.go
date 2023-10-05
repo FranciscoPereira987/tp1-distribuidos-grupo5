@@ -8,28 +8,27 @@ import (
 type Conn interface {
 	io.Reader
 	io.Writer
-	Close()
+	Close() error
 }
 
-
 /*
-	Not thread safe implementation of a safe socket
+Not thread safe implementation of a safe socket
 */
 type socket struct {
 	dial net.Conn
 }
 
-func NewSocketConnection(at string)(con Conn, err error){
+func NewSocketConnection(at string) (con Conn, err error) {
 	dial, err := net.Dial("tcp", at)
 	con = &socket{
 		dial: dial,
 	}
-	return 
+	return
 }
 
 /*
-	Safe read implementation, either reads the whole buffer
-	or returns an error
+Safe read implementation, either reads the whole buffer
+or returns an error
 */
 func (s *socket) Read(buf []byte) (readed int, err error) {
 
@@ -45,13 +44,12 @@ func (s *socket) Read(buf []byte) (readed int, err error) {
 	return
 }
 
-
 /*
-	Safe write implementation, either writes the whole buffer
-	or returns an error
+Safe write implementation, either writes the whole buffer
+or returns an error
 */
 func (s *socket) Write(buf []byte) (writen int, err error) {
-	
+
 	for len(buf) > 0 {
 		newlyWriten, writeErr := s.dial.Write(buf)
 		if writeErr != nil {
@@ -65,6 +63,6 @@ func (s *socket) Write(buf []byte) (writen int, err error) {
 	return
 }
 
-func (s *socket) Close() {
-	s.dial.Close()
+func (s *socket) Close() error {
+	return s.dial.Close()
 }

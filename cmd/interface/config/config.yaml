@@ -1,0 +1,8 @@
+query:
+  second: "7777"
+
+server:
+  dataport: "9999"
+  resultsport: "10000" 
+
+agregator: "6666"

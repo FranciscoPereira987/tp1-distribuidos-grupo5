@@ -11,8 +11,9 @@ func NewDummyConnector() *DummyConnector {
 	}
 }
 
-func (con *DummyConnector) Close() {
+func (con *DummyConnector) Close() error {
 	close(con.buffer)
+	return nil
 }
 
 func (con *DummyConnector) Read(buf []byte) (readed int, err error) {

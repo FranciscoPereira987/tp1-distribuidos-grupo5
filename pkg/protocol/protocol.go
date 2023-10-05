@@ -25,6 +25,10 @@ func NewProtocol(conn conection.Conn) *Protocol {
 	}
 }
 
+func (proto *Protocol) Shutdown() error {
+	return proto.source.Close()
+}
+
 // Protocol.source should be safe to read (not producing short reads)
 func (proto *Protocol) readMessage() ([]byte, error) {
 	header := make([]byte, 5)

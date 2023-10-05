@@ -6,6 +6,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	"github.com/sirupsen/logrus"
 )
 
 type WorkerConfig struct {
@@ -66,7 +67,7 @@ func getMultiData() *protocol.MultiData {
 
 func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.Data) {
 	coords, _ := distance.CoordsFromData(data)
-	log.Printf("Adding airport: %s", value.Name.Value())
+	logrus.Infof("Adding airport: %s", value.Name.Value())
 	worker.computer.AddAirport(value.Name.Value(), *coords)
 }
 
@@ -77,15 +78,18 @@ func (worker *Worker) handleFilter(value *distance.AirportDataType, data protoco
 		return
 	}
 	if greaterThanX {
+		logrus.Infof("filtered airport: %s", value.AsRecord())
 		worker.results.Send(data)
 	}
 }
 
 func (worker *Worker) handleFinData(value *distance.CoordFin, data protocol.Data) {
 	if worker.finishedLoad {
+		logrus.Info("finishing work")
 		worker.results.Send(data)
 		worker.finished = true
 	} else {
+		logrus.Info("action: coordinates send | result: finished")
 		worker.finishedLoad = true
 	}
 

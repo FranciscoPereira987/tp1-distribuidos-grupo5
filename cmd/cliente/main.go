@@ -46,6 +46,8 @@ func getConfig(v *viper.Viper) *lib.ClientConfig {
 	config.ResultsDir = v.GetString(RESULTS_DIR)
 	config.ServerData = connecTo(v.GetString(SERVER_ADDR), v.GetString(DATA_PORT))
 	config.ServerResults = connecTo(v.GetString(SERVER_ADDR), v.GetString(RESULTS_PORT))
+	config.DataFile = v.GetString(DATA_FILE)
+	config.CoordsFile = v.GetString(COORDS_FILE)
 	return config
 }
 

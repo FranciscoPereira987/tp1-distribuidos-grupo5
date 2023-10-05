@@ -61,8 +61,15 @@ func NewResultWriter(dir string, files []string, results []Numbered) (*ResultWri
 
 func (writer *ResultWriter) WriteInto(into Numbered, record []string) error {
 	csvWriter, ok := writer.files[into.Number()]
+	csvWriter.Flush()
 	if !ok {
 		return errors.New("invalid result")
 	}
 	return csvWriter.Write(record)
+}
+
+func (writer *ResultWriter) Close() {
+	for _, fd := range writer.fds {
+		fd.Close()
+	}
 }

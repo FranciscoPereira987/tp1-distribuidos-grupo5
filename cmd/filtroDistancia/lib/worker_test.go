@@ -62,6 +62,7 @@ func runClient(sender *protocol.Protocol) {
 func getResults() map[string]bool {
 	file, _ := os.Open("/home/fran/Documents/distribuidos/tp1/data/query2_result.csv")
 	reader := csv.NewReader(file)
+	reader.Read()
 	results := make(map[string]bool)
 	for {
 		line, err := reader.Read()
@@ -103,6 +104,9 @@ func TestProcessingWithOneWorker(t *testing.T) {
 		results = append(results, *data.Type().(*distance.AirportDataType))
 	}
 	expected := getResults()
+	if len(expected) != len(results) {
+		t.Fatalf("results are not as much as expected")
+	}
 	for _, result := range results {
 		if _, ok := expected[result.Type()[0]]; !ok {
 			t.Fatalf("result: %s not found in expected", result.Type()[0])

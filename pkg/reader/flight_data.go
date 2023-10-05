@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	FLIGHT_TYPE_NUMBER = byte(0x08)
+	FLIGHT_TYPE_NUMBER = byte(0x09)
 )
 
 type FlightDataType struct {
@@ -83,10 +83,12 @@ func (flight *FlightDataType) Deserialize(stream []byte) (err error) {
 	if err = utils.CheckHeader(flight, stream); err != nil {
 		return err
 	}
-	if err = flight.id.Deserialize(stream[1:]); err != nil {
+	id, rest := typing.GetTypeFromStream(flight.id, stream[1:])
+	if err = flight.id.Deserialize(id); err != nil {
 		return err
 	}
-	origin, rest := typing.GetTypeFromStream(flight.origin, stream[1:])
+
+	origin, rest := typing.GetTypeFromStream(flight.origin, rest)
 	if err = flight.origin.Deserialize(origin); err != nil {
 		return err
 	}

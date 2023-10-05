@@ -20,8 +20,8 @@ type ClientConfig struct {
 	//Query3File string
 	//Query4File string
 
-	dataFile   string
-	coordsFile string
+	DataFile   string
+	CoordsFile string
 
 	ServerData    conection.Conn
 	ServerResults conection.Conn
@@ -65,11 +65,11 @@ func NewClient(config ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
-	dataReader, err := reader.NewDataReader(config.dataFile)
+	dataReader, err := reader.NewDataReader(config.DataFile)
 	if err != nil {
 		return nil, err
 	}
-	coordsReader, err := reader.NewCoordinatesReader(config.coordsFile)
+	coordsReader, err := reader.NewCoordinatesReader(config.CoordsFile)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,8 @@ func NewClient(config ClientConfig) (*Client, error) {
 
 func getClientMultiData() protocol.Data {
 	data := protocol.NewMultiData()
-	data.Register(protocol.NewDataMessage(&distance.AirportDataType{}))
+	flights, _ := distance.NewAirportData("", "", "", 0)
+	data.Register(protocol.NewDataMessage(flights))
 	return data
 }
 
@@ -109,7 +110,9 @@ func (client *Client) runResults() {
 			logrus.Errorf("Error while recieving results: %s", err)
 			break
 		}
-		client.writer.WriteInto(data.Type(), data.AsRecord())
+		if err := client.writer.WriteInto(data.Type(), data.AsRecord()); err != nil {
+			logrus.Errorf("Error writting to file: %s", err)
+		}
 
 	}
 	client.resultsConn.Close()
@@ -133,7 +136,9 @@ func (client *Client) runData() {
 			break
 		}
 	}
-
+	if err := client.dataConn.Send(protocol.NewDataMessage(&distance.CoordFin{})); err != nil {
+		logrus.Infof("error while sending coordinates end: %s", err)
+	}
 	client.coordsReader.Close() //Try to get this error
 	for {
 		data, err := client.dataReader.ReadData()
@@ -142,8 +147,8 @@ func (client *Client) runData() {
 				logrus.Infof("action: data sending | result: success")
 				break
 			}
-			logrus.Errorf("action: data sending | result: failed | error: %s", err)
-			break
+			//logrus.Errorf("action: data sending | result: failed | error: %s", err)
+			continue
 		}
 		if err := client.dataConn.Send(data); err != nil {
 			logrus.Errorf("action: data sending | result: failed | error: %s", err)
@@ -164,6 +169,7 @@ func (client *Client) waiter() error {
 }
 
 func (client *Client) Run() error {
+	defer client.writer.Close()
 	go client.runResults()
 	go client.runData()
 	return client.waiter()

@@ -41,7 +41,7 @@ func getDataMessages() protocol.Data {
 	query2Type, _ := distance.NewAirportData("", "", "", 0)
 	flightType, _ := reader.NewFlightDataType("", "", "", 0, 0, 0, "")
 	flightData := protocol.NewDataMessage(flightType)
-	endData := protocol.NewDataMessage(reader.FinData(0))
+	endData := protocol.NewDataMessage(reader.FinData())
 	multi.Register(flightData, endData, protocol.NewDataMessage(coordinatesType), protocol.NewDataMessage(query2Type))
 	return multi
 }

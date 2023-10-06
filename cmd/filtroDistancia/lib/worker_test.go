@@ -34,7 +34,7 @@ func runClient(sender *protocol.Protocol) {
 		sender.Send(data)
 	}
 
-	sender.Send(protocol.NewDataMessage(reader.FinData(0)))
+	sender.Send(protocol.NewDataMessage(reader.FinData()))
 	valueR.Close()
 	valueR, err = reader.NewDataReader("/home/francisco/Documents/Distribuidos/tp1/data/test.csv")
 	if err != nil {
@@ -55,7 +55,7 @@ func runClient(sender *protocol.Protocol) {
 		sender.Send(data)
 	}
 	log.Printf("Sent: %d flights", sent)
-	sender.Send(protocol.NewDataMessage(reader.FinData(0)))
+	sender.Send(protocol.NewDataMessage(reader.FinData()))
 	sender.Close()
 }
 func getResults() map[string]bool {
@@ -90,6 +90,7 @@ func TestProcessingWithOneWorker(t *testing.T) {
 	if err != nil {
 		log.Fatalf("could not create worker")
 	}
+	
 	go worker.Run()
 
 	results := make([]distance.AirportDataType, 0)

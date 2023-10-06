@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -38,10 +40,12 @@ func connecTo(addr string, port string) conection.Conn {
 	return conn
 }
 
-func getConfig(v *viper.Viper) (config lib.WorkerConfig) {
+func getConfig(v *viper.Viper) (config lib.WorkerConfig, cancel context.CancelFunc) {
 	config.Times = v.GetInt(TIMES)
 	config.DataConn = connecTo(v.GetString(DATA_ADDR), v.GetString(DATA_PORT))
 	config.ResultConn = connecTo(v.GetString(RESULT_ADDR), v.GetString(RESULT_PORT))
+	ctx, cancel := context.WithCancel(context.Background())
+	config.Ctx = ctx
 	return
 }
 
@@ -53,12 +57,13 @@ func main() {
 	}
 	utils.PrintConfig(v, CONFIG_VARS...)
 
-	config := getConfig(v)
+	config, cancel := getConfig(v)
+	defer cancel()
 	worker, err := lib.NewWorker(config)
 	if err != nil {
 		log.Fatalf("error at creating worker: %s", err)
 	}
-	if err := worker.Run(); err != nil {
+	if err := worker.Start(); err != nil {
 		log.Fatalf("error during run: %s", err)
 	}
 	worker.Shutdown()

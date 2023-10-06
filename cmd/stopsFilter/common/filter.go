@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"

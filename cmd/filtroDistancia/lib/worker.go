@@ -1,7 +1,11 @@
 package lib
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
@@ -14,6 +18,7 @@ type WorkerConfig struct {
 	DataConn   conection.Conn
 	ResultConn conection.Conn
 	Times      int
+	Ctx context.Context
 }
 
 type Worker struct {
@@ -25,7 +30,6 @@ type Worker struct {
 	finishedLoad bool
 	finished     bool
 
-	processed uint32
 }
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
@@ -62,7 +66,7 @@ func (worker *Worker) Shutdown() {
 func getMultiData() *protocol.MultiData {
 	coords := distance.IntoData(distance.Coordinates{}, "")
 	airport, _ := distance.NewAirportData("", "", "", 0)
-	coordsEnd := reader.FinData(0)
+	coordsEnd := reader.FinData()
 	multi := protocol.NewMultiData()
 	multi.Register(coords, protocol.NewDataMessage(airport), protocol.NewDataMessage(coordsEnd))
 	return multi
@@ -75,7 +79,6 @@ func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.D
 }
 
 func (worker *Worker) handleFilter(value *distance.AirportDataType, data protocol.Data) {
-	worker.processed++
 	greaterThanX, err := value.GreaterThanXTimes(worker.config.Times, *worker.computer)
 	if err != nil {
 		log.Printf("error processing data: %s", err)
@@ -90,13 +93,34 @@ func (worker *Worker) handleFilter(value *distance.AirportDataType, data protoco
 func (worker *Worker) handleFinData() {
 	if worker.finishedLoad {
 		logrus.Info("action: filtering | result: finished")
-		worker.results.Send(protocol.NewDataMessage(reader.FinData(worker.processed)))
+		worker.results.Send(protocol.NewDataMessage(reader.FinData()))
 		worker.finished = true
 	} else {
 		logrus.Info("action: coordinates send | result: finished")
 		worker.finishedLoad = true
 	}
 
+}
+
+func (worker *Worker) Start() error {
+	runChan := make(chan error)
+	sigChan := make(chan os.Signal, 1)
+	defer close(runChan)
+	defer close(sigChan)
+	go func() {
+		runChan <- worker.Run()
+	}()
+
+
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select{
+	case <- worker.config.Ctx.Done():
+	case <- sigChan:
+	case err := <- runChan:
+		return err
+	}
+	return nil
 }
 
 func (worker *Worker) Run() error {

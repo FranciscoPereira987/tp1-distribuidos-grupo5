@@ -73,6 +73,7 @@ if the answer is not HelloAck, then returns error
 */
 func (proto *Protocol) Connect() error {
 	hello := NewHelloMessage(0)
+	
 	err := proto.sendMessage(hello)
 
 	if err != nil {

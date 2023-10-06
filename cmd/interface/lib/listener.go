@@ -3,8 +3,10 @@ package lib
 import (
 	"net"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,10 +33,16 @@ func NewListener(dataAt string, resultsAt string) (*Listener, error) {
 
 func getDataMessages() protocol.Data {
 	multi := protocol.NewMultiData()
+	coordinatesType := &distance.CoordWrapper{
+		Name: &typing.StrType{},
+		Lat: &typing.FloatType{},
+		Long: &typing.FloatType{},
+	}
+	query2Type, _ := distance.NewAirportData("", "", "", 0)
 	flightType, _ := reader.NewFlightDataType("", "", "", 0, 0, 0, "")
 	flightData := protocol.NewDataMessage(flightType)
 	endData := protocol.NewDataMessage(&reader.DataFin{})
-	multi.Register(flightData, endData)
+	multi.Register(flightData, endData, protocol.NewDataMessage(coordinatesType), protocol.NewDataMessage(query2Type))
 	return multi
 }
 
@@ -54,14 +62,14 @@ func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {
 		resultsConn.Close()
 		return nil, nil, err
 	}
-	logrus.Info("accepted succesfuly")
-
+	
 	resultsProt := protocol.NewProtocol(resultsConn)
 	if err := resultsProt.Accept(); err != nil {
 		dataConn.Close()
 		resultsConn.Close()
 		return nil, nil, err
 	}
-
+	
+	logrus.Info("accepted succesfuly")
 	return dataProt, resultsProt, nil
 }

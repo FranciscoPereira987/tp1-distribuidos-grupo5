@@ -29,8 +29,10 @@ func (agg *Agregator) GetChan() chan<- *protocol.Protocol {
 
 func (agg *Agregator) Run() error {
 	results := <-agg.listeningChan
+	
 	data := getDataMessages()
 	for {
+		logrus.Info("Waiting for result data")
 		if err := agg.config.AgregatorQueue.Recover(data); err != nil {
 			if err.Error() == io.EOF.Error() {
 				logrus.Info("agregator queue failed")
@@ -40,5 +42,7 @@ func (agg *Agregator) Run() error {
 		}
 		results.Send(data)
 	}
+	agg.config.AgregatorQueue.Close()
+	agg.config.AgregatorQueue.Shutdown()
 	return nil
 }

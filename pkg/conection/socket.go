@@ -52,11 +52,12 @@ func (s *socket) Write(buf []byte) (writen int, err error) {
 
 	for len(buf) > 0 {
 		newlyWriten, writeErr := s.dial.Write(buf)
+		
 		if writeErr != nil {
 			err = writeErr
 			break
 		}
-		buf = buf[:newlyWriten]
+		buf = buf[newlyWriten:]
 		writen += newlyWriten
 	}
 

@@ -44,25 +44,25 @@ func getDistanceConfig(ports []string) distanceFilter.WorkerConfig {
 }
 
 func runInterface(parserPorts []string, listeningPorts []string) {
-	channel := make(chan *protocol.Protocol)
 	dataConn, _ := dummies.NewDummyProtocol("127.0.0.1:" + parserPorts[0])
 	resultsConn, _ := dummies.NewDummyProtocol("127.0.0.1:" + parserPorts[1])
 	dataProto := protocol.NewProtocol(dataConn)
 	dataProto.Connect()
 	resultsProto := protocol.NewProtocol(resultsConn)
 	resultsProto.Connect()
+	configAgg := lib.AgregatorConfig{
+		AgregatorQueue: resultsProto,
+	}
+	aggregator := lib.NewAgregator(configAgg)
 	configParser := lib.ParserConfig{
 		Query2:        dataProto,
 		ListeningPort: listeningPorts[0],
 		ResultsPort:   listeningPorts[1],
 
-		ResultsChan: channel,
+		ResultsChan: aggregator.GetChan(),
 	}
-	configAgg := lib.AgregatorConfig{
-		AgregatorQueue: resultsProto,
-	}
+	
 	parser, _ := lib.NewParser(configParser)
-	aggregator := lib.NewAgregator(configAgg)
 	go parser.Run()
 	go aggregator.Run()
 }
@@ -142,6 +142,7 @@ func main() {
 	clientConfig := getClientConfig(listeningPorts)
 
 	distanceConfig := getDistanceConfig(workerPorts)
+	
 	client, err := client.NewClient(clientConfig)
 
 	if err != nil {

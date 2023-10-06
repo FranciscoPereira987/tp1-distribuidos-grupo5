@@ -71,11 +71,11 @@ func NewClient(config ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	logrus.Info("running interface")
 	dataConn := protocol.NewProtocol(config.ServerData)
 	if err := dataConn.Connect(); err != nil {
 		return nil, err
 	}
-	logrus.Info("running interface")
 	resultsConn := protocol.NewProtocol(config.ServerResults)
 	if err := resultsConn.Connect(); err != nil {
 		return nil, err
@@ -110,9 +110,11 @@ func (client *Client) runResults() {
 			logrus.Errorf("Error while recieving results: %s", err)
 			break
 		}
+		logrus.Info("client recovered result")
 		if err := client.writer.WriteInto(data.Type(), data.AsRecord()); err != nil {
 			logrus.Errorf("Error writting to file: %s", err)
 		}
+		
 
 	}
 	client.resultsConn.Close()
@@ -142,6 +144,7 @@ func (client *Client) runData() {
 	if err := client.dataConn.Send(protocol.NewDataMessage(&distance.CoordFin{})); err != nil {
 		logrus.Infof("error while sending coordinates end: %s", err)
 	}
+	
 	client.coordsReader.Close() //Try to get this error
 	for {
 		data, err := client.dataReader.ReadData()

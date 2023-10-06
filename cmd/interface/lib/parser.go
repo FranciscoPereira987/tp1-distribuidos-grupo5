@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"io"
-
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/sirupsen/logrus"
@@ -49,13 +47,17 @@ func (parser *Parser) Run() error {
 		results.Shutdown()
 		return err
 	}
+	
 	parser.config.ResultsChan <- results
+	
 	message := getDataMessages()
 	for {
 
 		if err := data.Recover(message); err != nil {
-			if err.Error() == io.EOF.Error() {
+			
+			if err.Error() == "connection closed" {
 				logrus.Info("client finished sending its data")
+				parser.config.Query2.Send(protocol.NewDataMessage(&reader.DataFin{}))
 				parser.config.Query2.Close()
 				break
 			}

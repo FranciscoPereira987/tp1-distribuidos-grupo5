@@ -7,7 +7,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-var (
+const (
 	HELLO_OP_CODE = byte(0x01)
 )
 
@@ -30,13 +30,13 @@ func (hello *HelloMessage) Number() byte {
 	return HELLO_OP_CODE
 }
 
-func (hello *HelloMessage) Marshall() []byte {
+func (hello *HelloMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
 	header = binary.BigEndian.AppendUint32(header, 0)
 	return header
 }
 
-func (hello *HelloMessage) UnMarshall(stream []byte) error {
+func (hello *HelloMessage) UnMarshal(stream []byte) error {
 	if err := utils.CheckHeader(hello, stream); err != nil {
 		return err
 	}

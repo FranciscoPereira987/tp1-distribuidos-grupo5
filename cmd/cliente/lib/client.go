@@ -123,6 +123,7 @@ func (client *Client) runResults() {
 }
 
 func (client *Client) runData() {
+	var sended uint32 = 0
 	for {
 		data, err := client.coordsReader.ReadData()
 
@@ -139,13 +140,15 @@ func (client *Client) runData() {
 			logrus.Errorf("error sending coordinates data: %s", err)
 			break
 		}
+		sended++
 	}
 
-	if err := client.dataConn.Send(protocol.NewDataMessage(&distance.CoordFin{})); err != nil {
+	if err := client.dataConn.Send(protocol.NewDataMessage(reader.FinData(sended))); err != nil {
 		logrus.Infof("error while sending coordinates end: %s", err)
 	}
 	
 	client.coordsReader.Close() //Try to get this error
+	sended = 0
 	for {
 		data, err := client.dataReader.ReadData()
 		if err != nil {
@@ -160,7 +163,9 @@ func (client *Client) runData() {
 			logrus.Errorf("action: data sending | result: failed | error: %s", err)
 			break
 		}
+		sended++
 	}
+	client.dataConn.Send(protocol.NewDataMessage(reader.FinData(sended)))
 	client.dataConn.Close()
 	logrus.Infof("action: data sending | result: finished")
 	client.dataSendingEnd <- true

@@ -20,11 +20,10 @@ func runClient(sender *protocol.Protocol) {
 	if err := sender.Accept(); err != nil {
 		return
 	}
-	valueR, err := reader.NewCoordinatesReader("/home/fran/Documents/distribuidos/tp1/data/airports-codepublic.csv")
+	valueR, err := reader.NewCoordinatesReader("/home/francisco/Documents/Distribuidos/tp1/data/airports-codepublic.csv")
 	if err != nil {
 		wd, _ := os.Getwd()
-		panic(fmt.Sprintf("Error hier: %s", wd))
-		return
+		panic(fmt.Sprintf("Error hier: %s, %s", wd, err))
 	}
 
 	for {
@@ -34,10 +33,10 @@ func runClient(sender *protocol.Protocol) {
 		}
 		sender.Send(data)
 	}
-	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
 
+	sender.Send(protocol.NewDataMessage(reader.FinData(0)))
 	valueR.Close()
-	valueR, err = reader.NewDataReader("/home/fran/Documents/distribuidos/tp1/data/test.csv")
+	valueR, err = reader.NewDataReader("/home/francisco/Documents/Distribuidos/tp1/data/test.csv")
 	if err != nil {
 		return
 	}
@@ -56,11 +55,11 @@ func runClient(sender *protocol.Protocol) {
 		sender.Send(data)
 	}
 	log.Printf("Sent: %d flights", sent)
-	sender.Send(protocol.NewDataMessage(&distance.CoordFin{}))
+	sender.Send(protocol.NewDataMessage(reader.FinData(0)))
 	sender.Close()
 }
 func getResults() map[string]bool {
-	file, _ := os.Open("/home/fran/Documents/distribuidos/tp1/data/query2_result.csv")
+	file, _ := os.Open("/home/francisco/Documents/Distribuidos/tp1/data/test_results.csv")
 	reader := csv.NewReader(file)
 	reader.Read()
 	results := make(map[string]bool)
@@ -103,9 +102,10 @@ func TestProcessingWithOneWorker(t *testing.T) {
 
 		results = append(results, *data.Type().(*distance.AirportDataType))
 	}
+	
 	expected := getResults()
 	if len(expected) != len(results) {
-		t.Fatalf("results are not as much as expected")
+		t.Fatalf("results are not as much as expected: %d vs %d", len(expected), len(results))
 	}
 	for _, result := range results {
 		if _, ok := expected[result.Type()[0]]; !ok {

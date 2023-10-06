@@ -8,7 +8,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-var (
+const (
 	DATA_OP_CODE = byte(0x03)
 )
 
@@ -52,11 +52,11 @@ func (multi *MultiData) Number() byte {
 	return DATA_OP_CODE
 }
 
-func (multi *MultiData) Marshall() []byte {
-	return multi.last.Marshall()
+func (multi *MultiData) Marshal() []byte {
+	return multi.last.Marshal()
 }
 
-func (multi *MultiData) UnMarshall(stream []byte) error {
+func (multi *MultiData) UnMarshal(stream []byte) error {
 
 	if len(stream) <= 5 {
 		return errors.New("invalid data message")
@@ -68,7 +68,7 @@ func (multi *MultiData) UnMarshall(stream []byte) error {
 
 	multi.last = multi.data[key]
 
-	return multi.last.UnMarshall(stream)
+	return multi.last.UnMarshal(stream)
 }
 
 func (multi *MultiData) Response() Message {
@@ -97,14 +97,14 @@ func (hello *DataMessage) Number() byte {
 	return DATA_OP_CODE
 }
 
-func (hello *DataMessage) Marshall() []byte {
+func (hello *DataMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
 	body := hello.data_type.Serialize()
 	header = binary.BigEndian.AppendUint32(header, uint32(len(body)))
 	return append(header, body...)
 }
 
-func (hello *DataMessage) UnMarshall(stream []byte) error {
+func (hello *DataMessage) UnMarshal(stream []byte) error {
 	if err := utils.CheckHeader(hello, stream); err != nil {
 		return err
 	}

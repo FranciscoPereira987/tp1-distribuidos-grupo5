@@ -8,7 +8,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-var (
+const (
 	ACK_OP_CODE = byte(0x02)
 	TYPE_INDEX  = 5
 )
@@ -57,7 +57,7 @@ func (hello *AckMessage) Number() byte {
 	return ACK_OP_CODE
 }
 
-func (hello *AckMessage) Marshall() []byte {
+func (hello *AckMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
 	body := hello.ack_body.Serialize()
 	header = binary.BigEndian.AppendUint32(header, uint32(len(body)))
@@ -65,7 +65,7 @@ func (hello *AckMessage) Marshall() []byte {
 	return append(header, body...)
 }
 
-func (hello *AckMessage) UnMarshall(stream []byte) error {
+func (hello *AckMessage) UnMarshal(stream []byte) error {
 
 	if err := utils.CheckHeader(hello, stream); err != nil {
 		return err

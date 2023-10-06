@@ -25,6 +25,7 @@ to the diferent workers
 type Parser struct {
 	config   ParserConfig
 	listener *Listener
+	processed uint32
 }
 
 func NewParser(config ParserConfig) (*Parser, error) {
@@ -35,6 +36,7 @@ func NewParser(config ParserConfig) (*Parser, error) {
 	return &Parser{
 		config:   config,
 		listener: listener,
+		processed: 0,
 	}, nil
 }
 
@@ -57,18 +59,17 @@ func (parser *Parser) Run() error {
 			
 			if err.Error() == "connection closed" {
 				logrus.Info("client finished sending its data")
-				parser.config.Query2.Send(protocol.NewDataMessage(&reader.DataFin{}))
 				parser.config.Query2.Close()
 				break
 			}
 			continue
 		}
 		if value, ok := message.Type().(*reader.FlightDataType); ok {
+			parser.processed++
 			parser.config.Query2.Send(protocol.NewDataMessage(value.IntoDistanceData()))
 		} else {
 			parser.config.Query2.Send(message)
 		}
 	}
-
 	return nil
 }

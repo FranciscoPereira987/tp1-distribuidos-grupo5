@@ -54,12 +54,14 @@ func runInterface(parserPorts []string, listeningPorts []string) {
 		AgregatorQueue: resultsProto,
 	}
 	aggregator := lib.NewAgregator(configAgg)
+	results := aggregator.GetChan()
 	configParser := lib.ParserConfig{
 		Query2:        dataProto,
 		ListeningPort: listeningPorts[0],
 		ResultsPort:   listeningPorts[1],
 
-		ResultsChan: aggregator.GetChan(),
+		ResultsChan: results,
+		
 	}
 	
 	parser, _ := lib.NewParser(configParser)

@@ -68,19 +68,19 @@ func (reg *ackRegistry) Response() Message {
 	return reg.lastFound.Response()
 }
 
-func (reg *ackRegistry) UnMarshall(stream []byte) error {
+func (reg *ackRegistry) UnMarshal(stream []byte) error {
 	message, ok := reg.registry[stream[TYPE_INDEX]]
 	if !ok {
 		return errors.New("invalid ack message type")
 	}
 	reg.lastFound = message
-	return message.UnMarshall(stream)
+	return message.UnMarshal(stream)
 }
 
 func (reg *ackRegistry) IsResponseFrom(message Message) bool {
 	return reg.lastFound.IsResponseFrom(message)
 }
 
-func (reg *ackRegistry) Marshall() []byte {
+func (reg *ackRegistry) Marshal() []byte {
 	return nil
 }

@@ -9,8 +9,8 @@ import (
 
 type Message interface {
 	utils.Numbered
-	Marshall() []byte
-	UnMarshall([]byte) error
+	Marshal() []byte
+	UnMarshal([]byte) error
 	Response() Message
 	IsResponseFrom(message Message) bool
 }

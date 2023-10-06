@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"io"
-
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/sirupsen/logrus"
 )
@@ -14,6 +12,7 @@ type AgregatorConfig struct {
 type Agregator struct {
 	config        AgregatorConfig
 	listeningChan chan *protocol.Protocol
+	
 }
 
 func NewAgregator(config AgregatorConfig) *Agregator {
@@ -23,26 +22,29 @@ func NewAgregator(config AgregatorConfig) *Agregator {
 	}
 }
 
-func (agg *Agregator) GetChan() chan<- *protocol.Protocol {
+func (agg *Agregator) GetChan() (chan<- *protocol.Protocol) {
 	return agg.listeningChan
 }
 
+
+
+
 func (agg *Agregator) Run() error {
+	defer func () {
+		agg.config.AgregatorQueue.Close()
+		agg.config.AgregatorQueue.Shutdown()
+	}()
 	results := <-agg.listeningChan
 	
 	data := getDataMessages()
 	for {
 		logrus.Info("Waiting for result data")
 		if err := agg.config.AgregatorQueue.Recover(data); err != nil {
-			if err.Error() == io.EOF.Error() {
-				logrus.Info("agregator queue failed")
-				break
-			}
-			continue
+			logrus.Fatalf("error on aggregator queue: %s", err)
 		}
+		
 		results.Send(data)
 	}
-	agg.config.AgregatorQueue.Close()
-	agg.config.AgregatorQueue.Shutdown()
+	
 	return nil
 }

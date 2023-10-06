@@ -7,7 +7,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-var (
+const (
 	ERR_OP_CODE = byte(0x04)
 )
 
@@ -22,13 +22,13 @@ func (errMes *ErrMessage) Number() byte {
 	return ERR_OP_CODE
 }
 
-func (errMes *ErrMessage) Marshall() []byte {
+func (errMes *ErrMessage) Marshal() []byte {
 	header := utils.GetHeader(errMes)
 	header = binary.BigEndian.AppendUint32(header, 0)
 	return header
 }
 
-func (errMes *ErrMessage) UnMarshall(stream []byte) error {
+func (errMes *ErrMessage) UnMarshal(stream []byte) error {
 	if err := utils.CheckHeader(errMes, stream); err != nil {
 		return err
 	}

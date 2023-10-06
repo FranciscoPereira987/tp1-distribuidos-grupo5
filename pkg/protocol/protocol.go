@@ -87,7 +87,7 @@ func (proto *Protocol) Connect() error {
 	if err != nil {
 		return err
 	}
-	if err := recovered.UnMarshall(stream); err != nil {
+	if err := recovered.UnMarshal(stream); err != nil {
 		return err
 	}
 	if err := proto.manageResponse(recovered, hello); err != nil {
@@ -108,7 +108,7 @@ func (proto *Protocol) Accept() error {
 	if err != nil {
 		return err
 	}
-	if err := expected.UnMarshall(recovered); err != nil {
+	if err := expected.UnMarshal(recovered); err != nil {
 		return err
 	}
 	response := NewHelloAckMessage(0) //Todo, define the user id (va a servir para multiples clientes)
@@ -121,7 +121,7 @@ func (proto *Protocol) Accept() error {
 
 // Protocol.source should be safe to write to (not producing short writes)
 func (proto *Protocol) sendMessage(message Message) error {
-	_, err := proto.source.Write(message.Marshall())
+	_, err := proto.source.Write(message.Marshal())
 
 	return err
 }
@@ -151,7 +151,7 @@ func (proto *Protocol) Recover(data Data) error {
 		return err
 	}
 
-	if err := data.UnMarshall(stream); err != nil {
+	if err := data.UnMarshal(stream); err != nil {
 
 		return proto.manageInvalidData(stream, err)
 	}
@@ -176,7 +176,7 @@ func (proto *Protocol) Send(data Data) error {
 	if err != nil {
 		return err
 	}
-	if err := recovered.UnMarshall(stream); err != nil {
+	if err := recovered.UnMarshal(stream); err != nil {
 		return err
 	}
 	return proto.manageResponse(recovered, data)

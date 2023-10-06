@@ -6,6 +6,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,6 +24,8 @@ type Worker struct {
 	computer     *distance.DistanceComputer
 	finishedLoad bool
 	finished     bool
+
+	processed uint32
 }
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
@@ -59,7 +62,7 @@ func (worker *Worker) Shutdown() {
 func getMultiData() *protocol.MultiData {
 	coords := distance.IntoData(distance.Coordinates{}, "")
 	airport, _ := distance.NewAirportData("", "", "", 0)
-	coordsEnd := &distance.CoordFin{}
+	coordsEnd := reader.FinData(0)
 	multi := protocol.NewMultiData()
 	multi.Register(coords, protocol.NewDataMessage(airport), protocol.NewDataMessage(coordsEnd))
 	return multi
@@ -72,6 +75,7 @@ func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.D
 }
 
 func (worker *Worker) handleFilter(value *distance.AirportDataType, data protocol.Data) {
+	worker.processed++
 	greaterThanX, err := value.GreaterThanXTimes(worker.config.Times, *worker.computer)
 	if err != nil {
 		log.Printf("error processing data: %s", err)
@@ -83,10 +87,10 @@ func (worker *Worker) handleFilter(value *distance.AirportDataType, data protoco
 	}
 }
 
-func (worker *Worker) handleFinData(value *distance.CoordFin, data protocol.Data) {
+func (worker *Worker) handleFinData() {
 	if worker.finishedLoad {
-		logrus.Info("finishing work")
-		worker.results.Send(data)
+		logrus.Info("action: filtering | result: finished")
+		worker.results.Send(protocol.NewDataMessage(reader.FinData(worker.processed)))
 		worker.finished = true
 	} else {
 		logrus.Info("action: coordinates send | result: finished")
@@ -107,8 +111,8 @@ func (worker *Worker) Run() error {
 			worker.handleCoords(value, multi)
 		} else if value, ok := recovered.(*distance.AirportDataType); ok {
 			worker.handleFilter(value, multi)
-		} else if value, ok := recovered.(*distance.CoordFin); ok {
-			worker.handleFinData(value, multi)
+		} else if _, ok := recovered.(*reader.DataFin); ok {
+			worker.handleFinData()
 		}
 	}
 

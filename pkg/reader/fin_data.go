@@ -9,10 +9,22 @@ var (
 	DATA_FIN_TYPE_NUMBER = byte(0x07)
 )
 
-type DataFin struct{}
+type DataFin struct{
+	processed *typing.IntType
+}
 
 func (data *DataFin) Number() byte {
 	return DATA_FIN_TYPE_NUMBER
+}
+
+func FinData(processed uint32) *DataFin {
+	return &DataFin{
+		processed: &typing.IntType{Value: processed},
+	}
+}
+
+func (data *DataFin) GetProcessed() uint32 {
+	return data.processed.Value
 }
 
 func (data *DataFin) Trim(stream []byte) []byte {
@@ -26,14 +38,14 @@ func (data *DataFin) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(data, stream); err != nil {
 		return err
 	}
-	if err := typing.CheckTypeLength(1, stream); err != nil {
+	if err := data.processed.Deserialize(stream[1:]); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (data *DataFin) Serialize() []byte {
-	return utils.GetHeader(data)
+	return append(utils.GetHeader(data), data.processed.Serialize()...)
 }
 
 func (Data *DataFin) AsRecord() []string {

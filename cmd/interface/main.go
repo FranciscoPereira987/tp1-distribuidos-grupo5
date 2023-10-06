@@ -80,7 +80,8 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error creating agregator: %s", err)
 	}
-	parser, err := getListener(v, agg.GetChan())
+	aggC := agg.GetChan()
+	parser, err := getListener(v, aggC)
 	if err != nil {
 		logrus.Fatalf("error creating parser: %s", err)
 	}

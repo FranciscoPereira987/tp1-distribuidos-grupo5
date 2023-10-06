@@ -57,6 +57,7 @@ func (multi *MultiData) Marshall() []byte {
 }
 
 func (multi *MultiData) UnMarshall(stream []byte) error {
+
 	if len(stream) <= 5 {
 		return errors.New("invalid data message")
 	}

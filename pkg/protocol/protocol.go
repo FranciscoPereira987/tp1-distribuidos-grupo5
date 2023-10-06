@@ -33,6 +33,7 @@ func (proto *Protocol) Shutdown() error {
 func (proto *Protocol) readMessage() ([]byte, error) {
 	header := make([]byte, 5)
 	_, err := proto.source.Read(header)
+
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +74,7 @@ if the answer is not HelloAck, then returns error
 func (proto *Protocol) Connect() error {
 	hello := NewHelloMessage(0)
 	err := proto.sendMessage(hello)
+
 	if err != nil {
 		return err
 	}
@@ -119,6 +121,7 @@ func (proto *Protocol) Accept() error {
 // Protocol.source should be safe to write to (not producing short writes)
 func (proto *Protocol) sendMessage(message Message) error {
 	_, err := proto.source.Write(message.Marshall())
+
 	return err
 }
 
@@ -160,6 +163,7 @@ func (proto *Protocol) Send(data Data) error {
 	if err := proto.checkConnected(); err != nil {
 		return err
 	}
+
 	if err := proto.sendMessage(data); err != nil {
 		return err
 	}

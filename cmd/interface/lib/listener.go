@@ -5,6 +5,7 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/sirupsen/logrus"
 )
 
 type Listener struct {
@@ -42,21 +43,25 @@ func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	dataProt := protocol.NewProtocol(dataConn)
-	if err := dataProt.Accept(); err != nil {
-		dataConn.Close()
-		return nil, nil, err
-	}
 	resultsConn, err := l.results.Accept()
 	if err != nil {
 		dataConn.Close()
 		return nil, nil, err
 	}
-	resultsProt := protocol.NewProtocol(dataConn)
+	dataProt := protocol.NewProtocol(dataConn)
+	if err := dataProt.Accept(); err != nil {
+		dataConn.Close()
+		resultsConn.Close()
+		return nil, nil, err
+	}
+	logrus.Info("accepted succesfuly")
+
+	resultsProt := protocol.NewProtocol(resultsConn)
 	if err := resultsProt.Accept(); err != nil {
 		dataConn.Close()
 		resultsConn.Close()
 		return nil, nil, err
 	}
+
 	return dataProt, resultsProt, nil
 }

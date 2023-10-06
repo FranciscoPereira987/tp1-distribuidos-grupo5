@@ -60,11 +60,9 @@ func TypesAsNumbered() []utils.Numbered {
 
 func NewClient(config ClientConfig) (*Client, error) {
 	writer, err := utils.NewResultWriter(config.ResultsDir, getFiles(config), TypesAsNumbered())
-
 	if err != nil {
 		return nil, err
 	}
-
 	dataReader, err := reader.NewDataReader(config.DataFile)
 	if err != nil {
 		return nil, err
@@ -77,10 +75,12 @@ func NewClient(config ClientConfig) (*Client, error) {
 	if err := dataConn.Connect(); err != nil {
 		return nil, err
 	}
+	logrus.Info("running interface")
 	resultsConn := protocol.NewProtocol(config.ServerResults)
 	if err := resultsConn.Connect(); err != nil {
 		return nil, err
 	}
+
 	return &Client{
 		config:         config,
 		writer:         writer,
@@ -123,6 +123,7 @@ func (client *Client) runResults() {
 func (client *Client) runData() {
 	for {
 		data, err := client.coordsReader.ReadData()
+
 		if err != nil {
 			if err.Error() == io.EOF.Error() {
 				logrus.Info("action: coordinate's data | result: success")
@@ -131,11 +132,13 @@ func (client *Client) runData() {
 			logrus.Errorf("Error while reading coordinate data: %s", err)
 			break
 		}
+
 		if err := client.dataConn.Send(data); err != nil {
 			logrus.Errorf("error sending coordinates data: %s", err)
 			break
 		}
 	}
+
 	if err := client.dataConn.Send(protocol.NewDataMessage(&distance.CoordFin{})); err != nil {
 		logrus.Infof("error while sending coordinates end: %s", err)
 	}
@@ -170,6 +173,7 @@ func (client *Client) waiter() error {
 
 func (client *Client) Run() error {
 	defer client.writer.Close()
+
 	go client.runResults()
 	go client.runData()
 	return client.waiter()

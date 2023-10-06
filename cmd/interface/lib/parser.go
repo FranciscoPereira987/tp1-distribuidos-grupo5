@@ -41,8 +41,10 @@ func NewParser(config ParserConfig) (*Parser, error) {
 }
 
 func (parser *Parser) Run() error {
+	logrus.Info("action: waiting conection | result: in progress")
 	data, results, err := parser.listener.Accept()
 	if err != nil {
+		logrus.Errorf("action: waiting conection | result: failed | reason: %s", err)
 		data.Shutdown()
 		results.Shutdown()
 		return err
@@ -50,6 +52,7 @@ func (parser *Parser) Run() error {
 	parser.config.ResultsChan <- results
 	message := getDataMessages()
 	for {
+
 		if err := data.Recover(message); err != nil {
 			if err.Error() == io.EOF.Error() {
 				logrus.Info("client finished sending its data")

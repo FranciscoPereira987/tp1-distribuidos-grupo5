@@ -1,12 +1,12 @@
 package middleware
 
 import (
-	"binary"
 	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 
+	log "github.com/sirupsen/logrus"
 	amqp "github.com/rabbitmq/ampq091-go"
 )
 
@@ -106,7 +106,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan []byte, e
 			case <-ctx.Done():
 				return
 			case d := <-msgs:
-				if d.RoutingKey != "control" {
+				if !bytes.HasSuffix(d.RoutingKey, "control") {
 					ch <- d.Body
 					break
 				}

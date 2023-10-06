@@ -58,8 +58,15 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
+// Describes the topology around this node.
 func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
 	q, err := m.QueueDeclare(v.GetString("queue"))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	// Subscribe to EOF events.
+	err := m.QueueBind(q, "", []string{q + ".control"})
 	if err != nil {
 		return "", "", "", err
 	}

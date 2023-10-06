@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	// "hash"
-	// "hash/fnv"
 
 	amqp "github.com/rabbitmq/ampq091-go"
 )
@@ -16,11 +14,7 @@ type Middleware struct {
 	ch   *amqp.Channel
 }
 
-func NewMiddleWare(min, max int) *Middleware {
-	return &Middleware{}
-}
-
-func (m *Middleware) Dial(url string) error {
+func Dial(url string) (*Middleware, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err
@@ -32,10 +26,10 @@ func (m *Middleware) Dial(url string) error {
 		return nil, err
 	}
 
-	m.conn = conn
-	m.ch = ch
-
-	return nil
+	return &Middleware{
+		conn: conn,
+		ch:   ch,
+	}, nil
 }
 
 func (m *Middleware) ExchangeDeclare(name, kind string) error {

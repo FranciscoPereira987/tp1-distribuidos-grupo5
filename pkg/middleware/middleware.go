@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	amqp "github.com/rabbitmq/ampq091-go"
 )
@@ -32,8 +33,8 @@ func Dial(url string) (*Middleware, error) {
 	}, nil
 }
 
-func (m *Middleware) ExchangeDeclare(name, kind string) error {
-	return m.ch.ExchangeDeclare(
+func (m *Middleware) ExchangeDeclare(name, kind string) (string, error) {
+	return name, m.ch.ExchangeDeclare(
 		name,  // name
 		kind,  // type
 		true,  // durable
@@ -82,44 +83,57 @@ func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) err
 	return nil
 }
 
-func (m *Middleware) Unmarshal(ctx context.Context, d amqp.Delivery) (FlightData, error) {
-	if d.RoutingKey == "control" {
-		if len(d.Body) != 2 {
-			return FlightData{}, io.EOF
-		}
-		n := binary.LittleEndian.Uint16(d.Body)
-		if n < 2 {
-			return FlightData{}, io.EOF
-		}
-		body := binary.LittleEndian.AppendUint16(d.Body[:0], n-1)
-		err := m.ch.PublishWithContext(
-			ctx,
-			d.Exchange,
-			d.RoutingKey,
-			false,
-			false,
-			ampq.Publishing{
-				ContentType: "application/octet-stream",
-				Body:        body,
-			},
-		)
-		if err == nil {
-			err = io.EOF
-		}
-
-		return FlightData{}, err
+func (m *Middleware) Consume(ctx context.Context, name string) (<-chan []byte, error) {
+	msgs, err := m.ch.ConsumeWithContext(
+		ctx,
+		name,  // queue
+		"",    // consumer
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return Unmarshal(d.Body)
+	ch := make(chan []byte)
+	go func() {
+		defer close(ch)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case d := <-msgs:
+				if d.RoutingKey != "control" {
+					ch <- d.Body
+					break
+				}
+				if err := m.propagateEOF(ctx, d); err != nil {
+					log.Error(err)
+				}
+				return
+			}
+		}
+	}()
+
+	return ch, nil
 }
 
-func (m *Middleware) PublishWithContext(ctx context.Context, exchange string, data FlightData, flags int) error {
-	/*
-	 * TODO: this needs to be something else, like a hash.
-	 * So that we can shard before knowing the (origin, destiny) pairs.
-	 */
-	key := data.Origin + "." + data.Destiny
+func (m *Middleware) propagateEOF(ctx context.Context, d amqp.Delivery) error {
+	if len(d.Body) == 0 {
+		return nil
+	}
+	n := binary.Uvarint(d.Body)
+	if n < 2 {
+		return nil
+	}
+	body := binary.PutUvarint(d.Body, n-1)
+	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, body)
+}
 
+func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {
 	return m.ch.PublishWithContext(
 		ctx,
 		exchange, // exchange
@@ -128,7 +142,7 @@ func (m *Middleware) PublishWithContext(ctx context.Context, exchange string, da
 		false,    // immediate
 		amqp.Publishing{
 			ContentType: "application/octet-stream",
-			Body:        Marshal(data, flags),
+			Body:        body,
 		},
 	)
 }
@@ -138,96 +152,7 @@ func (m *Middleware) Close() {
 	m.conn.Close()
 }
 
-type FlightData struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Duration uint32
-	Price    float32
-	Distance uint16
-	Stops    string
-}
-
-// These flags indicate if a message contains the corresponding optional data.
-const (
-	IDFlag = 1 << iota
-	DurationFlag
-	PriceFlag
-	DistanceFlag
-	StopsFlag
-)
-
-func Marshal(data FlightData, flags int) []byte {
-	buf := make([]byte, 1)
-	buf[0] = byte(flags)
-
-	if flags&IDFlag != 0 {
-		buf = append(buf, data.ID[:]...)
-	}
-	buf = binary.AppendUvarint(buf, len(data.Origin))
-	buf = append(buf, data.Origin...)
-	buf = binary.AppendUvarint(buf, len(data.Destiny))
-	buf = append(buf, data.Destiny...)
-	if flags&DurationFlag != 0 {
-		buf = binary.LittleEndian.AppendUint32(buf, data.Duration)
-	}
-	if flags&PriceFlag != 0 {
-		var w bytes.Buffer
-		_ = binary.Write(w, binary.LittleEndian, data.Price)
-		buf = append(buf, w.Bytes()...)
-	}
-	if flags&DistanceFlag != 0 {
-		buf = binary.LittleEndian.AppendUint16(buf, data.Distance)
-	}
-	if flags&StopsFlag != 0 {
-		buf = binary.AppendUvarint(buf, len(data.Stops))
-		buf = append(buf, data.Stops...)
-	}
-
-	return buf
-}
-
-func Unmarshal(buf []byte) (data FlightData, err error) {
-	if len(buf) < 1 {
-		return FlightData{}, fmt.Errorf("Error reading flight data: %w", io.ErrUnexpectedEOF)
-	}
-
-	flags := buf[0]
-	r := bytes.NewReader(buf[1:])
-
-	if err != nil && flags&IDFlag != 0 {
-		_, err = io.ReadFull(r, data.ID[:])
-	}
-	if err != nil {
-		data.Origin, err = readString(r)
-	}
-	if err != nil {
-		data.Destiny, err = readString(r)
-	}
-	if err != nil && flags&DurationFlag != 0 {
-		err = binary.Read(r, binary.LittleEndian, data.Duration)
-	}
-	if err != nil && flags&PriceFlag != 0 {
-		err = binary.Read(r, binary.LittleEndian, data.Price)
-	}
-	if err != nil && flags&DistanceFlag != 0 {
-		err = binary.Read(r, binary.LittleEndian, data.Distance)
-	}
-	if err != nil && flags&StopsFlag != 0 {
-		data.Stops, err = readString(r)
-	}
-
-	return data, err
-}
-
-func readString(r io.Reader) (string, error) {
-	n, err := binary.ReadUvarint(r)
-	if err != nil {
-		return "", err
-	}
-
-	buf := make([]byte, n)
-	_, err = io.ReadFull(r, buf)
-
-	return string(buf), err
+func KeyFrom(origin, destiny string) string {
+	// TODO: use a hash to be able to shard ahead of time
+	return origin + "." + destiny
 }

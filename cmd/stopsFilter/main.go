@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter/common"
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -57,6 +58,25 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
+func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
+	q, err := m.QueueDeclare(v.GetString("queue"))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	results, err := m.QueueDeclare(v.GetString("results"))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	forward, err := m.ExchangeDeclare(v.GetString("forward.name"), v.GetString("forward.kind"))
+	if err != nil {
+		return "", "", "", err
+	}
+
+	return q, results, forward, err
+}
+
 func main() {
 	v, err := InitConfig()
 	if err != nil {
@@ -67,20 +87,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	conn, err := mid.NewConnection(v)
+	middleware, err := mid.Dial(v.GetString("server.url"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer middleware.Close()
+
+	source, results, forward, err := setupMiddleware(middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	middleware := common.NewMiddleware(v, conn)
-	defer middleware.Close()
-
-	filter := common.NewFilter(middleware)
+	filter := common.NewFilter(middleware, source, results, forward)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	if err := filter.Start(sig); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := filter.Start(ctx, sig); err != nil {
 		log.Error(err)
 	}
 }

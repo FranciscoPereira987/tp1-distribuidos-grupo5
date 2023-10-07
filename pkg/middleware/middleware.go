@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	amqp "github.com/rabbitmq/ampq091-go"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Middleware struct {

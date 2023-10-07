@@ -1,13 +1,14 @@
 package middleware
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 )
 
 func Q3Marshal(data StopsFilterData) []byte {
 	buf := make([]byte, 1, 40)
-	buf[0] = mid.Query3Flag
+	buf[0] = Query3Flag
 
 	buf = append(buf, data.ID[:]...)
 
@@ -21,7 +22,7 @@ func Q3Marshal(data StopsFilterData) []byte {
 	return buf
 }
 
-type Q3Result struct {
+type ResultQ3 struct {
 	ID       [16]byte
 	Origin   string
 	Destiny  string
@@ -29,7 +30,7 @@ type Q3Result struct {
 	Stops    string
 }
 
-func Q3Unmarshal(r io.Reader) (data ResultQ3, err error) {
+func Q3Unmarshal(r *bytes.Reader) (data ResultQ3, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {
 		data.Origin, err = ReadString(r)

@@ -16,7 +16,7 @@ func Q1Marshal(data StopsFilterData) []byte {
 	buf = AppendString(buf, data.Destiny)
 
 	var w bytes.Buffer
-	_ = binary.Write(w, binary.LittleEndian, data.Price)
+	_ = binary.Write(&w, binary.LittleEndian, data.Price)
 	buf = append(buf, w.Bytes()...)
 
 	buf = AppendString(buf, data.Stops)
@@ -32,7 +32,7 @@ type ResultQ1 struct {
 	Stops   string
 }
 
-func Q1Unmarshal(r io.Reader) (data ResultQ1, err error) {
+func Q1Unmarshal(r *bytes.Reader) (data ResultQ1, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {
 		data.Origin, err = ReadString(r)

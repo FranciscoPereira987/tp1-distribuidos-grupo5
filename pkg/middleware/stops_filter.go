@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
 )
@@ -14,7 +15,8 @@ type StopsFilterData struct {
 	Stops    string
 }
 
-func StopsFilterUnmarshal([]byte) (data StopsFilterData, err error) {
+func StopsFilterUnmarshal(buf []byte) (data StopsFilterData, err error) {
+	r := bytes.NewReader(buf)
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {
 		data.Origin, err = ReadString(r)

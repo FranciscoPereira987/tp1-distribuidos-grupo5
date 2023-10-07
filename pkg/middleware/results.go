@@ -17,7 +17,7 @@ const (
 // Get the result with a type switch
 func ResultUnmarshal(buf []byte) (any, error) {
 	if len(buf) < 1 {
-		return data, fmt.Errorf("Error reading flight data: %w", io.ErrUnexpectedEOF)
+		return nil, fmt.Errorf("Error reading flight data: %w", io.ErrUnexpectedEOF)
 	}
 
 	r := bytes.NewReader(buf[1:])
@@ -25,23 +25,23 @@ func ResultUnmarshal(buf []byte) (any, error) {
 	switch buf[0] {
 	case Query1Flag:
 		return Q1Unmarshal(r)
-	case Query2Flag:
-		return Q2Unmarshal(r)
+	// case Query2Flag:
+	// 	return Q2Unmarshal(r)
 	case Query3Flag:
 		return Q3Unmarshal(r)
-	case Query4Flag:
-		return Q4Unmarshal(r)
+	// case Query4Flag:
+	// 	return Q4Unmarshal(r)
 	default:
 		return nil, fmt.Errorf("Unknown format specifier: %d", buf[0])
 	}
 }
 
 func AppendString(buf []byte, s string) []byte {
-	buf = binary.AppendUvarint(buf, len(s))
+	buf = binary.AppendUvarint(buf, uint64(len(s)))
 	return append(buf, s...)
 }
 
-func ReadString(r io.Reader) (string, error) {
+func ReadString(r *bytes.Reader) (string, error) {
 	n, err := binary.ReadUvarint(r)
 	if err != nil {
 		return "", err

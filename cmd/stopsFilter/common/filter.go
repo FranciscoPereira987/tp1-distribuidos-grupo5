@@ -35,9 +35,9 @@ func updateFastest(fastest FastestFlightsMap, data mid.StopsFilterData) {
 		tmp := [2]mid.StopsFilterData{data}
 		destinyMap[data.Destiny] = tmp[:1]
 	} else if data.Duration < fast[0].Duration {
-		append(fast[:0], data, fast[0])
+		_ = append(fast[:0], data, fast[0])
 	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
-		append(fast[:1], data)
+		_ = append(fast[:1], data)
 	}
 }
 

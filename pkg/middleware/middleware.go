@@ -69,7 +69,7 @@ func (m *Middleware) QueueDeclare(name string) (string, error) {
 
 func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) error {
 	for _, key := range routingKeys {
-		err = m.ch.QueueBind(
+		err := m.ch.QueueBind(
 			queue,
 			key,
 			exchange,
@@ -83,7 +83,7 @@ func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) err
 	return nil
 }
 
-func (m *Middleware) Consume(ctx context.Context, name string) (<-chan []byte, error) {
+func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-chan []byte, error) {
 	msgs, err := m.ch.ConsumeWithContext(
 		ctx,
 		name,  // queue
@@ -125,12 +125,12 @@ func (m *Middleware) propagateEOF(ctx context.Context, d amqp.Delivery) error {
 	if len(d.Body) == 0 {
 		return nil
 	}
-	n := binary.Uvarint(d.Body)
+	n, _ := binary.Uvarint(d.Body)
 	if n < 2 {
 		return nil
 	}
-	body := binary.PutUvarint(d.Body, n-1)
-	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, body)
+	binary.PutUvarint(d.Body, n-1)
+	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, d.Body)
 }
 
 func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {

@@ -6,12 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter/common"
+	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -75,8 +77,8 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 	}
 
 	// Subscribe to shards specific and EOF events.
-	shardKey := mid.ShardKey(v.GetInt("id"))
-	err := m.QueueBind(q, source, []string{shardKey, "control"})
+	shardKey := mid.ShardKey(v.GetString("id"))
+	err = m.QueueBind(q, source, []string{shardKey, "control"})
 	if err != nil {
 		return "", "", err
 	}

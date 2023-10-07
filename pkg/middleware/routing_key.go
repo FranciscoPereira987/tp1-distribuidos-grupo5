@@ -24,5 +24,5 @@ func (kg KeyGenerator) KeyFrom(origin, destiny string) string {
 
 	v := h.Sum32()%uint32(kg) + 1
 
-	return strconv.Itoa(v)
+	return strconv.Itoa(int(v))
 }

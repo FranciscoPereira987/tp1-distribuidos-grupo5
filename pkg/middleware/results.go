@@ -37,11 +37,11 @@ func ResultUnmarshal(buf []byte) (any, error) {
 }
 
 type ResultQ1 struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Price    float32
-	Stops    string
+	ID      [16]byte
+	Origin  string
+	Destiny string
+	Price   float32
+	Stops   string
 }
 
 func UnmarshalQ1(r io.Reader) (data ResultQ1, err error) {
@@ -54,6 +54,32 @@ func UnmarshalQ1(r io.Reader) (data ResultQ1, err error) {
 	}
 	if err == nil {
 		err = binary.Read(r, binary.LittleEndian, &(data.Price))
+	}
+	if err == nil {
+		data.Stops, err = ReadString(r)
+	}
+
+	return data, err
+}
+
+type ResultQ2 struct {
+	ID       [16]byte
+	Origin   string
+	Destiny  string
+	Duration uint32
+	Stops    string
+}
+
+func UnmarshalQ2(r io.Reader) (data ResultQ2, err error) {
+	_, err = io.ReadFull(r, data.ID[:])
+	if err == nil {
+		data.Origin, err = ReadString(r)
+	}
+	if err == nil {
+		data.Destiny, err = ReadString(r)
+	}
+	if err == nil {
+		err = binary.Read(r, binary.LittleEndian, &(data.Duration))
 	}
 	if err == nil {
 		data.Stops, err = ReadString(r)

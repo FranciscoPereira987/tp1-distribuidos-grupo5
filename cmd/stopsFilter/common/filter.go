@@ -15,22 +15,39 @@ import (
 const stopsSep = "||"
 
 type Filter struct {
-	m       *mid.Middleware
-	source  string
-	resKey  string
-	forward string
+	m      *mid.Middleware
+	source string
+	sink   string
 }
 
-func NewFilter(m *mid.Middleware, source, resKey, forward string) *Filter {
+func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 	return &Filter{
-		m:       m,
-		source:  source,
-		resKey:  resKey,
-		forward: forward,
+		m:      m,
+		source: source,
+		sink:   sink,
+	}
+}
+
+type FastestFlightsMap map[string]map[string][]FlightData
+
+func updateFastest(fastest FastestFlightsMap, data FlightData) {
+	if destinyMap, ok := fastest[data.Origin]; !ok {
+		tmp := [2]FlightData{data}
+		fastest[data.Origin] = map[string][]FlightData{
+			data.Destiny: tmp[:1],
+		}
+	} else if fast, ok := destinyMap[data.Destiny]; !ok {
+		tmp := [2]FlightData{data}
+		destinyMap[data.Destiny] = tmp[:1]
+	} else if data.Duration < fast[0].Duration {
+		append(fast[:0], data, fast[0])
+	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
+		append(fast[:1], data)
 	}
 }
 
 func (f *Filter) Run(ctx context.Context) error {
+	fastest := make(FastestFlightsMap)
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
@@ -41,11 +58,20 @@ func (f *Filter) Run(ctx context.Context) error {
 			return err
 		}
 		if strings.Count(data.Stops, stopsSep) >= 3 {
-			key := mid.KeyFrom(data.Origin, data.Destiny)
-			errRes := f.m.PublishWithContext(ctx, "", f.resKey, ResultMarshal(data))
-			errFwd := f.m.PublishWithContext(ctx, f.forward, key, ForwardMarshal(data))
-			if err := errors.Join(errRes, errFwd); err != nil {
+			err := f.m.PublishWithContext(ctx, "", f.sink, ResultQ1Marshal(data))
+			if err != nil {
 				return err
+			}
+			updateFastest(fastest, data)
+		}
+	}
+	for _, destinyMap := range fastest {
+		for _, arr := range destinyMap {
+			for _, v := range arr {
+				err := f.m.PublishWithContext(ctx, "", f.sink, ResultQ2Marshal(v))
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -99,8 +125,8 @@ func Unmarshal([]byte) (data FlightData, err error) {
 	return data, err
 }
 
-func ResultMarshal(data FlightData) []byte {
-	buf := make([]byte, 1)
+func ResultQ1Marshal(data FlightData) []byte {
+	buf := make([]byte, 1, 40)
 	buf[0] = mid.Query1Flag
 
 	buf = append(buf, data.ID[:]...)
@@ -112,8 +138,23 @@ func ResultMarshal(data FlightData) []byte {
 	_ = binary.Write(w, binary.LittleEndian, data.Price)
 	buf = append(buf, w.Bytes()...)
 
-	buf = binary.AppendUvarint(buf, len(data.Stops))
-	buf = append(buf, data.Stops...)
+	buf = mid.AppendString(buf, data.Stops)
+
+	return buf
+}
+
+func ResultQ2Marshal(data FlightData) []byte {
+	buf := make([]byte, 1, 40)
+	buf[0] = mid.Query3Flag
+
+	buf = append(buf, data.ID[:]...)
+
+	buf = mid.AppendString(buf, data.Origin)
+	buf = mid.AppendString(buf, data.Destiny)
+
+	buf = binary.LittleEndian.AppendUint32(buf, data.Duration)
+
+	buf = mid.AppendString(buf, data.Stops)
 
 	return buf
 }

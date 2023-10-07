@@ -25,7 +25,7 @@ func InitConfig() (*viper.Viper, error) {
 	// env variables for the nested configurations
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// Set defaults?
+	// Set defaults
 	v.SetDefault("source.kind", "direct")
 
 	// Try to read configuration from config file. If config file
@@ -40,8 +40,8 @@ func InitConfig() (*viper.Viper, error) {
 		fmt.Fprintln(os.Stderr, "Configuration could not be read from config file. Using env variables instead")
 	}
 
-	if _, err := strconv.Atoi(v.GetString("shard.number")); err != nil {
-		return nil, fmt.Errorf("Could not parse STOPS_SHARD_NUMBER env var as int: %w", err)
+	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
+		return nil, fmt.Errorf("Could not parse STOPS_ID env var as int: %w", err)
 	}
 
 	return v, nil
@@ -75,7 +75,7 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 	}
 
 	// Subscribe to shards specific and EOF events.
-	shardKey := mid.ShardKey(v.GetInt("shard.number"))
+	shardKey := mid.ShardKey(v.GetInt("id"))
 	err := m.QueueBind(q, source, []string{shardKey, "control"})
 	if err != nil {
 		return "", "", err
@@ -111,10 +111,15 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
 
-	if err := filter.Start(ctx, sig); err != nil {
+	go func() {
+		<-sig
+		cancel(fmt.Errorf("Signal received"))
+	}()
+
+	if err := filter.Run(ctx); err != nil {
 		log.Error(err)
 	}
 }

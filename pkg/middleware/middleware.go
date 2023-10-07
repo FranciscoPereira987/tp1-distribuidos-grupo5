@@ -151,8 +151,3 @@ func (m *Middleware) Close() {
 	m.ch.Close()
 	m.conn.Close()
 }
-
-func KeyFrom(origin, destiny string) string {
-	// TODO: use a hash to be able to shard ahead of time
-	return origin + "." + destiny
-}

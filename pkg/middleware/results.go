@@ -24,68 +24,16 @@ func ResultUnmarshal(buf []byte) (any, error) {
 
 	switch buf[0] {
 	case Query1Flag:
-		return UnmarshalQ1(r)
+		return Q1Unmarshal(r)
 	case Query2Flag:
-		return UnmarshalQ2(r)
+		return Q2Unmarshal(r)
 	case Query3Flag:
-		return UnmarshalQ3(r)
+		return Q3Unmarshal(r)
 	case Query4Flag:
-		return UnmarshalQ4(r)
+		return Q4Unmarshal(r)
 	default:
 		return nil, fmt.Errorf("Unknown format specifier: %d", buf[0])
 	}
-}
-
-type ResultQ1 struct {
-	ID      [16]byte
-	Origin  string
-	Destiny string
-	Price   float32
-	Stops   string
-}
-
-func UnmarshalQ1(r io.Reader) (data ResultQ1, err error) {
-	_, err = io.ReadFull(r, data.ID[:])
-	if err == nil {
-		data.Origin, err = ReadString(r)
-	}
-	if err == nil {
-		data.Destiny, err = ReadString(r)
-	}
-	if err == nil {
-		err = binary.Read(r, binary.LittleEndian, &(data.Price))
-	}
-	if err == nil {
-		data.Stops, err = ReadString(r)
-	}
-
-	return data, err
-}
-
-type ResultQ2 struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Duration uint32
-	Stops    string
-}
-
-func UnmarshalQ2(r io.Reader) (data ResultQ2, err error) {
-	_, err = io.ReadFull(r, data.ID[:])
-	if err == nil {
-		data.Origin, err = ReadString(r)
-	}
-	if err == nil {
-		data.Destiny, err = ReadString(r)
-	}
-	if err == nil {
-		err = binary.Read(r, binary.LittleEndian, &(data.Duration))
-	}
-	if err == nil {
-		data.Stops, err = ReadString(r)
-	}
-
-	return data, err
 }
 
 func AppendString(buf []byte, s string) []byte {

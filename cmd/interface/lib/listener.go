@@ -3,6 +3,7 @@ package lib
 import (
 	"net"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
@@ -47,11 +48,11 @@ func getDataMessages() protocol.Data {
 }
 
 func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {
-	dataConn, err := l.data.Accept()
+	dataConn, err := conection.FromListener(l.data)
 	if err != nil {
 		return nil, nil, err
 	}
-	resultsConn, err := l.results.Accept()
+	resultsConn, err := conection.FromListener(l.results)
 	if err != nil {
 		dataConn.Close()
 		return nil, nil, err

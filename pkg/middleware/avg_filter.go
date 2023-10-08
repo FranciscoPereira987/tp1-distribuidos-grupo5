@@ -21,6 +21,16 @@ func AvgUnmarshal(msg []byte) (float32, error) {
 	return avgPrice, err
 }
 
+func AvgMarshal(data AvgFilterData) []byte {
+	buf := make([]byte, 0)
+	buf = AppendString(buf, data.Origin)
+	buf = AppendString(buf, data.Destination)
+	var w bytes.Buffer
+	binary.Write(&w, binary.LittleEndian, &data.Price)
+	buf = append(buf, w.Bytes()...)
+	return buf
+}
+
 func AvgFilterUnmarshal(msg []byte) (data AvgFilterData, err error) {
 	r := bytes.NewReader(msg)
 

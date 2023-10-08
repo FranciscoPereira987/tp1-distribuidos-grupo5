@@ -2,11 +2,9 @@ package middleware
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

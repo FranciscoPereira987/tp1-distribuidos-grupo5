@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -145,7 +146,32 @@ func (flight *FlightDataType) AsRecord() []string {
 	return append(record, flight.stops.AsRecord()...)
 }
 
-func (flight *FlightDataType) IntoDistanceData() typing.Type {
+func (flight *FlightDataType) IntoDistanceData() *distance.AirportDataType {
 	data, _ := distance.NewAirportData(flight.id.Value(), flight.origin.Value(), flight.destination.Value(), flight.distance.Value)
 	return data
+}
+
+
+func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilterData) {
+	data.ID = [16]byte([]byte(flight.id.Value()))
+	data.Origin = flight.origin.Value()
+	data.Destination = flight.destination.Value()
+	data.Duration = flight.duration.Value
+	data.Price = float32(flight.fare.Value)
+	data.Stops = flight.stops.Value()
+	return
+}
+
+type AvgFilterData struct {
+	Origin      string
+	Destination string
+	Price       float32
+}
+
+func (flight *FlightDataType) IntoAvgFilterData() (data middleware.AvgFilterData) {
+	data.Origin = flight.origin.Value()
+	data.Destination = flight.destination.Value()
+	data.Price = float32(flight.fare.Value)
+	return
+	
 }

@@ -14,17 +14,17 @@ import (
 
 var (
 	TIMES       = "times"
-	DATA_ADDR   = "data.addr"
-	DATA_PORT   = "data.port"
-	RESULT_ADDR = "result.addr"
-	RESULT_PORT = "result.port"
+	DATA_ADDR   = "source.data"
+	RESULT_ADDR = "source.sink"
+	ID = "id"
+	SOURCE = "source.url"
 
 	CONFIG_VARS = []string{
 		TIMES,
 		DATA_ADDR,
-		DATA_PORT,
 		RESULT_ADDR,
-		RESULT_PORT,
+		ID,
+		SOURCE,
 	}
 )
 

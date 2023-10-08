@@ -22,6 +22,14 @@ func NewSocketConnection(at string) (con Conn, err error) {
 	return
 }
 
+func FromListener(listener net.Listener) (con Conn, err error) {
+	sckt, err := listener.Accept()
+	con = &socket{
+		dial: sckt,
+	}
+	return 
+}
+
 /*
 Safe read implementation, either reads the whole buffer
 or returns an error

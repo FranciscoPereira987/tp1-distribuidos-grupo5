@@ -1,8 +1,18 @@
-query:
-  second: "7777"
+exchange:
+  first: "stops"
+  second: "distance"
+  third: "duration"
+  fourth: "avg"
+  agregator: "results"
+
+workers:
+  first: 1
+  second: 1
+  third: 1
+  fourth: 1
+  
+source: "rabbit-url"
 
 server:
-  dataport: "9999"
-  resultsport: "10000" 
-
-agregator: "6666"
+  dataport: "6666"
+  resultsport: "7777"

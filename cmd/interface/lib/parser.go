@@ -1,19 +1,34 @@
 package lib
 
 import (
+	"context"
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/sirupsen/logrus"
 )
 
 type ParserConfig struct {
-	//Query1 *protocol.Protocol
-	Query2 *protocol.Protocol
-	//Query3 *protocol.Protocol
-	//Query4 *protocol.Protocol
+	Query1 string
+	Workers1 int
+	Query2 string
+	Workers2 int
+	Query3 string
+	Workers3 int
+	Query4 string
+	Workers4 int
+
+	Mid *middleware.Middleware
 
 	ListeningPort string
 	ResultsPort   string
+	Ctx context.Context
 
 	ResultsChan chan<- *protocol.Protocol
 }
@@ -25,6 +40,11 @@ to the diferent workers
 type Parser struct {
 	config   ParserConfig
 	listener *Listener
+	query1Keys middleware.KeyGenerator
+	query2Keys middleware.KeyGenerator
+	query3Keys middleware.KeyGenerator
+	query4Keys middleware.KeyGenerator
+
 	processed uint32
 }
 
@@ -36,8 +56,81 @@ func NewParser(config ParserConfig) (*Parser, error) {
 	return &Parser{
 		config:   config,
 		listener: listener,
+		query1Keys: middleware.NewKeyGenerator(config.Workers1),
+		query2Keys: middleware.NewKeyGenerator(config.Workers2),
+		query3Keys: middleware.NewKeyGenerator(config.Workers3),
+		query4Keys: middleware.NewKeyGenerator(config.Workers4),
 		processed: 0,
 	}, nil
+}
+
+func (parser *Parser) publishQuery1(data *reader.FlightDataType) (err error) {
+	flight := data.IntoStopsFilterData()
+	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query1, key, middleware.Q1Marshal(flight))
+	return
+}
+
+func (parser *Parser) publishQuery2(data *reader.FlightDataType) (err error) {
+	flight := data.IntoDistanceData().IntoQ2Data()
+	key := parser.query2Keys.KeyFrom(flight.Origin, flight.Destination)
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, key, middleware.Q2Marshal(flight))
+	return
+}
+
+func (parser *Parser) publishQuery3(data *reader.FlightDataType) (err error) {
+	flight := data.IntoStopsFilterData()
+	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query3, key, middleware.Q1Marshal(flight))
+	
+	return
+}
+
+func (parser *Parser) publishQuery4(data *reader.FlightDataType) (err error) {
+	flight := data.IntoAvgFilterData()
+	key := parser.query4Keys.KeyFrom(flight.Origin, flight.Destination)
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query4, key, middleware.AvgMarshal(flight))
+	return
+}
+
+func (parser *Parser) Start(agg *Agregator) error {
+	sig := make(chan os.Signal, 1)
+	result := make(chan error, 1)
+	aggResult := make(chan error, 1)
+
+	endResult := make(chan error, 1)
+
+	defer close(sig)
+	defer close(result)
+	defer close(aggResult)
+	defer close(endResult)
+	
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+
+	go func(){
+		result <- parser.Run()
+	}()
+
+	go func() {
+		aggResult <- agg.Run()
+	}()
+
+	go func() {
+		parserResult := <- result
+		agregatorResult := <- aggResult
+
+		endResult <- errors.Join(parserResult, agregatorResult)
+	}()
+
+	select {
+	case <- parser.config.Ctx.Done():
+		return context.Cause(parser.config.Ctx)
+	case <- sig:
+		return nil
+	case err := <- endResult:
+		return err
+	}
+
 }
 
 func (parser *Parser) Run() error {
@@ -59,16 +152,28 @@ func (parser *Parser) Run() error {
 			
 			if err.Error() == "connection closed" {
 				logrus.Info("client finished sending its data")
-				parser.config.Query2.Close()
+				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
+				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))
+				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
+				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
 				break
 			}
 			continue
 		}
-		if value, ok := message.Type().(*reader.FlightDataType); ok {
-			parser.processed++
-			parser.config.Query2.Send(protocol.NewDataMessage(value.IntoDistanceData()))
-		} else {
-			parser.config.Query2.Send(message)
+		messageType := message.Type()
+		switch messageType.(type) {
+		case (*distance.CoordWrapper):
+			data := messageType.(*distance.CoordWrapper).IntoCoordData()
+			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "", middleware.CoordMarshal(data))
+		case (*reader.FlightDataType):
+			data := messageType.(*reader.FlightDataType)
+			err = parser.publishQuery1(data)
+			err = errors.Join(err, parser.publishQuery2(data))
+			err = errors.Join(err, parser.publishQuery3(data))
+			err = errors.Join(err, parser.publishQuery4(data))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

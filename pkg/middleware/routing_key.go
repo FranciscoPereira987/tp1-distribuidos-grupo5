@@ -15,12 +15,12 @@ func ShardKey(id string) string {
 	return id
 }
 
-func (kg KeyGenerator) KeyFrom(origin, destiny string) string {
+func (kg KeyGenerator) KeyFrom(origin, destination string) string {
 	h := fnv.New32()
 
 	h.Write([]byte(origin))
 	h.Write([]byte("."))
-	h.Write([]byte(destiny))
+	h.Write([]byte(destination))
 
 	v := h.Sum32()%uint32(kg) + 1
 

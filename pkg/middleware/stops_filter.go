@@ -7,12 +7,12 @@ import (
 )
 
 type StopsFilterData struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Duration uint32
-	Price    float32
-	Stops    string
+	ID          [16]byte
+	Origin      string
+	Destination string
+	Duration    uint32
+	Price       float32
+	Stops       string
 }
 
 func StopsFilterUnmarshal(buf []byte) (data StopsFilterData, err error) {
@@ -22,7 +22,7 @@ func StopsFilterUnmarshal(buf []byte) (data StopsFilterData, err error) {
 		data.Origin, err = ReadString(r)
 	}
 	if err == nil {
-		data.Destiny, err = ReadString(r)
+		data.Destination, err = ReadString(r)
 	}
 	if err == nil {
 		err = binary.Read(r, binary.LittleEndian, &(data.Duration))

@@ -13,7 +13,7 @@ func Q3Marshal(data StopsFilterData) []byte {
 	buf = append(buf, data.ID[:]...)
 
 	buf = AppendString(buf, data.Origin)
-	buf = AppendString(buf, data.Destiny)
+	buf = AppendString(buf, data.Destination)
 
 	buf = binary.LittleEndian.AppendUint32(buf, data.Duration)
 
@@ -23,11 +23,11 @@ func Q3Marshal(data StopsFilterData) []byte {
 }
 
 type ResultQ3 struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Duration uint32
-	Stops    string
+	ID          [16]byte
+	Origin      string
+	Destination string
+	Duration    uint32
+	Stops       string
 }
 
 func Q3Unmarshal(r *bytes.Reader) (data ResultQ3, err error) {
@@ -36,7 +36,7 @@ func Q3Unmarshal(r *bytes.Reader) (data ResultQ3, err error) {
 		data.Origin, err = ReadString(r)
 	}
 	if err == nil {
-		data.Destiny, err = ReadString(r)
+		data.Destination, err = ReadString(r)
 	}
 	if err == nil {
 		err = binary.Read(r, binary.LittleEndian, &(data.Duration))

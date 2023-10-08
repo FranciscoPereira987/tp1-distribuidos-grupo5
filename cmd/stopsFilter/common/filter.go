@@ -26,14 +26,14 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 type FastestFlightsMap map[string]map[string][]mid.StopsFilterData
 
 func updateFastest(fastest FastestFlightsMap, data mid.StopsFilterData) {
-	if destinyMap, ok := fastest[data.Origin]; !ok {
+	if destinationMap, ok := fastest[data.Origin]; !ok {
 		tmp := [2]mid.StopsFilterData{data}
 		fastest[data.Origin] = map[string][]mid.StopsFilterData{
-			data.Destiny: tmp[:1],
+			data.Destination: tmp[:1],
 		}
-	} else if fast, ok := destinyMap[data.Destiny]; !ok {
+	} else if fast, ok := destinationMap[data.Destination]; !ok {
 		tmp := [2]mid.StopsFilterData{data}
-		destinyMap[data.Destiny] = tmp[:1]
+		destinationMap[data.Destination] = tmp[:1]
 	} else if data.Duration < fast[0].Duration {
 		_ = append(fast[:0], data, fast[0])
 	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
@@ -70,8 +70,8 @@ loop:
 			updateFastest(fastest, data)
 		}
 	}
-	for _, destinyMap := range fastest {
-		for _, arr := range destinyMap {
+	for _, destinationMap := range fastest {
+		for _, arr := range destinationMap {
 			for _, v := range arr {
 				err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q3Marshal(v))
 				if err != nil {

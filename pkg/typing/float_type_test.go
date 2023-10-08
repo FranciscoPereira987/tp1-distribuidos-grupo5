@@ -13,7 +13,7 @@ func TestFloatSerialization(t *testing.T) {
 	value := typing.FloatType{
 		299.0,
 	}
-	expected := binary.BigEndian.AppendUint64([]byte{value.Number()}, math.Float64bits(value.Value))
+	expected := binary.LittleEndian.AppendUint64([]byte{value.Number()}, math.Float64bits(value.Value))
 	result := value.Serialize()
 
 	if !bytes.Equal(expected, result) {

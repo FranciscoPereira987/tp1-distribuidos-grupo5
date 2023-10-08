@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -104,17 +105,31 @@ func (data AirportDataType) calculateDistance(computer DistanceComputer) (float6
 	return computer.CalculateDistance(data.origin.Value(), data.destination.Value())
 }
 
-func (data AirportDataType) GreaterThanXTimes(x int, computer DistanceComputer) (bool, error) {
-	distance, err := data.calculateDistance(computer)
-	if err != nil {
-		return false, err
-	}
-	return float64(data.totalDistance.Value) > float64(x)*distance, nil
-}
+
 
 func (data *AirportDataType) AsRecord() []string {
 	record := data.id.AsRecord()
 	record = append(record, data.origin.AsRecord()...)
 	record = append(record, data.destination.AsRecord()...)
 	return append(record, data.totalDistance.AsRecord()...)
+}
+
+
+func (data AirportDataType) IntoQ2Data() (midData middleware.DataQ2) {
+
+	midData.ID = [16]byte(data.id.Serialize())
+
+	midData.Origin = data.origin.Value()
+	midData.Destination = data.origin.Value()
+	midData.TotalDistance = data.totalDistance.Value
+
+	return
+}
+
+func GreaterThanXTimes(x int, computer DistanceComputer, data middleware.DataQ2) (bool, error) {
+	distance, err := computer.CalculateDistance(data.Origin, data.Destination)
+	if err != nil {
+		return false, err
+	}
+	return float64(data.TotalDistance) > float64(x)*distance, nil
 }

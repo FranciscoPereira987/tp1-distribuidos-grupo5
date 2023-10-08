@@ -31,7 +31,7 @@ func (intType *IntType) Trim(stream []byte) []byte {
 }
 
 func (intType *IntType) Serialize() []byte {
-	return binary.BigEndian.AppendUint32(utils.GetHeader(intType), intType.Value)
+	return binary.LittleEndian.AppendUint32(utils.GetHeader(intType), intType.Value)
 }
 
 func (intType *IntType) Deserialize(stream []byte) error {
@@ -41,7 +41,7 @@ func (intType *IntType) Deserialize(stream []byte) error {
 	if err := CheckTypeLength(intType.length(), stream); err != nil {
 		return err
 	}
-	intType.Value = binary.BigEndian.Uint32(stream[1:])
+	intType.Value = binary.LittleEndian.Uint32(stream[1:])
 	return nil
 }
 

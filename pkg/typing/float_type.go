@@ -27,7 +27,7 @@ func (f *FloatType) Number() byte {
 
 func (f *FloatType) Serialize() []byte {
 	bits := math.Float64bits(f.Value)
-	return binary.BigEndian.AppendUint64(utils.GetHeader(f), bits)
+	return binary.LittleEndian.AppendUint64(utils.GetHeader(f), bits)
 }
 
 func (f *FloatType) Trim(stream []byte) []byte {
@@ -46,7 +46,7 @@ func (f *FloatType) Deserialize(stream []byte) error {
 		return err
 	}
 
-	bits := binary.BigEndian.Uint64(stream[1:])
+	bits := binary.LittleEndian.Uint64(stream[1:])
 	f.Value = math.Float64frombits(bits)
 
 	return nil

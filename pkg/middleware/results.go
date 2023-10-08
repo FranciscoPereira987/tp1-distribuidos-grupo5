@@ -12,6 +12,7 @@ const (
 	Query2Flag
 	Query3Flag
 	Query4Flag
+	CoordFlag
 )
 
 // Get the result with a type switch

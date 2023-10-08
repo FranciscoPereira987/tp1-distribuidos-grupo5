@@ -22,6 +22,8 @@ func Q2Marshal(data DataQ2) []byte {
 	return buf
 }
 
+type ResultQ2 DataQ2
+
 type DataQ2 struct {
 	ID          [16]byte
 	Origin      string

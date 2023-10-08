@@ -3,6 +3,7 @@ package distance
 import (
 	"errors"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -94,4 +95,14 @@ func CoordsFromData(data protocol.Data) (*Coordinates, error) {
 		Lon: wrapper.Long.Value,
 	}
 	return coords, nil
+}
+
+
+func (coords CoordWrapper) IntoCoordData() (midData middleware.CoordinatesData) {
+
+	midData.AirportCode = coords.Name.Value()
+	midData.Latitude = coords.Lat.Value
+	midData.Longitud = coords.Long.Value
+
+	return
 }

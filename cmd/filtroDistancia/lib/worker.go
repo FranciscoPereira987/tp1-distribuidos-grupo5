@@ -7,24 +7,22 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/sirupsen/logrus"
+	"github.com/umahmood/haversine"
 )
 
 type WorkerConfig struct {
-	DataConn   conection.Conn
-	ResultConn conection.Conn
+	Mid *middleware.Middleware
+	Source string
+	Sink string
 	Times      int
 	Ctx context.Context
 }
 
 type Worker struct {
 	config  WorkerConfig
-	data    *protocol.Protocol
-	results *protocol.Protocol
 
 	computer     *distance.DistanceComputer
 	finishedLoad bool
@@ -34,71 +32,44 @@ type Worker struct {
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
 
-	data := protocol.NewProtocol(config.DataConn)
-	if err := data.Connect(); err != nil {
-		return nil, err
-	}
-
-	results := protocol.NewProtocol(config.ResultConn)
-	if err := results.Connect(); err != nil {
-		return nil, err
-	}
-
 	computer := distance.NewComputer()
 
 	return &Worker{
 		config:       config,
-		data:         data,
-		results:      results,
 		computer:     computer,
-		finishedLoad: false,
 		finished:     false,
 	}, nil
 }
 
-func (worker *Worker) Shutdown() {
-	worker.data.Close()
-	worker.results.Close()
-	worker.config.DataConn.Close()
-	worker.config.ResultConn.Close()
+
+
+func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
+	logrus.Infof("Adding airport: %s", value.AirportCode)
+	coords := &haversine.Coord{
+		Lat: value.Latitude,
+		Lon: value.Longitud,
+	}
+	worker.computer.AddAirport(value.AirportCode, *coords)
 }
 
-func getMultiData() *protocol.MultiData {
-	coords := distance.IntoData(distance.Coordinates{}, "")
-	airport, _ := distance.NewAirportData("", "", "", 0)
-	coordsEnd := reader.FinData()
-	multi := protocol.NewMultiData()
-	multi.Register(coords, protocol.NewDataMessage(airport), protocol.NewDataMessage(coordsEnd))
-	return multi
-}
-
-func (worker *Worker) handleCoords(value *distance.CoordWrapper, data protocol.Data) {
-	coords, _ := distance.CoordsFromData(data)
-	logrus.Infof("Adding airport: %s", value.Name.Value())
-	worker.computer.AddAirport(value.Name.Value(), *coords)
-}
-
-func (worker *Worker) handleFilter(value *distance.AirportDataType, data protocol.Data) {
-	greaterThanX, err := value.GreaterThanXTimes(worker.config.Times, *worker.computer)
+func (worker *Worker) handleFilter(value middleware.DataQ2) {
+	greaterThanX, err := distance.GreaterThanXTimes(worker.config.Times, *worker.computer, value)
 	if err != nil {
 		log.Printf("error processing data: %s", err)
 		return
 	}
 	if greaterThanX {
-		logrus.Infof("filtered airport: %s", value.AsRecord())
-		worker.results.Send(data)
+		logrus.Infof("filtered flight: %s", value.ID)
+		worker.config.Mid.PublishWithContext(worker.config.Ctx, "",
+		worker.config.Sink, middleware.Q2Marshal(value))
 	}
 }
 
 func (worker *Worker) handleFinData() {
-	if worker.finishedLoad {
-		logrus.Info("action: filtering | result: finished")
-		worker.results.Send(protocol.NewDataMessage(reader.FinData()))
-		worker.finished = true
-	} else {
-		logrus.Info("action: coordinates send | result: finished")
-		worker.finishedLoad = true
-	}
+	
+	logrus.Info("action: filtering | result: finished")
+	worker.config.Mid.End(worker.config.Ctx, worker.config.Sink)
+	worker.finished = true
 
 }
 
@@ -117,27 +88,57 @@ func (worker *Worker) Start() error {
 	select{
 	case <- worker.config.Ctx.Done():
 	case <- sigChan:
+		worker.config.Mid.Close()
 	case err := <- runChan:
 		return err
 	}
 	return nil
 }
 
+func (worker *Worker) Shutdown() {
+	worker.config.Mid.Close()
+}
+
+func (worker *Worker) handleData(buf []byte) error {
+	
+
+	_, data, err := middleware.DistanceFilterUnmarshal(buf)
+	if err != nil {
+		return err
+	}
+
+	switch data.(type) {
+	case (middleware.CoordinatesData):
+		coords := data.(middleware.CoordinatesData)
+		worker.handleCoords(coords)
+	case (middleware.DataQ2):
+		airport := data.(middleware.DataQ2)
+		worker.handleFilter(airport)
+	}
+	return nil
+}
+
 func (worker *Worker) Run() error {
-	multi := getMultiData()
+	ch, err := worker.config.Mid.ConsumeWithContext(worker.config.Ctx, worker.config.Source)
+	if err != nil {
+		return err
+	}
+	
 	for !worker.finished {
-		if err := worker.data.Recover(multi); err != nil {
-			log.Printf("failed recovering data: %s", err)
-			return err
+		select{
+		case <-worker.config.Ctx.Done():
+			return context.Cause(worker.config.Ctx)
+		case buf, more := <- ch:
+			if !more {
+				worker.handleFinData()
+				break
+			}
+			if err := worker.handleData(buf); err != nil {
+				return err
+			}
 		}
-		recovered := multi.Type()
-		if value, ok := recovered.(*distance.CoordWrapper); ok {
-			worker.handleCoords(value, multi)
-		} else if value, ok := recovered.(*distance.AirportDataType); ok {
-			worker.handleFilter(value, multi)
-		} else if _, ok := recovered.(*reader.DataFin); ok {
-			worker.handleFinData()
-		}
+		
+
 	}
 
 	return nil

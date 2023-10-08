@@ -42,8 +42,8 @@ func connecTo(addr string, port string) conection.Conn {
 
 func getConfig(v *viper.Viper) (config lib.WorkerConfig, cancel context.CancelFunc) {
 	config.Times = v.GetInt(TIMES)
-	config.DataConn = connecTo(v.GetString(DATA_ADDR), v.GetString(DATA_PORT))
-	config.ResultConn = connecTo(v.GetString(RESULT_ADDR), v.GetString(RESULT_PORT))
+	//config.DataConn = connecTo(v.GetString(DATA_ADDR), v.GetString(DATA_PORT))
+	//config.ResultConn = connecTo(v.GetString(RESULT_ADDR), v.GetString(RESULT_PORT))
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Ctx = ctx
 	return

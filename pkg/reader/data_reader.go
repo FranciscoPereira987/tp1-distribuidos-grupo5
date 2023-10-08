@@ -21,6 +21,8 @@ var (
 	DURATION_EXP = "[0-9]+"
 )
 
+
+
 type DataReader struct {
 	file *os.File
 	csv  *csv.Reader

@@ -5,11 +5,7 @@ import (
 	"net"
 )
 
-type Conn interface {
-	io.Reader
-	io.Writer
-	Close() error
-}
+type Conn io.ReadWriteCloser
 
 /*
 Not thread safe implementation of a safe socket
@@ -31,7 +27,6 @@ Safe read implementation, either reads the whole buffer
 or returns an error
 */
 func (s *socket) Read(buf []byte) (readed int, err error) {
-
 	for readed < len(buf) {
 		newlyReaded, readErr := s.dial.Read(buf[readed:])
 		if readErr != nil {
@@ -49,7 +44,6 @@ Safe write implementation, either writes the whole buffer
 or returns an error
 */
 func (s *socket) Write(buf []byte) (writen int, err error) {
-
 	for len(buf) > 0 {
 		newlyWriten, writeErr := s.dial.Write(buf)
 		

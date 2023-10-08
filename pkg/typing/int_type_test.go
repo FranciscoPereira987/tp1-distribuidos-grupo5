@@ -12,7 +12,7 @@ func TestIntSerialization(t *testing.T) {
 	value := typing.IntType{
 		999,
 	}
-	expected := binary.BigEndian.AppendUint32([]byte{typing.INT_TYPE_NUMBER}, value.Value)
+	expected := binary.LittleEndian.AppendUint32([]byte{typing.INT_TYPE_NUMBER}, value.Value)
 
 	result := value.Serialize()
 

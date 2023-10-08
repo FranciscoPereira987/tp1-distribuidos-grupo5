@@ -11,8 +11,9 @@ import (
 )
 
 type Middleware struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
+	conn     *amqp.Connection
+	ch       *amqp.Channel
+	countEOF int
 }
 
 func Dial(url string) (*Middleware, error) {
@@ -31,6 +32,10 @@ func Dial(url string) (*Middleware, error) {
 		conn: conn,
 		ch:   ch,
 	}, nil
+}
+
+func (m *Middleware) SetExpectedEOFCount(count int) {
+	m.countEOF = count
 }
 
 func (m *Middleware) ExchangeDeclare(name, kind string) (string, error) {
@@ -106,14 +111,13 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 			case <-ctx.Done():
 				return
 			case d := <-msgs:
-				if !strings.HasSuffix(d.RoutingKey, "control") {
-					ch <- d.Body
-					break
+				if strings.HasSuffix(d.RoutingKey, "control") {
+					m.countEOF--
+					if m.countEOF <= 0 {
+						return
+					}
 				}
-				if err := m.propagateEOF(ctx, d); err != nil {
-					log.Error(err)
-				}
-				return
+				ch <- d.Body
 			}
 		}
 	}()
@@ -121,16 +125,8 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 	return ch, nil
 }
 
-func (m *Middleware) propagateEOF(ctx context.Context, d amqp.Delivery) error {
-	if len(d.Body) == 0 {
-		return nil
-	}
-	n, _ := binary.Uvarint(d.Body)
-	if n < 2 {
-		return nil
-	}
-	binary.PutUvarint(d.Body, n-1)
-	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, d.Body)
+func (m *Middleware) EOF(ctx context.Context, exchange string) error {
+	return m.PublishWithContext(ctx, exchange, "control", []byte{})
 }
 
 func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {

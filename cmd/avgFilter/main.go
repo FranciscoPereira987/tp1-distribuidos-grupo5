@@ -123,5 +123,7 @@ func main() {
 
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)
+	} else if err := middleware.EOF(ctx, sink); err != nil {
+		log.Error(err)
 	}
 }

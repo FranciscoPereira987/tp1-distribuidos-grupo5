@@ -1,13 +1,13 @@
 package middleware
 
 import (
-	"binary"
-	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
-	log "github.com/sirupsen/logrus"
+	"strings"
 
-	amqp "github.com/rabbitmq/ampq091-go"
+	log "github.com/sirupsen/logrus"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Middleware struct {
@@ -69,7 +69,7 @@ func (m *Middleware) QueueDeclare(name string) (string, error) {
 
 func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) error {
 	for _, key := range routingKeys {
-		err = m.ch.QueueBind(
+		err := m.ch.QueueBind(
 			queue,
 			key,
 			exchange,
@@ -83,7 +83,7 @@ func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) err
 	return nil
 }
 
-func (m *Middleware) Consume(ctx context.Context, name string) (<-chan []byte, error) {
+func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-chan []byte, error) {
 	msgs, err := m.ch.ConsumeWithContext(
 		ctx,
 		name,  // queue
@@ -106,7 +106,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan []byte, e
 			case <-ctx.Done():
 				return
 			case d := <-msgs:
-				if d.RoutingKey != "control" {
+				if !strings.HasSuffix(d.RoutingKey, "control") {
 					ch <- d.Body
 					break
 				}
@@ -125,12 +125,12 @@ func (m *Middleware) propagateEOF(ctx context.Context, d amqp.Delivery) error {
 	if len(d.Body) == 0 {
 		return nil
 	}
-	n := binary.Uvarint(d.Body)
+	n, _ := binary.Uvarint(d.Body)
 	if n < 2 {
 		return nil
 	}
-	body := binary.PutUvarint(d.Body, n-1)
-	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, body)
+	binary.PutUvarint(d.Body, n-1)
+	return m.PublishWithContext(ctx, d.Exchange, d.RoutingKey, d.Body)
 }
 
 func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {
@@ -150,9 +150,4 @@ func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key strin
 func (m *Middleware) Close() {
 	m.ch.Close()
 	m.conn.Close()
-}
-
-func KeyFrom(origin, destiny string) string {
-	// TODO: use a hash to be able to shard ahead of time
-	return origin + "." + destiny
 }

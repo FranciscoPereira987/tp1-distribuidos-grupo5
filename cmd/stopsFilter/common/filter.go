@@ -3,118 +3,83 @@ package common
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
-	"errors"
-	"io"
-	"os"
 	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
-	// log "github.com/sirupsen/logrus"
 )
 
 const stopsSep = "||"
 
 type Filter struct {
-	m       *mid.Middleware
-	source  string
-	resKey  string
-	forward string
+	m      *mid.Middleware
+	source string
+	sink   string
 }
 
-func NewFilter(m *mid.Middleware, source, resKey, forward string) *Filter {
+func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 	return &Filter{
-		m:       m,
-		source:  source,
-		resKey:  resKey,
-		forward: forward,
+		m:      m,
+		source: source,
+		sink:   sink,
+	}
+}
+
+type FastestFlightsMap map[string]map[string][]mid.StopsFilterData
+
+func updateFastest(fastest FastestFlightsMap, data mid.StopsFilterData) {
+	if destinationMap, ok := fastest[data.Origin]; !ok {
+		tmp := [2]mid.StopsFilterData{data}
+		fastest[data.Origin] = map[string][]mid.StopsFilterData{
+			data.Destination: tmp[:1],
+		}
+	} else if fast, ok := destinationMap[data.Destination]; !ok {
+		tmp := [2]mid.StopsFilterData{data}
+		destinationMap[data.Destination] = tmp[:1]
+	} else if data.Duration < fast[0].Duration {
+		_ = append(fast[:0], data, fast[0])
+	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
+		_ = append(fast[:1], data)
 	}
 }
 
 func (f *Filter) Run(ctx context.Context) error {
+	fastest := make(FastestFlightsMap)
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
 	}
-	for msg := range ch {
-		data, err := Unmarshal(msg)
-		if err != nil {
-			return err
+loop:
+	for {
+		var data mid.StopsFilterData
+		select {
+		case <-ctx.Done():
+			return context.Cause(ctx)
+		case msg, more := <-ch:
+			if !more {
+				break loop
+			}
+			data, err = mid.StopsFilterUnmarshal(msg)
+			if err != nil {
+				return err
+			}
 		}
 		if strings.Count(data.Stops, stopsSep) >= 3 {
-			key := mid.KeyFrom(data.Origin, data.Destiny)
-			errRes := f.m.PublishWithContext(ctx, "", f.resKey, ResultMarshal(data))
-			errFwd := f.m.PublishWithContext(ctx, f.forward, key, ForwardMarshal(data))
-			if err := errors.Join(errRes, errFwd); err != nil {
+			err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q1Marshal(data))
+			if err != nil {
 				return err
+			}
+			updateFastest(fastest, data)
+		}
+	}
+	for _, destinationMap := range fastest {
+		for _, arr := range destinationMap {
+			for _, v := range arr {
+				err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q3Marshal(v))
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
-}
-
-func (f *Filter) Start(ctx context.Context, sig <-chan os.Signal) error {
-	done := make(chan error)
-
-	go func() {
-		done <- f.Run(ctx)
-	}()
-
-	select {
-	case <-ctx.Done():
-	case <-sig:
-	case err := <-done:
-		return err
-	}
-	f.m.Close()
-	return <-done
-}
-
-type FlightData struct {
-	ID       [16]byte
-	Origin   string
-	Destiny  string
-	Duration uint32
-	Price    float32
-	Stops    string
-}
-
-func Unmarshal([]byte) (data FlightData, err error) {
-	_, err = io.ReadFull(r, data.ID[:])
-	if err == nil {
-		data.Origin, err = mid.ReadString(r)
-	}
-	if err == nil {
-		data.Destiny, err = mid.ReadString(r)
-	}
-	if err == nil {
-		err = binary.Read(r, binary.LittleEndian, &(data.Duration))
-	}
-	if err == nil {
-		err = binary.Read(r, binary.LittleEndian, &(data.Price))
-	}
-	if err == nil {
-		data.Stops, err = mid.ReadString(r)
-	}
-
-	return data, err
-}
-
-func ResultMarshal(data FlightData) []byte {
-	buf := make([]byte, 1)
-	buf[0] = mid.Query1Flag
-
-	buf = append(buf, data.ID[:]...)
-
-	buf = mid.AppendString(buf, data.Origin)
-	buf = mid.AppendString(buf, data.Destiny)
-
-	var w bytes.Buffer
-	_ = binary.Write(w, binary.LittleEndian, data.Price)
-	buf = append(buf, w.Bytes()...)
-
-	buf = binary.AppendUvarint(buf, len(data.Stops))
-	buf = append(buf, data.Stops...)
-
-	return buf
 }

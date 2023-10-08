@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter/common"
+	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 )
 
 func InitConfig() (*viper.Viper, error) {
@@ -24,7 +27,8 @@ func InitConfig() (*viper.Viper, error) {
 	// env variables for the nested configurations
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// Set defaults?
+	// Set defaults
+	v.SetDefault("source.kind", "direct")
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -38,7 +42,9 @@ func InitConfig() (*viper.Viper, error) {
 		fmt.Fprintln(os.Stderr, "Configuration could not be read from config file. Using env variables instead")
 	}
 
-	// Parse values?
+	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
+		return nil, fmt.Errorf("Could not parse STOPS_ID env var as int: %w", err)
+	}
 
 	return v, nil
 }
@@ -58,23 +64,27 @@ func InitLogger(logLevel string) error {
 	return nil
 }
 
-func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
+// Describes the topology around this node.
+func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) {
+	source, err := m.ExchangeDeclare(v.GetString("source.name"), v.GetString("source.kind"))
+	if err != nil {
+		return "", "", err
+	}
+
 	q, err := m.QueueDeclare(v.GetString("queue"))
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
-	results, err := m.QueueDeclare(v.GetString("results"))
+	// Subscribe to shards specific and EOF events.
+	shardKey := mid.ShardKey(v.GetString("id"))
+	err = m.QueueBind(q, source, []string{shardKey, "control"})
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
-	forward, err := m.ExchangeDeclare(v.GetString("forward.name"), v.GetString("forward.kind"))
-	if err != nil {
-		return "", "", "", err
-	}
-
-	return q, results, forward, err
+	sink, err := m.QueueDeclare(v.GetString("results"))
+	return q, sink, err
 }
 
 func main() {
@@ -93,20 +103,25 @@ func main() {
 	}
 	defer middleware.Close()
 
-	source, results, forward, err := setupMiddleware(middleware, v)
+	source, sink, err := setupMiddleware(middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, source, results, forward)
+	filter := common.NewFilter(middleware, source, sink)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
 
-	if err := filter.Start(ctx, sig); err != nil {
+	go func() {
+		<-sig
+		cancel(fmt.Errorf("Signal received"))
+	}()
+
+	if err := filter.Run(ctx); err != nil {
 		log.Error(err)
 	}
 }

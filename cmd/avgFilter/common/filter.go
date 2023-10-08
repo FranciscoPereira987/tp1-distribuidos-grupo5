@@ -24,7 +24,8 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 }
 
 func (f *Filter) Run(ctx context.Context) error {
-	prices, avg := make(map[string][]float32), 0.0
+	prices := make(map[string][]float32)
+	var avg float32
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
@@ -40,7 +41,10 @@ loop:
 				return context.Cause(ctx)
 			}
 			if mid.IsAvgPriceMessage(msg) {
-				avg = mid.AvgUnmarshal(msg)
+				avg, err = mid.AvgUnmarshal(msg)
+				if err != nil {
+					return err
+				}
 				break loop
 			}
 			data, err = mid.AvgFilterUnmarshal(msg)
@@ -56,8 +60,8 @@ loop:
 		v := mid.ResultQ4{
 			Origin:      origin,
 			Destination: destination,
-			Avg:         a.Sum / float32(a.Count),
-			Max:         a.Max,
+			AvgPrice:    a.Sum / float32(a.Count),
+			MaxPrice:    a.Max,
 		}
 		err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q4Marshal(v))
 		if err != nil {
@@ -69,8 +73,8 @@ loop:
 
 func aggregate(prices map[string][]float32, avg float32) map[string]resultAggregator {
 	acc := make(map[string]resultAggregator)
-	for _, arr := range prices {
-		for k, v := range arr {
+	for k, arr := range prices {
+		for _, v := range arr {
 			if avg < v {
 				a := acc[k]
 				a.Count++

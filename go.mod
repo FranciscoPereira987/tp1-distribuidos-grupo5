@@ -1,6 +1,6 @@
 module github.com/franciscopereira987/tp1-distribuidos
 
-go 1.20
+go 1.21
 
 require (
 	github.com/rabbitmq/amqp091-go v1.9.0

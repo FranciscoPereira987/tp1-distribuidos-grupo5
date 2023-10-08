@@ -8,6 +8,7 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia/lib"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -42,10 +43,24 @@ func connecTo(addr string, port string) conection.Conn {
 
 func getConfig(v *viper.Viper) (config lib.WorkerConfig, cancel context.CancelFunc) {
 	config.Times = v.GetInt(TIMES)
-	//config.DataConn = connecTo(v.GetString(DATA_ADDR), v.GetString(DATA_PORT))
-	//config.ResultConn = connecTo(v.GetString(RESULT_ADDR), v.GetString(RESULT_PORT))
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Ctx = ctx
+	return
+}
+
+func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, sink string, err error) {
+	data = v.GetString("source.data")
+	sink = v.GetString("source.sink")
+	id := v.GetString("id")
+	name, err := mid.QueueDeclare(data + id)
+	if err != nil {
+		return
+	}
+	shardKey := []string{id, "control"}
+	err = mid.QueueBind(name, data, shardKey)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -58,6 +73,14 @@ func main() {
 	utils.PrintConfig(v, CONFIG_VARS...)
 
 	config, cancel := getConfig(v)
+	mid, err := middleware.Dial(v.GetString("source.url"))
+	if err != nil {
+		log.Fatalf("error dialing middleware: %s", err)
+	}
+	data, sink, err := setupMiddleware(mid, v)
+	config.Mid = mid
+	config.Source = data
+	config.Sink = sink
 	defer cancel()
 	worker, err := lib.NewWorker(config)
 	if err != nil {

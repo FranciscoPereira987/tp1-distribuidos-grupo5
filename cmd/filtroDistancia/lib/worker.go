@@ -68,7 +68,7 @@ func (worker *Worker) handleFilter(value middleware.DataQ2) {
 func (worker *Worker) handleFinData() {
 	
 	logrus.Info("action: filtering | result: finished")
-	worker.config.Mid.End(worker.config.Ctx, worker.config.Sink)
+	worker.config.Mid.EOF(worker.config.Ctx, worker.config.Sink)
 	worker.finished = true
 
 }
@@ -82,7 +82,7 @@ func (worker *Worker) Start() error {
 		runChan <- worker.Run()
 	}()
 
-
+	
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	select{
@@ -131,7 +131,7 @@ func (worker *Worker) Run() error {
 		case buf, more := <- ch:
 			if !more {
 				worker.handleFinData()
-				break
+				return nil
 			}
 			if err := worker.handleData(buf); err != nil {
 				return err

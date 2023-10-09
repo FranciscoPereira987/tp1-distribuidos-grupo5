@@ -63,6 +63,7 @@ func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {
 		resultsConn.Close()
 		return nil, nil, err
 	}
+	logrus.Info("Accepted both connections")
 	
 	resultsProt := protocol.NewProtocol(resultsConn)
 	if err := resultsProt.Accept(); err != nil {

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/interface/lib"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -46,25 +46,38 @@ var (
 	}
 )
 
-func getAggregator(v *viper.Viper) (*lib.Agregator, error) {
-	conn, err := conection.NewSocketConnection("127.0.0.1:" + v.GetString(AGG_QUEUE))
+func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator, error) {
+	mid, err := middleware.Dial(v.GetString(SOURCE))
 	if err != nil {
 		return nil, err
 	}
-	proto := protocol.NewProtocol(conn)
-
-	if err := proto.Connect(); err != nil {
+	
+	name, err := mid.QueueDeclare(v.GetString(AGG_QUEUE))
+	if err != nil {
 		return nil, err
 	}
-
+	mid.ExchangeDeclare(v.GetString(AGG_QUEUE), "direct")
+	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
+	mid.SetExpectedEOFCount(2)
 	config := lib.AgregatorConfig{
-		AgregatorQueue: proto,
+		Mid: mid,
+		AgregatorQueue: v.GetString(AGG_QUEUE),
+		Ctx: agg_context,
 	}
 
 	return lib.NewAgregator(config), nil
 }
 
-func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol) (*lib.Parser, error) {
+func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
+	_, err = mid.ExchangeDeclare(v.GetString(QUERY1EXCHANGE), "direct")
+	if err == nil {
+		_, err = mid.ExchangeDeclare(v.GetString(QUERY2EXCHANGE), "direct")
+	}
+
+	return
+}
+
+func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list_context context.Context) (*lib.Parser, error) {
 	mid, err := middleware.Dial(v.GetString(SOURCE))
 	if err != nil {
 		return nil, err
@@ -79,10 +92,12 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol) (*li
 		Query4: v.GetString(QUERY4EXCHANGE),
 		Workers4: v.GetInt(QUERY4WORKERS),
 		Mid: mid,
+		Ctx: list_context,
 		ListeningPort: v.GetString(LISTENINGPORT),
 		ResultsPort:   v.GetString(RESULTSPORT),
 		ResultsChan:   aggregator_chan,
 	}
+	DeclareExchanges(mid, list_context, v)
 	return lib.NewParser(config)
 }
 
@@ -96,12 +111,16 @@ func main() {
 		logrus.Fatalf("could not initialize config: %s", err)
 	}
 	utils.PrintConfig(v, CONFIG_VARS...)
-	agg, err := getAggregator(v)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	agg, err := getAggregator(v, ctx)
 	if err != nil {
 		logrus.Fatalf("error creating agregator: %s", err)
 	}
 	aggC := agg.GetChan()
-	parser, err := getListener(v, aggC)
+
+	parser, err := getListener(v, aggC, ctx)
+	
 	if err != nil {
 		logrus.Fatalf("error creating parser: %s", err)
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"io"
 )
 
 
@@ -21,7 +20,7 @@ func CoordMarshal(coords CoordinatesData) (buf []byte) {
 
 	buf = append(buf, CoordFlag)
 
-	buf = append(buf, coords.AirportCode[:]...)
+	buf = AppendString(buf, coords.AirportCode)
 
 	var w bytes.Buffer
 	binary.Write(&w, binary.LittleEndian, &coords.Latitude)
@@ -34,10 +33,10 @@ func CoordMarshal(coords CoordinatesData) (buf []byte) {
 
 
 func CoordUnmarshal(r *bytes.Reader) (data CoordinatesData, err error) {
-	buf := make([]byte, 3)
-	_, err = io.ReadFull(r, buf)
+	
+	
 	if err == nil {
-		data.AirportCode = string(buf)
+		data.AirportCode, err = ReadString(r)
 	}
 	if err == nil {
 		err = binary.Read(r, binary.LittleEndian, &(data.Latitude))
@@ -59,7 +58,7 @@ func DistanceFilterUnmarshal(buf []byte) (dataType int, data any, err error) {
 		err = errors.New("stream is empty")
 		return
 	}
-	r := bytes.NewReader(buf)
+	r := bytes.NewReader(buf[1:])
 	switch buf[0] {
 	case Query2Flag:
 		dataType = 2

@@ -9,4 +9,4 @@ coordsfile: "./data/airports-codepublic.csv"
 server:
   addr: "127.0.0.1"
   data: "6666"
-  results: "6667"
+  results: "7777"

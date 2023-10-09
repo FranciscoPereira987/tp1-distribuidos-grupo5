@@ -1,6 +1,6 @@
 times: 4
 
 source:
-  url: "rabbit-url"
-  data: "data-exchange-name"
-  sink: "results-exchange-name"
+  url: "amqp://guest:guest@localhost:5672/"
+  data: "distance"
+  sink: "results"

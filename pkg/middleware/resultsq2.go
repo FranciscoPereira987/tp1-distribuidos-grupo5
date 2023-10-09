@@ -25,7 +25,7 @@ func Q2Marshal(data DataQ2) []byte {
 type ResultQ2 DataQ2
 
 type DataQ2 struct {
-	ID          [16]byte
+	ID          [32]byte
 	Origin      string
 	Destination string
 	
@@ -33,7 +33,9 @@ type DataQ2 struct {
 }
 
 func Q2Unmarshal(r *bytes.Reader) (data DataQ2, err error) {
+
 	_, err = io.ReadFull(r, data.ID[:])
+
 	if err == nil {
 		data.Origin, err = ReadString(r)
 	}

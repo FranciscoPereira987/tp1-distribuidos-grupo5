@@ -9,7 +9,9 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY . .
+COPY pkg/ /pkg/
+COPY cmd/interface/lib/ cmd/interface/lib/
+COPY cmd/interface/main.go cmd/interface/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/hello github.com/franciscopereira987/tp1-distribuidos/cmd/interface
 
 

@@ -138,8 +138,7 @@ func (parser *Parser) Run() error {
 	data, results, err := parser.listener.Accept()
 	if err != nil {
 		logrus.Errorf("action: waiting conection | result: failed | reason: %s", err)
-		data.Shutdown()
-		results.Shutdown()
+		
 		return err
 	}
 	
@@ -152,10 +151,10 @@ func (parser *Parser) Run() error {
 			
 			if err.Error() == "connection closed" {
 				logrus.Info("client finished sending its data")
-				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
+				//err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
 				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))
-				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
-				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
+				//err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
+				//err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
 				break
 			}
 			continue
@@ -164,13 +163,13 @@ func (parser *Parser) Run() error {
 		switch messageType.(type) {
 		case (*distance.CoordWrapper):
 			data := messageType.(*distance.CoordWrapper).IntoCoordData()
-			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "", middleware.CoordMarshal(data))
+			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*reader.FlightDataType):
 			data := messageType.(*reader.FlightDataType)
-			err = parser.publishQuery1(data)
+			//err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
-			err = errors.Join(err, parser.publishQuery3(data))
-			err = errors.Join(err, parser.publishQuery4(data))
+			//err = errors.Join(err, parser.publishQuery3(data))
+			//err = errors.Join(err, parser.publishQuery4(data))
 			if err != nil {
 				return err
 			}

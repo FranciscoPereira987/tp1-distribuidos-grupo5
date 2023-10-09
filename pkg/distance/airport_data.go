@@ -117,10 +117,10 @@ func (data *AirportDataType) AsRecord() []string {
 
 func (data AirportDataType) IntoQ2Data() (midData middleware.DataQ2) {
 
-	midData.ID = [16]byte(data.id.Serialize())
+	midData.ID = [32]byte([]byte(data.id.Value()))
 
 	midData.Origin = data.origin.Value()
-	midData.Destination = data.origin.Value()
+	midData.Destination = data.destination.Value()
 	midData.TotalDistance = data.totalDistance.Value
 
 	return

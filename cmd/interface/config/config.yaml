@@ -7,11 +7,11 @@ exchange:
 
 workers:
   first: 1
-  second: 1
+  second: 2
   third: 1
   fourth: 1
   
-source: "rabbit-url"
+source: "amqp://guest:guest@localhost:5672/"
 
 server:
   dataport: "6666"

@@ -56,11 +56,12 @@ func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, s
 	if err != nil {
 		return
 	}
-	shardKey := []string{id, "control"}
+	shardKey := []string{id, "control", "coord"}
 	err = mid.QueueBind(name, data, shardKey)
 	if err != nil {
 		return
 	}
+	data = name
 	return
 }
 
@@ -90,4 +91,5 @@ func main() {
 		log.Fatalf("error during run: %s", err)
 	}
 	worker.Shutdown()
+	utils.PrintConfig(v, CONFIG_VARS...)
 }

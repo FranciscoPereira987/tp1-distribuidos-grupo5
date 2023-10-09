@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/sirupsen/logrus"
 )
 
 type Middleware struct {
@@ -111,6 +112,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 			case d := <-msgs:
 				if strings.HasSuffix(d.RoutingKey, "control") {
 					m.countEOF--
+					logrus.Info("recieved control message")
 					if m.countEOF <= 0 {
 						return
 					}

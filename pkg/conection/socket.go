@@ -22,12 +22,11 @@ func NewSocketConnection(at string) (con Conn, err error) {
 	return
 }
 
-func FromListener(listener net.Listener) (con Conn, err error) {
+func FromListener(listener net.Listener) (Conn, error) {
 	sckt, err := listener.Accept()
-	con = &socket{
+	return &socket{
 		dial: sckt,
-	}
-	return 
+	}, err
 }
 
 /*

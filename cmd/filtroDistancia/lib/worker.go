@@ -54,12 +54,13 @@ func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
 
 func (worker *Worker) handleFilter(value middleware.DataQ2) {
 	greaterThanX, err := distance.GreaterThanXTimes(worker.config.Times, *worker.computer, value)
+	
 	if err != nil {
 		log.Printf("error processing data: %s", err)
 		return
 	}
 	if greaterThanX {
-		logrus.Infof("filtered flight: %s", value.ID)
+		logrus.Infof("filtered flight: %s", string(value.ID[:]))
 		worker.config.Mid.PublishWithContext(worker.config.Ctx, "",
 		worker.config.Sink, middleware.Q2Marshal(value))
 	}
@@ -104,6 +105,7 @@ func (worker *Worker) handleData(buf []byte) error {
 
 	_, data, err := middleware.DistanceFilterUnmarshal(buf)
 	if err != nil {
+		
 		return err
 	}
 

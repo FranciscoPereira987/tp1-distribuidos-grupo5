@@ -9,8 +9,7 @@ var (
 	DATA_FIN_TYPE_NUMBER = byte(0x07)
 )
 
-type DataFin struct{
-	
+type DataFin struct {
 }
 
 func (data *DataFin) Number() byte {
@@ -20,8 +19,6 @@ func (data *DataFin) Number() byte {
 func FinData() *DataFin {
 	return &DataFin{}
 }
-
-
 
 func (data *DataFin) Trim(stream []byte) []byte {
 	if err := utils.CheckHeader(data, stream); err != nil {

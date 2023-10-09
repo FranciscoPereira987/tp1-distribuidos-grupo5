@@ -3,12 +3,12 @@ package utils
 import "io"
 
 /*
-	Implements the Flood protocol
-	and returns wether the flush has ended based on a counter
+Implements the Flood protocol
+and returns wether the flush has ended based on a counter
 */
 type Flooder struct {
 	counter int
-	seen bool
+	seen    bool
 }
 
 func NewFlooder() *Flooder {
@@ -22,8 +22,8 @@ func (f *Flooder) Increase() {
 }
 
 func (f *Flooder) Flood(value int, buf []byte, writer io.Writer) error {
-	if value == 0 && f.seen{
-		
+	if value == 0 && f.seen {
+
 		return nil
 	}
 	_, err := writer.Write(buf)
@@ -34,8 +34,8 @@ func (f *Flooder) Reduce(value int) int {
 	if f.seen {
 		return value
 	}
-	
+
 	f.seen = true
-	
+
 	return value - f.counter
 }

@@ -11,14 +11,13 @@ import (
 
 type AgregatorConfig struct {
 	AgregatorQueue string
-	Mid *middleware.Middleware
-	Ctx context.Context
+	Mid            *middleware.Middleware
+	Ctx            context.Context
 }
 
 type Agregator struct {
 	config        AgregatorConfig
 	listeningChan chan *protocol.Protocol
-	
 }
 
 func NewAgregator(config AgregatorConfig) *Agregator {
@@ -28,15 +27,12 @@ func NewAgregator(config AgregatorConfig) *Agregator {
 	}
 }
 
-func (agg *Agregator) GetChan() (chan<- *protocol.Protocol) {
+func (agg *Agregator) GetChan() chan<- *protocol.Protocol {
 	return agg.listeningChan
 }
 
-
-
-
 func (agg *Agregator) Run() error {
-	defer func () {
+	defer func() {
 		agg.config.Mid.Close()
 	}()
 	results := <-agg.listeningChan
@@ -48,7 +44,7 @@ func (agg *Agregator) Run() error {
 		return err
 	}
 	for {
-		data, more := <- ch
+		data, more := <-ch
 		if !more {
 			logrus.Info("action: sending results | status: finished")
 			break
@@ -61,6 +57,6 @@ func (agg *Agregator) Run() error {
 			results.Send(data)
 		}
 	}
-	
+
 	return nil
 }

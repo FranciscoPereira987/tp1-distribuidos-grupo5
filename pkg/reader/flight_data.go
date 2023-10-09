@@ -151,7 +151,6 @@ func (flight *FlightDataType) IntoDistanceData() *distance.AirportDataType {
 	return data
 }
 
-
 func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilterData) {
 	data.ID = [16]byte([]byte(flight.id.Value()))
 	data.Origin = flight.origin.Value()
@@ -173,5 +172,5 @@ func (flight *FlightDataType) IntoAvgFilterData() (data middleware.AvgFilterData
 	data.Destination = flight.destination.Value()
 	data.Price = float32(flight.fare.Value)
 	return
-	
+
 }

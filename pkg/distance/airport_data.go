@@ -105,15 +105,12 @@ func (data AirportDataType) calculateDistance(computer DistanceComputer) (float6
 	return computer.CalculateDistance(data.origin.Value(), data.destination.Value())
 }
 
-
-
 func (data *AirportDataType) AsRecord() []string {
 	record := data.id.AsRecord()
 	record = append(record, data.origin.AsRecord()...)
 	record = append(record, data.destination.AsRecord()...)
 	return append(record, data.totalDistance.AsRecord()...)
 }
-
 
 func (data AirportDataType) IntoQ2Data() (midData middleware.DataQ2) {
 

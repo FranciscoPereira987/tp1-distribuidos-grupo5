@@ -16,8 +16,8 @@ var (
 	TIMES       = "times"
 	DATA_ADDR   = "source.data"
 	RESULT_ADDR = "source.sink"
-	ID = "id"
-	SOURCE = "source.url"
+	ID          = "id"
+	SOURCE      = "source.url"
 
 	CONFIG_VARS = []string{
 		TIMES,

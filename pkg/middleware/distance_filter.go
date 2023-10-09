@@ -6,15 +6,12 @@ import (
 	"errors"
 )
 
-
 type CoordinatesData struct {
 	AirportCode string
 
 	Latitude float64
 	Longitud float64
 }
-
-
 
 func CoordMarshal(coords CoordinatesData) (buf []byte) {
 
@@ -31,10 +28,8 @@ func CoordMarshal(coords CoordinatesData) (buf []byte) {
 	return
 }
 
-
 func CoordUnmarshal(r *bytes.Reader) (data CoordinatesData, err error) {
-	
-	
+
 	if err == nil {
 		data.AirportCode, err = ReadString(r)
 	}
@@ -49,9 +44,9 @@ func CoordUnmarshal(r *bytes.Reader) (data CoordinatesData, err error) {
 }
 
 /*
-	Returns the corresponding data based on the buf value
-	1 => CoordinatesData type
-	2 => DataQ2 type
+Returns the corresponding data based on the buf value
+1 => CoordinatesData type
+2 => DataQ2 type
 */
 func DistanceFilterUnmarshal(buf []byte) (dataType int, data any, err error) {
 	if len(buf) < 1 {
@@ -72,4 +67,3 @@ func DistanceFilterUnmarshal(buf []byte) (dataType int, data any, err error) {
 
 	return
 }
-

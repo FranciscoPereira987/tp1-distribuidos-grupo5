@@ -53,7 +53,7 @@ or returns an error
 func (s *socket) Write(buf []byte) (writen int, err error) {
 	for len(buf) > 0 {
 		newlyWriten, writeErr := s.dial.Write(buf)
-		
+
 		if writeErr != nil {
 			err = writeErr
 			break

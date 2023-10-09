@@ -105,7 +105,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("could not initialize logger: %s", err)
 	}
-	v, err := utils.InitConfig("./cmd/interface/config/config.yaml", CONFIG_VARS...)
+	v, err := utils.InitConfig("ifz", "./cmd/interface/config/config.yaml")
 	if err != nil {
 		logrus.Fatalf("could not initialize config: %s", err)
 	}

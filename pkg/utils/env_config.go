@@ -6,18 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-func InitConfig(configPath string, configVars ...string) (*viper.Viper, error) {
+func InitConfig(prefix, configPath string) (*viper.Viper, error) {
 	v := viper.New()
 
 	v.AutomaticEnv()
-	v.SetEnvPrefix("cli")
+	v.SetEnvPrefix(prefix)
 
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	for _, envVar := range configVars {
-		newVar := strings.Split(envVar, ".")
-		v.BindEnv(newVar...)
-	}
 
 	v.SetConfigFile(configPath)
 	if err := v.ReadInConfig(); err != nil {

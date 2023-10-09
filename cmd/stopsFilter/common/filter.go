@@ -60,7 +60,7 @@ loop:
 			}
 		}
 		if strings.Count(data.Stops, stopsSep) >= 3 {
-			err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q1Marshal(data))
+			err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q1Marshal(data))
 			if err != nil {
 				return err
 			}
@@ -69,7 +69,7 @@ loop:
 	}
 	for _, arr := range fastest {
 		for _, v := range arr {
-			err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q3Marshal(v))
+			err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q3Marshal(v))
 			if err != nil {
 				return err
 			}

@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -25,9 +28,12 @@ func DefaultLogger() error {
 }
 
 func PrintConfig(v *viper.Viper, configVars ...string) {
-	var varsString string
-	for _, variable := range configVars {
-		varsString += variable + "=" + v.GetString(variable) + "; "
+	var b strings.Builder
+	for i, variable := range configVars {
+		if i > 0 {
+			b.WriteString("; ")
+		}
+		fmt.Fprintf(&b, "%s=%s", variable, v.GetString(variable))
 	}
-	logrus.Infof("action: config | result: success | variables: %s", varsString)
+	logrus.Debug("action: config | result: success | variables: ", b.String())
 }

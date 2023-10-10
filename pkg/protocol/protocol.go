@@ -150,11 +150,12 @@ func (proto *Protocol) Recover(data Data) error {
 	if err != nil {
 		return err
 	}
-
+	
 	if err := data.UnMarshal(stream); err != nil {
-
+		
 		return proto.manageInvalidData(stream, err)
 	}
+	
 	response := data.Response()
 
 	return proto.sendMessage(response)

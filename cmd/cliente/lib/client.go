@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -45,7 +44,7 @@ func getFiles(config ClientConfig) []string {
 }
 
 func getResultTypes() []typing.Type {
-	types := []typing.Type{&distance.AirportDataType{}}
+	types := []typing.Type{typing.NewResultQ2()}
 	return types
 }
 
@@ -95,7 +94,7 @@ func NewClient(config ClientConfig) (*Client, error) {
 
 func getClientMultiData() protocol.Data {
 	data := protocol.NewMultiData()
-	flights, _ := distance.NewAirportData("", "", "", 0)
+	flights := typing.NewResultQ2()
 	data.Register(protocol.NewDataMessage(flights))
 	return data
 }

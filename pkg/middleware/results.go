@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	Query1Flag = iota
+	FlightType = iota
+	Query1Flag
 	Query2Flag
 	Query3Flag
 	Query4Flag

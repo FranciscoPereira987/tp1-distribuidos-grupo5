@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/umahmood/haversine"
 )
 
@@ -36,4 +37,12 @@ func (comp DistanceComputer) CalculateDistance(origin string, destination string
 	}
 	distance, _ := haversine.Distance(originCoor, destinationCoor)
 	return distance, nil
+}
+
+func (computer DistanceComputer) GreaterThanXTimes(x int, data middleware.DataQ2) (bool, error) {
+	distance, err := computer.CalculateDistance(data.Origin, data.Destination)
+	if err != nil {
+		return false, err
+	}
+	return float64(data.TotalDistance) > float64(x)*distance, nil
 }

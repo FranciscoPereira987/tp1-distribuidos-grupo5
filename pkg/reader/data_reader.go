@@ -2,12 +2,14 @@ package reader
 
 import (
 	"encoding/csv"
+	"encoding/hex"
 	"errors"
 	"os"
 	"regexp"
 	"strconv"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 var (
@@ -63,23 +65,19 @@ func (reader *DataReader) ReadData() (protocol.Data, error) {
 	if err != nil {
 		return nil, err
 	}
-	fare, err := strconv.ParseFloat(line[FARE], 64)
+	data := typing.NewFlightData()
+	
+	id, err := hex.DecodeString(line[ID])
 	if err != nil {
 		return nil, err
 	}
-	distance, err := strconv.ParseFloat(line[DISTANCE], 64)
-	if err != nil {
-		return nil, err
-	}
-	duration, err := ParseDuration(line[DURATION])
-	if err != nil {
-		return nil, err
-	}
-	data, err := NewFlightDataType(line[ID], line[ORIGIN], line[DESTINATION], duration,
-		fare, int(distance), line[STOPS])
-	if err != nil {
-		return nil, err
-	}
+	data.Id = [16]byte(id)
+	data.Origin = line[ORIGIN]
+	data.Destination = line[DESTINATION]
+	data.Duration = line[DURATION]
+	data.Fare = line[FARE]
+	data.Distance = line[DISTANCE]
+	data.Stops = line[STOPS]
 	return protocol.NewDataMessage(data), nil
 }
 

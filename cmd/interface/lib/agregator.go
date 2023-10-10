@@ -3,9 +3,9 @@ package lib
 import (
 	"context"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,8 +51,10 @@ func (agg *Agregator) Run() error {
 		}
 		_, result, err := middleware.DistanceFilterUnmarshal(data)
 		if err == nil {
+			logrus.Infof("Sending Query2 results: %s", result)
 			value := result.(middleware.DataQ2)
-			dataType, _ := distance.NewAirportData(string(value.ID[:]), value.Origin, value.Destination, value.TotalDistance)
+			dataType := typing.NewResultQ2()
+			dataType.Value = value
 			data := protocol.NewDataMessage(dataType)
 			results.Send(data)
 		}

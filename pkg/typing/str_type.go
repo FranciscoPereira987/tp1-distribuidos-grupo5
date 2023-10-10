@@ -16,6 +16,10 @@ type StrType struct {
 	value string
 }
 
+func New() *StrType {
+	return &StrType{""}
+}
+
 func NewStr(str string) (*StrType, error) {
 	if len(str) > math.MaxInt16 {
 		return nil, errors.New("string too large")

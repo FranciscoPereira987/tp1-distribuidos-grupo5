@@ -50,7 +50,7 @@ func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
 }
 
 func (worker *Worker) handleFilter(value middleware.DataQ2) {
-	greaterThanX, err := distance.GreaterThanXTimes(worker.config.Times, *worker.computer, value)
+	greaterThanX, err := worker.computer.GreaterThanXTimes(worker.config.Times, value)
 
 	if err != nil {
 		log.Printf("error processing data: %s", err)

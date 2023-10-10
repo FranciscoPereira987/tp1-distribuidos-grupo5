@@ -10,7 +10,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
 )
 
@@ -64,21 +64,22 @@ func NewParser(config ParserConfig) (*Parser, error) {
 	}, nil
 }
 
-func (parser *Parser) publishQuery1(data *reader.FlightDataType) (err error) {
+func (parser *Parser) publishQuery1(data *typing.FlightDataType) (err error) {
 	flight := data.IntoStopsFilterData()
 	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query1, key, middleware.Q1Marshal(flight))
 	return
 }
 
-func (parser *Parser) publishQuery2(data *reader.FlightDataType) (err error) {
-	flight := data.IntoDistanceData().IntoQ2Data()
+func (parser *Parser) publishQuery2(data *typing.FlightDataType) (err error) {
+	flight := data.IntoDistanceData()
+	logrus.Infof("data: %s", flight)
 	key := parser.query2Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, key, middleware.Q2Marshal(flight))
 	return
 }
 
-func (parser *Parser) publishQuery3(data *reader.FlightDataType) (err error) {
+func (parser *Parser) publishQuery3(data *typing.FlightDataType) (err error) {
 	flight := data.IntoStopsFilterData()
 	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query3, key, middleware.Q1Marshal(flight))
@@ -86,7 +87,7 @@ func (parser *Parser) publishQuery3(data *reader.FlightDataType) (err error) {
 	return
 }
 
-func (parser *Parser) publishQuery4(data *reader.FlightDataType) (err error) {
+func (parser *Parser) publishQuery4(data *typing.FlightDataType) (err error) {
 	flight := data.IntoAvgFilterData()
 	key := parser.query4Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query4, key, middleware.AvgMarshal(flight))
@@ -164,8 +165,8 @@ func (parser *Parser) Run() error {
 		case (*distance.CoordWrapper):
 			data := messageType.(*distance.CoordWrapper).IntoCoordData()
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
-		case (*reader.FlightDataType):
-			data := messageType.(*reader.FlightDataType)
+		case (*typing.FlightDataType):
+			data := messageType.(*typing.FlightDataType)
 			//err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
 			//err = errors.Join(err, parser.publishQuery3(data))

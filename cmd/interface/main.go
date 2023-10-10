@@ -51,6 +51,13 @@ var (
 		QUERY3WORKERS,
 		QUERY4WORKERS,
 	}
+
+	EXCHANGE_VARS = []string{
+		QUERY1EXCHANGE,
+		QUERY2EXCHANGE,
+		QUERY3EXCHANGE,
+		QUERY4EXCHANGE,
+	}
 )
 
 func getTotalWorkers(v *viper.Viper) (total int) {
@@ -83,10 +90,12 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 }
 
 func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
-	_, err = mid.ExchangeDeclare(v.GetString(QUERY1EXCHANGE), "direct")
-	if err == nil {
-		_, err = mid.ExchangeDeclare(v.GetString(QUERY2EXCHANGE), "direct")
-	}
+	for _, name := range EXCHANGE_VARS {
+		_, err = mid.ExchangeDeclare(name, "direct")
+		if err != nil {
+			return 
+		}
+	} 
 
 	return
 }

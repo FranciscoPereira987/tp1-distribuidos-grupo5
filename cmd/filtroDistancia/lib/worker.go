@@ -17,6 +17,7 @@ type WorkerConfig struct {
 	Mid    *middleware.Middleware
 	Source string
 	Sink   string
+	Status string
 	Times  int
 	Ctx    context.Context
 }
@@ -120,7 +121,8 @@ func (worker *Worker) Run() error {
 	if err != nil {
 		return err
 	}
-
+	worker.config.Mid.EOF(worker.config.Ctx, worker.config.Status)
+	logrus.Info("distance filter worker up")
 	for !worker.finished {
 		select {
 		case <-worker.config.Ctx.Done():

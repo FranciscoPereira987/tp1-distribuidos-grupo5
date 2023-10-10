@@ -29,6 +29,7 @@ var (
 	RESULTSPORT   = "server.resultsport"
 
 	AGG_QUEUE = "exchange.agregator"
+	WAITQUEUE = "exchange.status"
 
 	CONFIG_VARS = []string{
 		QUERY1EXCHANGE,
@@ -95,6 +96,12 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 	if err != nil {
 		return nil, err
 	}
+	name, err := mid.QueueDeclare(v.GetString(WAITQUEUE))
+	if err != nil {
+		return nil, err
+	}
+	mid.ExchangeDeclare(name, "direct")
+	mid.QueueBind(name, name, []string{"control"})
 	config := lib.ParserConfig{
 		Query1:        v.GetString(QUERY1EXCHANGE),
 		Workers1:      v.GetInt(QUERY1WORKERS),
@@ -105,6 +112,8 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 		Query4:        v.GetString(QUERY4EXCHANGE),
 		Workers4:      v.GetInt(QUERY4WORKERS),
 		Mid:           mid,
+		WaitQueue: v.GetString(WAITQUEUE),
+		TotalWorkers: getTotalWorkers(v),
 		Ctx:           list_context,
 		ListeningPort: v.GetString(LISTENINGPORT),
 		ResultsPort:   v.GetString(RESULTSPORT),

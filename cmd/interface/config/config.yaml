@@ -4,12 +4,13 @@ exchange:
   third: "duration"
   fourth: "avg"
   agregator: "results"
+  status: "status"
 
 workers:
-  first: 1
-  second: 1
-  third: 1
-  fourth: 1
+  first: 0
+  second: 2
+  third: 0
+  fourth: 0
   
 source: "amqp://guest:guest@localhost:5672/"
 

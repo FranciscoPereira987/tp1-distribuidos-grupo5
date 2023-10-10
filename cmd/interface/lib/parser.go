@@ -24,6 +24,9 @@ type ParserConfig struct {
 	Query4   string
 	Workers4 int
 
+	WaitQueue string
+	TotalWorkers int
+
 	Mid *middleware.Middleware
 
 	ListeningPort string
@@ -93,6 +96,25 @@ func (parser *Parser) publishQuery4(data *typing.FlightDataType) (err error) {
 	return
 }
 
+func (parser *Parser) waitForWorkers() (wait chan error) {
+	wait = make(chan error, 1)
+	
+	go func ()  {
+		defer close(wait)
+		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers, parser.config.WaitQueue)
+		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
+		parser.config.Mid.SetExpectedEOFCount(parser.config.TotalWorkers)
+		more := true
+		for ;more; _, more = <- ch {
+			logrus.Info("action: waiting for workers | info: worker up")
+		}
+		logrus.Infof("action: waiting for %d workers | result: finished", parser.config.TotalWorkers)
+		wait <- err
+	}()
+
+	return
+}
+
 func (parser *Parser) Start(agg *Agregator) error {
 	sig := make(chan os.Signal, 1)
 	result := make(chan error, 1)
@@ -106,9 +128,9 @@ func (parser *Parser) Start(agg *Agregator) error {
 	defer close(endResult)
 
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-
+	workers := parser.waitForWorkers()
 	go func() {
-		result <- parser.Run()
+		result <- parser.Run(workers)
 	}()
 
 	go func() {
@@ -121,6 +143,8 @@ func (parser *Parser) Start(agg *Agregator) error {
 
 		endResult <- errors.Join(parserResult, agregatorResult)
 	}()
+	
+	
 
 	select {
 	case <-parser.config.Ctx.Done():
@@ -133,7 +157,8 @@ func (parser *Parser) Start(agg *Agregator) error {
 
 }
 
-func (parser *Parser) Run() error {
+func (parser *Parser) Run(workers <-chan error) error {
+	
 	logrus.Info("action: waiting connection | result: in progress")
 	data, results, err := parser.listener.Accept()
 	if err != nil {
@@ -141,12 +166,15 @@ func (parser *Parser) Run() error {
 
 		return err
 	}
-
+	if err := <- workers; err != nil {
+		logrus.Infof("action: waiting for workers | result: failed | reason: %s", err)
+		return err
+	}
+	logrus.Info("action: waiting for workers | results: success")
 	parser.config.ResultsChan <- results
-
+	
 	message := getDataMessages()
 	for {
-		logrus.Info("recovering message")
 		if err := data.Recover(message); err != nil {
 		
 			if err.Error() == protocol.ErrConnectionClosed.Error() {

@@ -18,13 +18,14 @@ var (
 	RESULT_ADDR = "source.sink"
 	ID          = "id"
 	SOURCE      = "source.url"
-
+	STATUS = "source.status"
 	CONFIG_VARS = []string{
 		TIMES,
 		DATA_ADDR,
 		RESULT_ADDR,
 		ID,
 		SOURCE,
+		STATUS,
 	}
 )
 
@@ -45,6 +46,7 @@ func getConfig(v *viper.Viper) (config lib.WorkerConfig, cancel context.CancelFu
 	config.Times = v.GetInt(TIMES)
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Ctx = ctx
+	config.Status = v.GetString(STATUS)
 	return
 }
 

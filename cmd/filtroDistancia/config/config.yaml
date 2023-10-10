@@ -4,3 +4,4 @@ source:
   url: "amqp://guest:guest@localhost:5672/"
   data: "distance"
   sink: "results"
+  status: "status"

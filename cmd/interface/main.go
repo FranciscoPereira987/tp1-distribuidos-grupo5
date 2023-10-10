@@ -57,7 +57,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	}
 	mid.ExchangeDeclare(v.GetString(AGG_QUEUE), "direct")
 	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
-	mid.SetExpectedEOFCount(2)
+	mid.SetExpectedEOFCount(1)
 	config := lib.AgregatorConfig{
 		Mid:            mid,
 		AgregatorQueue: v.GetString(AGG_QUEUE),

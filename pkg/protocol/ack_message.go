@@ -45,13 +45,6 @@ func NewFinAckMessage() Message {
 	}
 }
 
-func (hello *AckMessage) IsResponseFrom(message Message) bool {
-	otherAck, ok := message.Response().(*AckMessage)
-	if ok {
-		ok = otherAck.ack_body.IsAckFrom(hello.ack_body)
-	}
-	return ok
-}
 
 func (hello *AckMessage) Number() byte {
 	return ACK_OP_CODE

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/sirupsen/logrus"
 )
 
 var ErrNotConnected = errors.New("not connected")
@@ -51,11 +52,10 @@ func (proto *Protocol) readMessage() ([]byte, error) {
 	return append(header, body...), nil
 }
 
-func (proto *Protocol) manageResponse(message Message, sent Message) error {
-	if !message.IsResponseFrom(sent) {
-
+func (proto *Protocol) manageHelloAck(message Message) error {
+	if _, ok := message.(*AckMessage); !ok {
+		logrus.Infof("got %s", message)
 		if _, ok := message.(*FinMessage); ok {
-			proto.sendMessage(NewFinAckMessage())
 			return ErrConnectionClosed
 		}
 
@@ -95,7 +95,7 @@ func (proto *Protocol) Connect() error {
 	if err := recovered.UnMarshal(stream); err != nil {
 		return err
 	}
-	if err := proto.manageResponse(recovered, hello); err != nil {
+	if err := proto.manageHelloAck(recovered); err != nil {
 		return err
 	}
 	proto.connected = true
@@ -137,8 +137,7 @@ Need to check just for a Fin Message. Otherwise its an invalid message
 func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 	fin, _ := proto.registry.GetMessage(stream)
 
-	if finM, ok := fin.(*FinMessage); ok {
-		proto.sendMessage(finM.Response())
+	if _, ok := fin.(*FinMessage); ok {
 		proto.connected = false
 		return ErrConnectionClosed
 	}
@@ -161,9 +160,7 @@ func (proto *Protocol) Recover(data Data) error {
 		return proto.manageInvalidData(stream, err)
 	}
 	
-	response := data.Response()
-
-	return proto.sendMessage(response)
+	return nil
 }
 
 func (proto *Protocol) Send(data Data) error {
@@ -174,18 +171,8 @@ func (proto *Protocol) Send(data Data) error {
 	if err := proto.sendMessage(data); err != nil {
 		return err
 	}
-	stream, err := proto.readMessage()
-	if err != nil {
-		return err
-	}
-	recovered, err := proto.registry.GetMessage(stream)
-	if err != nil {
-		return err
-	}
-	if err := recovered.UnMarshal(stream); err != nil {
-		return err
-	}
-	return proto.manageResponse(recovered, data)
+	
+	return nil
 }
 
 /*
@@ -200,8 +187,6 @@ func (proto *Protocol) Close() {
 		proto.connected = false
 		return
 	}
-
-	_, _ = proto.readMessage()
 
 	proto.connected = false
 	return

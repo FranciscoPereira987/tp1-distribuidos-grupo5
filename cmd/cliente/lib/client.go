@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"errors"
 	"io"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"

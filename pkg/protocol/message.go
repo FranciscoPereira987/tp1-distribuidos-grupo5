@@ -11,8 +11,6 @@ type Message interface {
 	utils.Numbered
 	Marshal() []byte
 	UnMarshal([]byte) error
-	Response() Message
-	IsResponseFrom(message Message) bool
 }
 
 func CheckMessageLength(stream []byte) (int, error) {

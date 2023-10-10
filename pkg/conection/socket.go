@@ -52,7 +52,8 @@ Safe write implementation, either writes the whole buffer
 or returns an error
 */
 func (s *socket) Write(buf []byte) (writen int, err error) {
-	return io.Copy(s.dial, bytes.NewReader(buf))
+	n, err := io.Copy(s.dial, bytes.NewReader(buf))
+	return int(n), err
 }
 
 func (s *socket) Close() error {

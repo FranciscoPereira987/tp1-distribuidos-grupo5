@@ -1,7 +1,6 @@
 package protocol_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"

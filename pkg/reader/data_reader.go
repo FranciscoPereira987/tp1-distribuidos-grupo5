@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	ID           = 1
-	ORIGIN       = 4
-	DESTINATION  = 5
-	DURATION     = 7
-	FARE         = 13
-	DISTANCE     = 15
-	STOPS        = 20
+	ID          = 1
+	ORIGIN      = 4
+	DESTINATION = 5
+	DURATION    = 7
+	FARE        = 13
+	DISTANCE    = 15
+	STOPS       = 20
 )
 
 type DataReader struct {
@@ -37,8 +37,6 @@ func NewDataReader(filepath string) (Reader, error) {
 	}, nil
 }
 
-
-
 func (reader *DataReader) ReadData() (protocol.Data, error) {
 	line, err := reader.csv.Read()
 	//log.Printf("line: %s, len: %d, field: %s", line, len(line), line[DISTANCE])
@@ -46,7 +44,7 @@ func (reader *DataReader) ReadData() (protocol.Data, error) {
 		return nil, err
 	}
 	data := typing.NewFlightData()
-	
+
 	id, err := hex.DecodeString(line[ID])
 	if err != nil {
 		return nil, err

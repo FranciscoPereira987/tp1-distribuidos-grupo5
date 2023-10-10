@@ -28,11 +28,11 @@ func ResultUnmarshal(buf []byte) (any, error) {
 	case Query1Flag:
 		return Q1Unmarshal(r)
 	case Query2Flag:
-	 	return Q2Unmarshal(r)
+		return Q2Unmarshal(r)
 	case Query3Flag:
 		return Q3Unmarshal(r)
-	 case Query4Flag:
-	 	return Q4Unmarshal(r)
+	case Query4Flag:
+		return Q4Unmarshal(r)
 	default:
 		return nil, fmt.Errorf("Unknown format specifier: %d", buf[0])
 	}

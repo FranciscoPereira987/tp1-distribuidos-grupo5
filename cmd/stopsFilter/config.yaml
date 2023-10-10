@@ -1,12 +1,8 @@
 # id: 1
-source:
-  name: "stops"
-  kind: "direct"
+source: "stops"
 queue: ""
 server:
   url: "amqp://guest:guest@rabbit:5672/"
-results:
-  name: "results"
-  kind: "direct"
+results: "results"
 log:
   level: "info"

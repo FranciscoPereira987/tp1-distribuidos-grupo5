@@ -9,12 +9,11 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-
 type ResultQ1 struct {
 	Value middleware.ResultQ1
 }
 
-func NewResultQ1() *ResultQ1{
+func NewResultQ1() *ResultQ1 {
 	return new(ResultQ1)
 }
 

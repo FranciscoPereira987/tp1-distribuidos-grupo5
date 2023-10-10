@@ -14,7 +14,10 @@ func InitConfig(prefix, configPath string) (*viper.Viper, error) {
 
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	v.SetConfigFile(configPath)
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(".")
+	v.AddConfigPath(configPath)
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err
 	}

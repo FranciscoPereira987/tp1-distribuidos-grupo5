@@ -166,11 +166,11 @@ func (proto *Protocol) Recover(data Data) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if err := data.UnMarshal(stream); err != nil {
 		return proto.manageInvalidData(stream, err)
 	}
-	
+
 	return nil
 }
 
@@ -191,7 +191,7 @@ func (proto *Protocol) Close() error {
 		return err
 	}
 	fin := &FinMessage{}
-	
+
 	err := proto.sendMessage(fin)
 	proto.buf.Flush()
 	proto.connected = false

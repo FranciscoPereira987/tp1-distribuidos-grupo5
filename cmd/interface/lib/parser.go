@@ -24,7 +24,7 @@ type ParserConfig struct {
 	Query4   string
 	Workers4 int
 
-	WaitQueue string
+	WaitQueue    string
 	TotalWorkers int
 
 	Mid *middleware.Middleware
@@ -98,14 +98,14 @@ func (parser *Parser) publishQuery4(data *typing.FlightDataType) (err error) {
 
 func (parser *Parser) waitForWorkers() (wait chan error) {
 	wait = make(chan error, 1)
-	
-	go func ()  {
+
+	go func() {
 		defer close(wait)
 		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers, parser.config.WaitQueue)
 		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
 		parser.config.Mid.SetExpectedEOFCount(parser.config.TotalWorkers)
 		missing := parser.config.TotalWorkers
-		for _, more := <- ch ;more; _, more = <- ch {
+		for _, more := <-ch; more; _, more = <-ch {
 			missing--
 			logrus.Infof("action: waiting for workers | info: missing: %d", missing)
 		}
@@ -144,8 +144,6 @@ func (parser *Parser) Start(agg *Agregator) error {
 
 		endResult <- errors.Join(parserResult, agregatorResult)
 	}()
-	
-	
 
 	select {
 	case <-parser.config.Ctx.Done():
@@ -169,17 +167,17 @@ func (parser *Parser) Run(workers <-chan error) error {
 
 		return err
 	}
-	if err := <- workers; err != nil {
+	if err := <-workers; err != nil {
 		logrus.Infof("action: waiting for workers | result: failed | reason: %s", err)
 		return err
 	}
 	logrus.Info("action: waiting for workers | results: success")
 	parser.config.ResultsChan <- results
-	
+
 	message := getDataMessages()
 	for {
 		if err := data.Recover(message); err != nil {
-		
+
 			if err.Error() == protocol.ErrConnectionClosed.Error() {
 				logrus.Info("client finished sending its data")
 				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)

@@ -18,7 +18,7 @@ var (
 	RESULT_ADDR = "source.sink"
 	ID          = "id"
 	SOURCE      = "source.url"
-	STATUS = "source.status"
+	STATUS      = "source.status"
 	CONFIG_VARS = []string{
 		TIMES,
 		DATA_ADDR,
@@ -62,10 +62,10 @@ func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, s
 	if err != nil {
 		return
 	}
-	mid.ExchangeDeclare(status, "direct")
+	mid.ExchangeDeclare(status)
 	mid.QueueBind(status, status, []string{"control"})
 	shardKey := []string{id, "control", "coord"}
-	mid.ExchangeDeclare(data, "direct")
+	mid.ExchangeDeclare(data)
 	err = mid.QueueBind(name, data, shardKey)
 	if err != nil {
 		return

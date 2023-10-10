@@ -16,10 +16,8 @@ type AckMessage struct {
 }
 
 func NewHelloAckMessage() Message {
-	return &AckMessage{
-	}
+	return &AckMessage{}
 }
-
 
 func (hello *AckMessage) Number() byte {
 	return ACK_OP_CODE

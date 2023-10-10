@@ -49,4 +49,3 @@ func (hello *HelloMessage) UnMarshal(stream []byte) error {
 	}
 	return nil
 }
-

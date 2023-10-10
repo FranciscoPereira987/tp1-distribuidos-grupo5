@@ -34,11 +34,11 @@ type ResultQ1 struct {
 
 func ResultQ1marshal(data ResultQ1) []byte {
 	filter := StopsFilterData{
-		ID: data.ID,
-		Origin: data.Origin,
+		ID:          data.ID,
+		Origin:      data.Origin,
 		Destination: data.Destination,
-		Price: data.Price,
-		Stops: data.Stops,
+		Price:       data.Price,
+		Stops:       data.Stops,
 	}
 	return Q1Marshal(filter)
 }

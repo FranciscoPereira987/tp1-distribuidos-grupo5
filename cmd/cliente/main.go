@@ -10,10 +10,10 @@ import (
 
 var (
 	RESULTS_DIR = "results.dir"
-	QUERY1 = "results.first"
-	QUERY2 = "results.second"
-	QUERY3 = "results.third"
-	QUERY4 = "results.fourth"
+	QUERY1      = "results.first"
+	QUERY2      = "results.second"
+	QUERY3      = "results.third"
+	QUERY4      = "results.fourth"
 	DATA_FILE   = "datafile"
 	COORDS_FILE = "coordsfile"
 
@@ -33,7 +33,7 @@ var (
 )
 
 func connecTo(addr string, port string) *connection.Conn {
-	conn, err := connection.Dial(addr,  port)
+	conn, err := connection.Dial(addr, port)
 	if err != nil {
 		logrus.Fatalf("error connecting: %s", err)
 	}

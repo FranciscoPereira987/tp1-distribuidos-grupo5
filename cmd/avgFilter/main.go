@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -14,59 +13,12 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/avgFilter/common"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
-
-func InitConfig() (*viper.Viper, error) {
-	v := viper.New()
-
-	// Configure viper to read env variables with the STOPS_ prefix
-	v.AutomaticEnv()
-	v.SetEnvPrefix("avg")
-	// Use a replacer to replace env variables underscores with points. This let us
-	// use nested configurations in the config file and at the same time define
-	// env variables for the nested configurations
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// Set defaults
-	v.SetDefault("source.kind", "direct")
-
-	// Try to read configuration from config file. If config file
-	// does not exists then ReadInConfig will fail but configuration
-	// can be loaded from the environment variables so we shouldn't
-	// return an error in that case
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-	v.AddConfigPath(".")
-	v.AddConfigPath("cmd/stopsFilter")
-	if err := v.ReadInConfig(); err != nil {
-		fmt.Fprintln(os.Stderr, "Configuration could not be read from config file. Using env variables instead")
-	}
-
-	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
-		return nil, fmt.Errorf("Could not parse AVG_ID env var as int: %w", err)
-	}
-
-	return v, nil
-}
-
-func InitLogger(logLevel string) error {
-	level, err := log.ParseLevel(logLevel)
-	if err != nil {
-		return err
-	}
-
-	customFormatter := &log.TextFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		FullTimestamp:   false,
-	}
-	log.SetFormatter(customFormatter)
-	log.SetLevel(level)
-	return nil
-}
 
 // Describes the topology around this node.
 func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("source.name"), v.GetString("source.kind"))
+	source, err := m.ExchangeDeclare(v.GetString("source"))
 	if err != nil {
 		return "", "", err
 	}
@@ -83,18 +35,20 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 		return "", "", err
 	}
 
-	sink, err := m.ExchangeDeclare(v.GetString("results.name"), v.GetString("results.kind"))
+	sink, err := m.ExchangeDeclare(v.GetString("results"))
 	return q, sink, err
 }
 
 func main() {
-	v, err := InitConfig()
+	v, err := utils.InitConfig("avg", "cmd/avgFilter")
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	if err := InitLogger(v.GetString("log.level")); err != nil {
+	if err := utils.InitLogger(v.GetString("log.level")); err != nil {
 		log.Fatal(err)
+	}
+	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
+		log.Fatal(fmt.Errorf("Could not parse AVG_ID env var as int: %w", err))
 	}
 
 	middleware, err := mid.Dial(v.GetString("server.url"))

@@ -20,4 +20,3 @@ func CheckTypeLength(typeLength int, stream []byte) error {
 
 	return nil
 }
-

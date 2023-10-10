@@ -45,7 +45,7 @@ var (
 		AGG_QUEUE,
 	}
 
-	WORKER_VARS = []string {
+	WORKER_VARS = []string{
 		QUERY1WORKERS,
 		QUERY2WORKERS,
 		QUERY3WORKERS,
@@ -64,7 +64,7 @@ func getTotalWorkers(v *viper.Viper) (total int) {
 	for _, value := range WORKER_VARS {
 		total += v.GetInt(value)
 	}
-	return 
+	return
 }
 
 func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator, error) {
@@ -77,7 +77,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	if err != nil {
 		return nil, err
 	}
-	mid.ExchangeDeclare(v.GetString(AGG_QUEUE), "direct")
+	mid.ExchangeDeclare(v.GetString(AGG_QUEUE))
 	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
 	mid.SetExpectedEOFCount(getTotalWorkers(v))
 	config := lib.AgregatorConfig{
@@ -91,12 +91,12 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 
 func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
 	for _, name := range EXCHANGE_VARS {
-		eName, err := mid.ExchangeDeclare(v.GetString(name), "direct")
+		eName, err := mid.ExchangeDeclare(v.GetString(name))
 		logrus.Infof("action: exchange declaration | info: declared: %s", eName)
 		if err != nil {
 			return err
 		}
-	} 
+	}
 
 	return
 }
@@ -110,7 +110,7 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 	if err != nil {
 		return nil, err
 	}
-	mid.ExchangeDeclare(name, "direct")
+	mid.ExchangeDeclare(name)
 	mid.QueueBind(name, name, []string{"control"})
 	config := lib.ParserConfig{
 		Query1:        v.GetString(QUERY1EXCHANGE),
@@ -122,8 +122,8 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 		Query4:        v.GetString(QUERY4EXCHANGE),
 		Workers4:      v.GetInt(QUERY4WORKERS),
 		Mid:           mid,
-		WaitQueue: v.GetString(WAITQUEUE),
-		TotalWorkers: getTotalWorkers(v),
+		WaitQueue:     v.GetString(WAITQUEUE),
+		TotalWorkers:  getTotalWorkers(v),
 		Ctx:           list_context,
 		ListeningPort: v.GetString(LISTENINGPORT),
 		ResultsPort:   v.GetString(RESULTSPORT),

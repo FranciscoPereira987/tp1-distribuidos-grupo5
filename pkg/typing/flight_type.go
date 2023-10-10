@@ -16,17 +16,17 @@ const (
 )
 
 type FlightDataType struct {
-	Id [16]byte
-	Origin string
+	Id          [16]byte
+	Origin      string
 	Destination string
-	Duration string
-	Fare string
-	Distance string
+	Duration    string
+	Fare        string
+	Distance    string
 
 	Stops string
 }
 
-func NewFlightData() *FlightDataType{
+func NewFlightData() *FlightDataType {
 	return new(FlightDataType)
 }
 
@@ -34,11 +34,11 @@ func (flight *FlightDataType) Number() byte {
 	return middleware.FlightType
 }
 
-func (flight *FlightDataType) AsRecord() []string{
+func (flight *FlightDataType) AsRecord() []string {
 	record := []string{hex.EncodeToString(flight.Id[:])}
 
 	return append(record, flight.Origin, flight.Destination, flight.Duration,
-	flight.Fare, flight.Distance, flight.Stops)
+		flight.Fare, flight.Distance, flight.Stops)
 }
 
 func (flight *FlightDataType) Serialize() []byte {
@@ -55,7 +55,7 @@ func (flight *FlightDataType) Serialize() []byte {
 	return middleware.AppendString(buf, flight.Stops)
 }
 
-func (flight *FlightDataType) Deserialize(r []byte)  error {
+func (flight *FlightDataType) Deserialize(r []byte) error {
 	if err := utils.CheckHeader(flight, r); err != nil {
 		return err
 	}
@@ -126,7 +126,6 @@ func (flight *FlightDataType) IntoDistanceData() (data middleware.DataQ2) {
 	data.Destination = flight.Destination
 	distance, _ := strconv.ParseFloat(flight.Distance, 32)
 	data.TotalDistance = uint32(distance)
-
 
 	return
 }

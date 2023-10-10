@@ -104,9 +104,10 @@ func (parser *Parser) waitForWorkers() (wait chan error) {
 		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers, parser.config.WaitQueue)
 		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
 		parser.config.Mid.SetExpectedEOFCount(parser.config.TotalWorkers)
-		more := true
-		for ;more; _, more = <- ch {
-			logrus.Info("action: waiting for workers | info: worker up")
+		missing := parser.config.TotalWorkers
+		for _, more := <- ch ;more; _, more = <- ch {
+			missing--
+			logrus.Infof("action: waiting for workers | info: missing: %d", missing)
 		}
 		logrus.Infof("action: waiting for %d workers | result: finished", parser.config.TotalWorkers)
 		wait <- err
@@ -179,12 +180,13 @@ func (parser *Parser) Run(workers <-chan error) error {
 		
 			if err.Error() == protocol.ErrConnectionClosed.Error() {
 				logrus.Info("client finished sending its data")
-				//err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
+				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
 				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))
-				//err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
-				//err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
+				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
+				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
 				break
 			}
+			logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
 			continue
 		}
 		messageType := message.Type()
@@ -194,10 +196,10 @@ func (parser *Parser) Run(workers <-chan error) error {
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := v
-			//err = parser.publishQuery1(data)
+			err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
-			//err = errors.Join(err, parser.publishQuery3(data))
-			//err = errors.Join(err, parser.publishQuery4(data))
+			err = errors.Join(err, parser.publishQuery3(data))
+			err = errors.Join(err, parser.publishQuery4(data))
 			if err != nil {
 				return err
 			}

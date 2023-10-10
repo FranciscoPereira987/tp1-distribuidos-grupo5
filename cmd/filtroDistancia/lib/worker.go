@@ -14,20 +14,19 @@ import (
 )
 
 type WorkerConfig struct {
-	Mid *middleware.Middleware
+	Mid    *middleware.Middleware
 	Source string
-	Sink string
-	Times      int
-	Ctx context.Context
+	Sink   string
+	Times  int
+	Ctx    context.Context
 }
 
 type Worker struct {
-	config  WorkerConfig
+	config WorkerConfig
 
 	computer     *distance.DistanceComputer
 	finishedLoad bool
 	finished     bool
-
 }
 
 func NewWorker(config WorkerConfig) (*Worker, error) {
@@ -35,13 +34,11 @@ func NewWorker(config WorkerConfig) (*Worker, error) {
 	computer := distance.NewComputer()
 
 	return &Worker{
-		config:       config,
-		computer:     computer,
-		finished:     false,
+		config:   config,
+		computer: computer,
+		finished: false,
 	}, nil
 }
-
-
 
 func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
 	logrus.Infof("Adding airport: %s", value.AirportCode)
@@ -54,7 +51,7 @@ func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
 
 func (worker *Worker) handleFilter(value middleware.DataQ2) {
 	greaterThanX, err := distance.GreaterThanXTimes(worker.config.Times, *worker.computer, value)
-	
+
 	if err != nil {
 		log.Printf("error processing data: %s", err)
 		return
@@ -62,12 +59,12 @@ func (worker *Worker) handleFilter(value middleware.DataQ2) {
 	if greaterThanX {
 		logrus.Infof("filtered flight: %s", string(value.ID[:]))
 		worker.config.Mid.PublishWithContext(worker.config.Ctx, "",
-		worker.config.Sink, middleware.Q2Marshal(value))
+			worker.config.Sink, middleware.Q2Marshal(value))
 	}
 }
 
 func (worker *Worker) handleFinData() {
-	
+
 	logrus.Info("action: filtering | result: finished")
 	worker.config.Mid.EOF(worker.config.Ctx, worker.config.Sink)
 	worker.finished = true
@@ -83,14 +80,13 @@ func (worker *Worker) Start() error {
 		runChan <- worker.Run()
 	}()
 
-	
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	select{
-	case <- worker.config.Ctx.Done():
-	case <- sigChan:
+	select {
+	case <-worker.config.Ctx.Done():
+	case <-sigChan:
 		worker.config.Mid.Close()
-	case err := <- runChan:
+	case err := <-runChan:
 		return err
 	}
 	return nil
@@ -101,11 +97,10 @@ func (worker *Worker) Shutdown() {
 }
 
 func (worker *Worker) handleData(buf []byte) error {
-	
 
 	_, data, err := middleware.DistanceFilterUnmarshal(buf)
 	if err != nil {
-		
+
 		return err
 	}
 
@@ -125,12 +120,12 @@ func (worker *Worker) Run() error {
 	if err != nil {
 		return err
 	}
-	
+
 	for !worker.finished {
-		select{
+		select {
 		case <-worker.config.Ctx.Done():
 			return context.Cause(worker.config.Ctx)
-		case buf, more := <- ch:
+		case buf, more := <-ch:
 			if !more {
 				worker.handleFinData()
 				return nil
@@ -139,7 +134,6 @@ func (worker *Worker) Run() error {
 				return err
 			}
 		}
-		
 
 	}
 

@@ -36,7 +36,7 @@ func getDataMessages() protocol.Data {
 	multi := protocol.NewMultiData()
 	coordinatesType := &distance.CoordWrapper{
 		Name: &typing.StrType{},
-		Lat: &typing.FloatType{},
+		Lat:  &typing.FloatType{},
 		Long: &typing.FloatType{},
 	}
 	query2Type, _ := distance.NewAirportData("", "", "", 0)
@@ -64,14 +64,14 @@ func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {
 		return nil, nil, err
 	}
 	logrus.Info("Accepted both connections")
-	
+
 	resultsProt := protocol.NewProtocol(resultsConn)
 	if err := resultsProt.Accept(); err != nil {
 		dataConn.Close()
 		resultsConn.Close()
 		return nil, nil, err
 	}
-	
+
 	logrus.Info("accepted succesfuly")
 	return dataProt, resultsProt, nil
 }

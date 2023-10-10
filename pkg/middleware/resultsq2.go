@@ -28,7 +28,7 @@ type DataQ2 struct {
 	ID          [32]byte
 	Origin      string
 	Destination string
-	
+
 	TotalDistance uint32
 }
 
@@ -48,6 +48,3 @@ func Q2Unmarshal(r *bytes.Reader) (data DataQ2, err error) {
 
 	return data, err
 }
-
-
-

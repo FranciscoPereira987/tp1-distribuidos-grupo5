@@ -114,7 +114,6 @@ func (client *Client) runResults() {
 		if err := client.writer.WriteInto(data.Type(), data.AsRecord()); err != nil {
 			logrus.Errorf("Error writting to file: %s", err)
 		}
-		
 
 	}
 	client.resultsConn.Close()
@@ -140,7 +139,7 @@ func (client *Client) runData() {
 			break
 		}
 	}
-	
+
 	client.coordsReader.Close() //Try to get this error
 	for {
 		data, err := client.dataReader.ReadData()

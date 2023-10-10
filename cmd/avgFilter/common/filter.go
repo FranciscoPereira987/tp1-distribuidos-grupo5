@@ -63,7 +63,7 @@ loop:
 			AvgPrice:    a.Sum / float32(a.Count),
 			MaxPrice:    a.Max,
 		}
-		err := f.m.PublishWithContext(ctx, "", f.sink, mid.Q4Marshal(v))
+		err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q4Marshal(v))
 		if err != nil {
 			return err
 		}

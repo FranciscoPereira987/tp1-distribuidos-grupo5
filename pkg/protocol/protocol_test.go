@@ -103,7 +103,7 @@ func TestClosingConnectionFromServerPOV(t *testing.T) {
 	client := protocol.NewProtocol(connection)
 	server := protocol.NewProtocol(connection)
 	dataDummy := protocol.NewDataMessage(&typing.FloatType{Value: 0.0})
-	go func () {
+	go func() {
 		client.Connect()
 		client.Close()
 	}()
@@ -117,7 +117,7 @@ func TestClosingConnectionFromServerPOV(t *testing.T) {
 		t.Fatalf("server recovered data on closing connection")
 	}
 
-	if err.Error() !=  errors.New("connection closed").Error() {
+	if err.Error() != errors.New("connection closed").Error() {
 		t.Fatalf("recieved unexpected error: %s", err)
 	}
 
@@ -129,7 +129,7 @@ func TestClosingConnectionFromClientPOV(t *testing.T) {
 	client := protocol.NewProtocol(connection)
 	server := protocol.NewProtocol(connection)
 	dataDummy := protocol.NewDataMessage(&typing.FloatType{0.0})
-	go func () {
+	go func() {
 		server.Accept()
 		server.Recover(dataDummy)
 	}()

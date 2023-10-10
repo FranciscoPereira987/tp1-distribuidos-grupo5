@@ -97,7 +97,6 @@ func CoordsFromData(data protocol.Data) (*Coordinates, error) {
 	return coords, nil
 }
 
-
 func (coords CoordWrapper) IntoCoordData() (midData middleware.CoordinatesData) {
 
 	midData.AirportCode = coords.Name.Value()

@@ -16,8 +16,8 @@ var (
 	TIMES       = "times"
 	DATA_ADDR   = "source.data"
 	RESULT_ADDR = "source.sink"
-	ID = "id"
-	SOURCE = "source.url"
+	ID          = "id"
+	SOURCE      = "source.url"
 
 	CONFIG_VARS = []string{
 		TIMES,
@@ -67,7 +67,7 @@ func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, s
 
 func main() {
 	utils.DefaultLogger()
-	v, err := utils.InitConfig("./cmd/filtroDistancia/config/config.yaml", CONFIG_VARS...)
+	v, err := utils.InitConfig("dist", "./cmd/filtroDistancia/config/config.yaml")
 	if err != nil {
 		log.Fatalf("could not initialize config: %s", err)
 	}

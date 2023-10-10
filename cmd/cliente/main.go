@@ -55,7 +55,7 @@ func main() {
 	if err := utils.DefaultLogger(); err != nil {
 		logrus.Errorf("error initializing logger: %s", err)
 	}
-	v, err := utils.InitConfig("./cmd/cliente/config/config.yaml", CONFIG_VARS...)
+	v, err := utils.InitConfig("cli", "./cmd/cliente/config/config.yaml")
 	if err != nil {
 		logrus.Fatalf("error initializing config: %s", err)
 	}

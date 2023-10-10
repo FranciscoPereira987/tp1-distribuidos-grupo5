@@ -24,7 +24,6 @@ var (
 	QUERY2WORKERS = "workers.second"
 	QUERY3WORKERS = "workers.third"
 	QUERY4WORKERS = "workers.fourth"
-	
 
 	LISTENINGPORT = "server.dataport"
 	RESULTSPORT   = "server.resultsport"
@@ -51,7 +50,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	name, err := mid.QueueDeclare(v.GetString(AGG_QUEUE))
 	if err != nil {
 		return nil, err
@@ -60,9 +59,9 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
 	mid.SetExpectedEOFCount(2)
 	config := lib.AgregatorConfig{
-		Mid: mid,
+		Mid:            mid,
 		AgregatorQueue: v.GetString(AGG_QUEUE),
-		Ctx: agg_context,
+		Ctx:            agg_context,
 	}
 
 	return lib.NewAgregator(config), nil
@@ -83,16 +82,16 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 		return nil, err
 	}
 	config := lib.ParserConfig{
-		Query1: v.GetString(QUERY1EXCHANGE),
-		Workers1: v.GetInt(QUERY1WORKERS),
-		Query2:       	v.GetString(QUERY2EXCHANGE),
-		Workers2: v.GetInt(QUERY2WORKERS),
-		Query3: v.GetString(QUERY3EXCHANGE),
-		Workers3: v.GetInt(QUERY3WORKERS),
-		Query4: v.GetString(QUERY4EXCHANGE),
-		Workers4: v.GetInt(QUERY4WORKERS),
-		Mid: mid,
-		Ctx: list_context,
+		Query1:        v.GetString(QUERY1EXCHANGE),
+		Workers1:      v.GetInt(QUERY1WORKERS),
+		Query2:        v.GetString(QUERY2EXCHANGE),
+		Workers2:      v.GetInt(QUERY2WORKERS),
+		Query3:        v.GetString(QUERY3EXCHANGE),
+		Workers3:      v.GetInt(QUERY3WORKERS),
+		Query4:        v.GetString(QUERY4EXCHANGE),
+		Workers4:      v.GetInt(QUERY4WORKERS),
+		Mid:           mid,
+		Ctx:           list_context,
 		ListeningPort: v.GetString(LISTENINGPORT),
 		ResultsPort:   v.GetString(RESULTSPORT),
 		ResultsChan:   aggregator_chan,
@@ -106,7 +105,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("could not initialize logger: %s", err)
 	}
-	v, err := utils.InitConfig("./cmd/interface/config/config.yaml", CONFIG_VARS...)
+	v, err := utils.InitConfig("ifz", "./cmd/interface/config/config.yaml")
 	if err != nil {
 		logrus.Fatalf("could not initialize config: %s", err)
 	}
@@ -120,7 +119,7 @@ func main() {
 	aggC := agg.GetChan()
 
 	parser, err := getListener(v, aggC, ctx)
-	
+
 	if err != nil {
 		logrus.Fatalf("error creating parser: %s", err)
 	}

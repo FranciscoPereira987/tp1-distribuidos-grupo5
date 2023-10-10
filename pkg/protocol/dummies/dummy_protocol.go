@@ -1,6 +1,8 @@
 package dummies
 
 import (
+	"net"
+
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 )
@@ -11,7 +13,8 @@ type DummyProtocol struct {
 }
 
 func NewDummyProtocol(at string) (conection.Conn, error) {
-	conn, err := conection.NewSocketConnection(at)
+	host, port, _ := net.SplitHostPort(at)
+	conn, err := conection.Dial(host, port)
 	if err != nil {
 		return nil, err
 	}

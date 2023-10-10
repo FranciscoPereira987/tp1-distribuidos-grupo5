@@ -34,7 +34,7 @@ directa que deberia tener el filtro.
 */
 
 func connecTo(addr string, port string) conection.Conn {
-	conn, err := conection.NewSocketConnection(addr + ":" + port)
+	conn, err := conection.Dial(addr, port)
 	if err != nil {
 		panic(err.Error())
 	}

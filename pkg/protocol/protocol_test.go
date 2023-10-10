@@ -30,8 +30,8 @@ func TestDataTransferFromServerPOV(t *testing.T) {
 	sendant := protocol.NewProtocol(connector)
 	reciever := protocol.NewProtocol(connector)
 
-	message, _ := typing.NewStr("A very important message")
-	dummyMessage, _ := typing.NewStr("")
+	message:= typing.NewFlightData()
+	dummyMessage := typing.NewFlightData()
 	data := protocol.NewDataMessage(message)
 	recieverData := protocol.NewDataMessage(dummyMessage)
 	go func() {
@@ -53,8 +53,8 @@ func TestDataTransferFromClientPOV(t *testing.T) {
 	sendant := protocol.NewProtocol(connector)
 	reciever := protocol.NewProtocol(connector)
 
-	message, _ := typing.NewStr("A very important message")
-	dummyMessage, _ := typing.NewStr("")
+	message := typing.NewFlightData()
+	dummyMessage := typing.NewFlightData()
 	data := protocol.NewDataMessage(message)
 	recieverData := protocol.NewDataMessage(dummyMessage)
 	go func() {
@@ -89,7 +89,7 @@ func TestUnconnectedCannotRecieveMessaged(t *testing.T) {
 	defer connection.Close()
 	connector := protocol.NewProtocol(connection)
 
-	data, _ := typing.NewStr("")
+	data := typing.NewFlightData()
 	message := protocol.NewDataMessage(data)
 
 	if err := connector.Recover(message); err == nil {

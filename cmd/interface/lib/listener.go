@@ -34,11 +34,7 @@ func NewListener(dataAt string, resultsAt string) (*Listener, error) {
 
 func getDataMessages() protocol.Data {
 	multi := protocol.NewMultiData()
-	coordinatesType := &distance.CoordWrapper{
-		Name: typing.New(),
-		Lat:  &typing.FloatType{},
-		Long: &typing.FloatType{},
-	}
+	coordinatesType := new(distance.CoordWrapper)
 	query2Type := typing.NewResultQ2()
 	flightType := typing.NewFlightData()
 	flightData := protocol.NewDataMessage(flightType)

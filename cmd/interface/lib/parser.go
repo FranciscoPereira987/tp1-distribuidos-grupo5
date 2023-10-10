@@ -163,7 +163,7 @@ func (parser *Parser) Run() error {
 		messageType := message.Type()
 		switch messageType.(type) {
 		case (*distance.CoordWrapper):
-			data := messageType.(*distance.CoordWrapper).IntoCoordData()
+			data := messageType.(*distance.CoordWrapper).Value
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := messageType.(*typing.FlightDataType)

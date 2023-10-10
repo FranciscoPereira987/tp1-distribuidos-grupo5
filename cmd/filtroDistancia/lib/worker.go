@@ -117,6 +117,7 @@ func (worker *Worker) handleData(buf []byte) error {
 }
 
 func (worker *Worker) Run() error {
+	defer worker.Shutdown()
 	ch, err := worker.config.Mid.ConsumeWithContext(worker.config.Ctx, worker.config.Source)
 	if err != nil {
 		return err

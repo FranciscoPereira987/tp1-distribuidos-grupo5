@@ -159,9 +159,11 @@ func (parser *Parser) Start(agg *Agregator) error {
 }
 
 func (parser *Parser) Run(workers <-chan error) error {
-	
+	defer parser.config.Mid.Close()
+	defer parser.listener.Close()
 	logrus.Info("action: waiting connection | result: in progress")
 	data, results, err := parser.listener.Accept()
+	defer data.Close()
 	if err != nil {
 		logrus.Errorf("action: waiting connection | result: failed | reason: %s", err)
 
@@ -196,10 +198,10 @@ func (parser *Parser) Run(workers <-chan error) error {
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := v
-			//err = parser.publishQuery1(data)
+			err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
-			//err = errors.Join(err, parser.publishQuery3(data))
-			//err = errors.Join(err, parser.publishQuery4(data))
+			err = errors.Join(err, parser.publishQuery3(data))
+			err = errors.Join(err, parser.publishQuery4(data))
 			if err != nil {
 				return err
 			}

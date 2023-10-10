@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"errors"
 	"net"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
@@ -41,6 +42,11 @@ func getDataMessages() protocol.Data {
 	endData := protocol.NewDataMessage(reader.FinData())
 	multi.Register(flightData, endData, protocol.NewDataMessage(coordinatesType), protocol.NewDataMessage(query2Type))
 	return multi
+}
+
+func (l *Listener) Close() error {
+	return errors.Join(l.data.Close(), l.results.Close())
+
 }
 
 func (l *Listener) Accept() (*protocol.Protocol, *protocol.Protocol, error) {

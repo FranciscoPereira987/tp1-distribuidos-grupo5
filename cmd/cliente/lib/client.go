@@ -116,7 +116,6 @@ func (client *Client) runResults() {
 
 	}
 	client.resultsConn.Close()
-	client.writer.Close()
 	logrus.Info("Results listener exiting succesfuly")
 	client.resultsEnd <- true
 }
@@ -140,7 +139,7 @@ func (client *Client) runData() {
 		}
 	}
 
-	client.coordsReader.Close() //Try to get this error
+	client.coordsReader.Close()
 	for {
 		data, err := client.dataReader.ReadData()
 		if err != nil {
@@ -165,6 +164,11 @@ func (client *Client) runData() {
 func (client *Client) waiter() error {
 	defer close(client.dataSendingEnd)
 	defer close(client.resultsEnd)
+	defer client.dataConn.Shutdown()
+	defer client.resultsConn.Shutdown()
+	defer client.coordsReader.Close()
+	defer client.dataReader.Close()
+	defer client.writer.Close()
 	<-client.dataSendingEnd
 	<-client.resultsEnd
 	return nil

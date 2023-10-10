@@ -32,13 +32,9 @@ func (agg *Agregator) GetChan() chan<- *protocol.Protocol {
 }
 
 func (agg *Agregator) Run() error {
-	defer func() {
-		agg.config.Mid.Close()
-	}()
+	defer agg.config.Mid.Close()
 	results := <-agg.listeningChan
-	defer func() {
-		results.Close()
-	}()
+	defer results.Close()
 	ch, err := agg.config.Mid.ConsumeWithContext(agg.config.Ctx, agg.config.AgregatorQueue)
 	if err != nil {
 		return err

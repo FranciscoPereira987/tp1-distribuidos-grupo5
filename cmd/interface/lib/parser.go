@@ -196,10 +196,10 @@ func (parser *Parser) Run(workers <-chan error) error {
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := v
-			err = parser.publishQuery1(data)
+			//err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
-			err = errors.Join(err, parser.publishQuery3(data))
-			err = errors.Join(err, parser.publishQuery4(data))
+			//err = errors.Join(err, parser.publishQuery3(data))
+			//err = errors.Join(err, parser.publishQuery4(data))
 			if err != nil {
 				return err
 			}

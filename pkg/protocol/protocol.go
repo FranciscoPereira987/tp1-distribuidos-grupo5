@@ -175,6 +175,7 @@ func (proto *Protocol) Recover(data Data) error {
 }
 
 func (proto *Protocol) Send(data Data) error {
+	proto.buf.Flush()
 	if err := proto.checkConnected(); err != nil {
 		return err
 	}

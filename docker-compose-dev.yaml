@@ -1,7 +1,55 @@
-name: tp0
+name: tp1
 services:
-  hello:
-    container_name: hello
-    image: hello:latest
-    entrypoint: /hello
-    
+  
+  server:
+    container_name: server
+    image: server:latest
+    entrypoint: /server
+    networks:
+      - testing_net
+    environment:
+      - IFZ_WORKERS_FIRST=0
+      - IFZ_WORKERS_SECOND=1
+      - IFZ_WORKERS_THIRD=0
+      - IFZ_WORKERS_FOURTH=0
+    depends_on:
+      rabbitmq:
+          condition: service_healthy
+    volumes:
+      - ./cmd/interface/config:/config
+      
+  distanceFilter:
+    container_name: distance_filter
+    image: distance_filter:latest
+    entrypoint: /filter
+    networks:
+      - testing_net
+    environment:
+      - DISTANCE_ID=1
+    volumes:
+      - ./cmd/filtroDistancia/config:/config
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.12-management
+    ports:
+      - 15672:15672
+    networks:
+      - testing_net
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 50s
+
+
+networks:
+  testing_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24

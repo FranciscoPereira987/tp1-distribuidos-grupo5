@@ -91,9 +91,10 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 
 func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
 	for _, name := range EXCHANGE_VARS {
-		_, err = mid.ExchangeDeclare(name, "direct")
+		eName, err := mid.ExchangeDeclare(v.GetString(name), "direct")
+		logrus.Infof("action: exchange declaration | info: declared: %s", eName)
 		if err != nil {
-			return 
+			return err
 		}
 	} 
 
@@ -137,7 +138,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("could not initialize logger: %s", err)
 	}
-	v, err := utils.InitConfig("ifz", "./cmd/interface/config/config.yaml")
+	v, err := utils.InitConfig("ifz", "./config/config.yaml")
 	if err != nil {
 		logrus.Fatalf("could not initialize config: %s", err)
 	}

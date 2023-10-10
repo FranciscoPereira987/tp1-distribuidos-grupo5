@@ -1,15 +1,15 @@
 results:
-  dir: "./results/"
+  dir: "./client/results/"
   first: "first.csv"
   second: "second.csv"
   third: "thrid.csv"
   fourth: "fourth.csv"
 
-datafile: "./data/test.csv"
+datafile: "./client/data/test.csv"
 
-coordsfile: "./data/airports-codepublic.csv"
+coordsfile: "./client/data/airports-codepublic.csv"
 
 server:
-  addr: "127.0.0.1"
+  addr: "server"
   data: "6666"
   results: "7777"

@@ -45,15 +45,17 @@ func (agg *Agregator) Run() error {
 	}
 	for {
 		data, more := <-ch
+		result, err := typing.ResultsUnmarshal(data)
+		if err == nil {
+			logrus.Info("action: sending results | action: sending new result")
+			data := protocol.NewDataMessage(result)
+			results.Send(data)
+		}
 		if !more {
 			logrus.Info("action: sending results | status: finished")
 			break
 		}
-		result, err := typing.ResultsUnmarshal(data)
-		if err == nil {
-			data := protocol.NewDataMessage(result)
-			results.Send(data)
-		}
+		
 	}
 
 	return nil

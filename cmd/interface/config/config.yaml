@@ -6,13 +6,9 @@ exchange:
   agregator: "results"
   status: "status"
 
-workers:
-  first: 0
-  second: 2
-  third: 0
-  fourth: 0
+
   
-source: "amqp://guest:guest@localhost:5672/"
+source: "amqp://guest:guest@rabbitmq:5672/"
 
 server:
   dataport: "6666"

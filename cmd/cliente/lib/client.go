@@ -69,7 +69,6 @@ func NewClient(config ClientConfig) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	logrus.Info("running interface")
 	dataConn := protocol.NewProtocol(config.ServerData)
 	if err := dataConn.Connect(); err != nil {
 		return nil, err
@@ -117,6 +116,7 @@ func (client *Client) runResults() {
 
 	}
 	client.resultsConn.Close()
+	client.writer.Close()
 	logrus.Info("Results listener exiting succesfuly")
 	client.resultsEnd <- true
 }

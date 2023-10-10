@@ -9,10 +9,16 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/hello github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia
+COPY cmd/filtroDistancia/lib/ cmd/filtroDistancia/lib/
+COPY cmd/filtroDistancia/main.go cmd/filtroDistancia/main.go
+COPY pkg/ pkg/
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod tidy
+RUN go mod vendor
+RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/filtroDistancia github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia
 
 
 FROM busybox:latest
-COPY --from=builder /build/bin/filtroDistancia /filtroDistancia
+COPY --from=builder /build/bin/filtroDistancia /filter
 ENTRYPOINT ["/bin/sh"]

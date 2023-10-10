@@ -13,7 +13,9 @@ build: GOOS=linux go build -0 ./bin/ ./cmd/$(CMD)/
 .PHONY: build
 
 build-image: 
-	docker build -t $(CMD) -f cmd/$(CMD)/Dockerfile .
+	docker build -t server -f cmd/interface/Dockerfile .
+	docker build -t distance_filter -f cmd/filtroDistancia/Dockerfile .
+	docker build -t client -f cmd/cliente/Dockerfile .
 .PHONY: build-image
 
 fmt:
@@ -24,7 +26,7 @@ test:
 	go test $(PWD)/... -timeout 10s
 .PHONY: test
 
-docker-compose-up: build-image
+docker-compose-up: 
 	# Hay que agregar la creacion de todas las imagenes
 	# Supongo que estan creadas
 	docker compose -f docker-compose-dev.yaml up -d

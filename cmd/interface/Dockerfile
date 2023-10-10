@@ -9,12 +9,16 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY pkg/ /pkg/
+COPY pkg/ pkg/
 COPY cmd/interface/lib/ cmd/interface/lib/
 COPY cmd/interface/main.go cmd/interface/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/hello github.com/franciscopereira987/tp1-distribuidos/cmd/interface
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod tidy
+RUN go mod vendor
+RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/interface github.com/franciscopereira987/tp1-distribuidos/cmd/interface
 
 
 FROM busybox:latest
-COPY --from=builder /build/bin/interface /interface
+COPY --from=builder /build/bin/interface /server
 ENTRYPOINT ["/bin/sh"]

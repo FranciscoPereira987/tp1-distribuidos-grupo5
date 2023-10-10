@@ -69,6 +69,9 @@ func (writer *ResultWriter) WriteInto(into Numbered, record []string) error {
 }
 
 func (writer *ResultWriter) Close() {
+	for _, writer := range writer.files {
+		writer.Flush()
+	}
 	for _, fd := range writer.fds {
 		fd.Close()
 	}

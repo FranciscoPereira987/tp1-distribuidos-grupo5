@@ -9,8 +9,14 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/hello github.com/franciscopereira987/tp1-distribuidos/cmd/cliente
+COPY cmd/cliente/lib/ cmd/cliente/lib/
+COPY cmd/cliente/main.go cmd/cliente/main.go
+COPY pkg/ pkg/
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod tidy
+RUN go mod vendor
+RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/cliente github.com/franciscopereira987/tp1-distribuidos/cmd/cliente
 
 
 FROM busybox:latest

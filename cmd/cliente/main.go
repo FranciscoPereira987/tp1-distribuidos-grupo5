@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/cliente/lib"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -32,8 +32,8 @@ var (
 	}
 )
 
-func connecTo(addr string, port string) conection.Conn {
-	conn, err := conection.Dial(addr,  port)
+func connecTo(addr string, port string) connection.Conn {
+	conn, err := connection.Dial(addr,  port)
 	if err != nil {
 		logrus.Fatalf("error connecting: %s", err)
 	}

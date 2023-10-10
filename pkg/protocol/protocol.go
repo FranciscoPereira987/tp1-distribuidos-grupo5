@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,11 +23,11 @@ var ErrUnexpected = errors.New("unexpected message")
 type Protocol struct {
 	registry  *Registry
 	buf       bufio.ReadWriter
-	source    conection.Conn
+	source    connection.Conn
 	connected bool
 }
 
-func NewProtocol(conn conection.Conn) *Protocol {
+func NewProtocol(conn connection.Conn) *Protocol {
 	return &Protocol{
 		registry:  NewRegistry(),
 		buf:       bufio.NewReadWriter(conn, conn),

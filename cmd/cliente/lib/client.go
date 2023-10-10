@@ -3,7 +3,7 @@ package lib
 import (
 	"io"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -21,8 +21,8 @@ type ClientConfig struct {
 	DataFile   string
 	CoordsFile string
 
-	ServerData    conection.Conn
-	ServerResults conection.Conn
+	ServerData    connection.Conn
+	ServerResults connection.Conn
 }
 
 type Client struct {

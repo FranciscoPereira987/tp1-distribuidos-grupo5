@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bytes"
 	"context"
 	"strings"
 
@@ -27,7 +26,7 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 type FastestFlightsMap map[string][]mid.StopsFilterData
 
 func updateFastest(fastest FastestFlightsMap, data mid.StopsFilterData) {
-	key := data.Origin + "." + data.Destiny
+	key := data.Origin + "." + data.Destination
 	if fast, ok := fastest[key]; !ok {
 		tmp := [2]mid.StopsFilterData{data}
 		fastest[key] = tmp[:1]

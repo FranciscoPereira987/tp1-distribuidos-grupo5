@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia/lib"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -33,8 +33,8 @@ Agregar como parametro, para que se pueda configurar las N veces mayor que la
 directa que deberia tener el filtro.
 */
 
-func connecTo(addr string, port string) conection.Conn {
-	conn, err := conection.NewSocketConnection(addr + ":" + port)
+func connecTo(addr string, port string) connection.Conn {
+	conn, err := connection.Dial(addr, port)
 	if err != nil {
 		panic(err.Error())
 	}

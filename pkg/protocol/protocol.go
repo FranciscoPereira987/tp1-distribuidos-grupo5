@@ -1,10 +1,13 @@
 package protocol
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,33 +22,37 @@ var ErrUnexpected = errors.New("unexpected message")
 */
 type Protocol struct {
 	registry  *Registry
-	source    conection.Conn
+	buf       bufio.ReadWriter
+	source    connection.Conn
 	connected bool
 }
 
-func NewProtocol(conn conection.Conn) *Protocol {
+func NewProtocol(conn connection.Conn) *Protocol {
 	return &Protocol{
 		registry:  NewRegistry(),
+		buf:       bufio.NewReadWriter(conn, conn),
 		source:    conn,
 		connected: false,
 	}
 }
 
 func (proto *Protocol) Shutdown() error {
-	return proto.source.Close()
+	errFlush := proto.buf.Flush()
+	errClose := proto.source.Close()
+	return errors.Join(errFlush, errClose)
 }
 
 // Protocol.source should be safe to read (not producing short reads)
 func (proto *Protocol) readMessage() ([]byte, error) {
 	header := make([]byte, 5)
-	_, err := proto.source.Read(header)
+	_, err := io.ReadFull(proto.buf, header)
 
 	if err != nil {
 		return nil, err
 	}
 	body_length, _ := CheckMessageLength(header)
 	body := make([]byte, body_length)
-	_, err = proto.source.Read(body)
+	_, err := io.ReadFull(proto.buf, body)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +86,13 @@ if the answer is not HelloAck, then returns error
 func (proto *Protocol) Connect() error {
 	hello := NewHelloMessage(0)
 
-	err := proto.sendMessage(hello)
-
-	if err != nil {
+	if err := proto.sendMessage(hello); err != nil {
 		return err
 	}
+	if err := proto.buf.Flush(); err != nil {
+		return err
+	}
+
 	stream, err := proto.readMessage()
 	if err != nil {
 		return err
@@ -116,17 +125,21 @@ func (proto *Protocol) Accept() error {
 	if err := expected.UnMarshal(recovered); err != nil {
 		return err
 	}
-	response := NewHelloAckMessage() //Todo, define the user id (va a servir para multiples clientes)
+	// TODO: define the user id (va a servir para multiples clientes)
+	response := NewHelloAckMessage()
 	if err := proto.sendMessage(response); err != nil {
+		return err
+	}
+	if err := proto.buf.Flush(); err != nil {
 		return err
 	}
 	proto.connected = true
 	return nil
 }
 
-// Protocol.source should be safe to write to (not producing short writes)
+// Protocol should be safe to write to (not producing short writes)
 func (proto *Protocol) sendMessage(message Message) error {
-	_, err := proto.source.Write(message.Marshal())
+	_, err := io.Copy(proto.buf, bytes.NewReader(message.Marshal()))
 
 	return err
 }
@@ -146,6 +159,7 @@ func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 
 	return err
 }
+
 func (proto *Protocol) Recover(data Data) error {
 	if err := proto.checkConnected(); err != nil {
 		return err
@@ -156,7 +170,6 @@ func (proto *Protocol) Recover(data Data) error {
 	}
 	
 	if err := data.UnMarshal(stream); err != nil {
-		
 		return proto.manageInvalidData(stream, err)
 	}
 	
@@ -168,26 +181,19 @@ func (proto *Protocol) Send(data Data) error {
 		return err
 	}
 
-	if err := proto.sendMessage(data); err != nil {
-		return err
-	}
-	
-	return nil
+	return proto.sendMessage(data)
 }
 
 /*
 Should not be think of as closing underlying resource (source)
 */
-func (proto *Protocol) Close() {
-	if proto.checkConnected() != nil {
-		return
+func (proto *Protocol) Close() error {
+	if err := proto.checkConnected(); err != nil {
+		return err
 	}
 	fin := &FinMessage{}
-	if err := proto.sendMessage(fin); err != nil {
-		proto.connected = false
-		return
-	}
+	err := proto.sendMessage(fin)
 
 	proto.connected = false
-	return
+	return err
 }

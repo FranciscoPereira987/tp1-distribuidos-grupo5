@@ -134,10 +134,10 @@ func (parser *Parser) Start(agg *Agregator) error {
 }
 
 func (parser *Parser) Run() error {
-	logrus.Info("action: waiting conection | result: in progress")
+	logrus.Info("action: waiting connection | result: in progress")
 	data, results, err := parser.listener.Accept()
 	if err != nil {
-		logrus.Errorf("action: waiting conection | result: failed | reason: %s", err)
+		logrus.Errorf("action: waiting connection | result: failed | reason: %s", err)
 
 		return err
 	}

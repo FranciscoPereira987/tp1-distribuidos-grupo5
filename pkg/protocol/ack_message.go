@@ -3,7 +3,6 @@ package protocol
 import (
 	"encoding/binary"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/ack_types"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -14,22 +13,10 @@ const (
 )
 
 type AckMessage struct {
-	/*
-		The body of an Ack message contains information about:
-
-			1. The Ack Type
-			2. Extra information the Ack needs
-	*/
-	ack_body ack_types.AckType
-}
-
-func (ack AckMessage) bodyNumber() byte {
-	return ack.ack_body.Number()
 }
 
 func NewHelloAckMessage() Message {
 	return &AckMessage{
-		ack_body: &ack_types.HelloAckType{},
 	}
 }
 
@@ -40,10 +27,9 @@ func (hello *AckMessage) Number() byte {
 
 func (hello *AckMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
-	body := hello.ack_body.Serialize()
-	header = binary.BigEndian.AppendUint32(header, uint32(len(body)))
+	header = binary.BigEndian.AppendUint32(header, 0)
 
-	return append(header, body...)
+	return header
 }
 
 func (hello *AckMessage) UnMarshal(stream []byte) error {
@@ -59,7 +45,7 @@ func (hello *AckMessage) UnMarshal(stream []byte) error {
 		return err
 	}
 
-	return hello.ack_body.Deserialize(stream[5:])
+	return nil
 }
 
 func (hello *AckMessage) Response() Message {

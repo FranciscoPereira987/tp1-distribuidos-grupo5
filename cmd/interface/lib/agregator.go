@@ -49,7 +49,7 @@ func (agg *Agregator) Run() error {
 			logrus.Info("action: sending results | status: finished")
 			break
 		}
-		_, result, err := middleware.DistanceFilterUnmarshal(data)
+		result, err := middleware.DistanceFilterUnmarshal(data)
 		if err == nil {
 			value := result.(middleware.DataQ2)
 			dataType := typing.NewResultQ2()

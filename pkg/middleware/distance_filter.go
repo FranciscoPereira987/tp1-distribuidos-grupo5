@@ -48,7 +48,7 @@ Returns the corresponding data based on the buf value
 1 => CoordinatesData type
 2 => DataQ2 type
 */
-func DistanceFilterUnmarshal(buf []byte) (dataType int, data any, err error) {
+func DistanceFilterUnmarshal(buf []byte) (data any, err error) {
 	if len(buf) < 1 {
 		err = errors.New("stream is empty")
 		return
@@ -56,10 +56,8 @@ func DistanceFilterUnmarshal(buf []byte) (dataType int, data any, err error) {
 	r := bytes.NewReader(buf[1:])
 	switch buf[0] {
 	case Query2Flag:
-		dataType = 2
 		data, err = Q2Unmarshal(r)
 	case CoordFlag:
-		dataType = 1
 		data, err = CoordUnmarshal(r)
 	default:
 		err = errors.New("invalid data for distance filter")

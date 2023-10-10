@@ -93,8 +93,11 @@ func NewClient(config ClientConfig) (*Client, error) {
 
 func getClientMultiData() protocol.Data {
 	data := protocol.NewMultiData()
-	flights := typing.NewResultQ2()
-	data.Register(protocol.NewDataMessage(flights))
+	query1 := protocol.NewDataMessage(typing.NewResultQ1())
+	query2 := protocol.NewDataMessage(typing.NewResultQ2())
+	query3 := protocol.NewDataMessage(typing.NewResultQ3())
+	query4 := protocol.NewDataMessage(typing.NewResultQ4())
+	data.Register(query1, query2, query3, query4)
 	return data
 }
 

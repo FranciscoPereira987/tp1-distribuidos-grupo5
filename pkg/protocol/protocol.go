@@ -8,7 +8,6 @@ import (
 	"io"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
-	"github.com/sirupsen/logrus"
 )
 
 var ErrNotConnected = errors.New("not connected")
@@ -51,7 +50,6 @@ func (proto *Protocol) readMessage() ([]byte, error) {
 		return nil, err
 	}
 	body_length, _ := CheckMessageLength(header)
-	logrus.Infof("waiting to read: %d", body_length)
 	body := make([]byte, body_length)
 	_, err = io.ReadFull(proto.buf, body)
 	if err != nil {
@@ -62,7 +60,6 @@ func (proto *Protocol) readMessage() ([]byte, error) {
 
 func (proto *Protocol) manageHelloAck(message Message) error {
 	if _, ok := message.(*AckMessage); !ok {
-		logrus.Infof("got %s", message)
 		if _, ok := message.(*FinMessage); ok {
 			proto.connected = false
 			return ErrConnectionClosed
@@ -171,7 +168,6 @@ func (proto *Protocol) Recover(data Data) error {
 	}
 	
 	if err := data.UnMarshal(stream); err != nil {
-		logrus.Info("Managed invalid data")
 		return proto.manageInvalidData(stream, err)
 	}
 	

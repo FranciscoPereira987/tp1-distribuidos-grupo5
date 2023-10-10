@@ -98,7 +98,7 @@ func (worker *Worker) Shutdown() {
 
 func (worker *Worker) handleData(buf []byte) error {
 
-	_, data, err := middleware.DistanceFilterUnmarshal(buf)
+	data, err := middleware.DistanceFilterUnmarshal(buf)
 	if err != nil {
 
 		return err

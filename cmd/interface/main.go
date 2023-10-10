@@ -77,7 +77,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	if err != nil {
 		return nil, err
 	}
-	mid.ExchangeDeclare(v.GetString(AGG_QUEUE), "direct")
+	mid.ExchangeDeclare(v.GetString(AGG_QUEUE))
 	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
 	mid.SetExpectedEOFCount(getTotalWorkers(v))
 	config := lib.AgregatorConfig{
@@ -91,7 +91,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 
 func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
 	for _, name := range EXCHANGE_VARS {
-		_, err = mid.ExchangeDeclare(name, "direct")
+		_, err = mid.ExchangeDeclare(name)
 		if err != nil {
 			return 
 		}
@@ -109,7 +109,7 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 	if err != nil {
 		return nil, err
 	}
-	mid.ExchangeDeclare(name, "direct")
+	mid.ExchangeDeclare(name)
 	mid.QueueBind(name, name, []string{"control"})
 	config := lib.ParserConfig{
 		Query1:        v.GetString(QUERY1EXCHANGE),

@@ -66,7 +66,7 @@ func InitLogger(logLevel string) error {
 
 // Describes the topology around this node.
 func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("source.name"), v.GetString("source.kind"))
+	source, err := m.ExchangeDeclare(v.GetString("source.name"))
 	if err != nil {
 		return "", "", err
 	}
@@ -83,7 +83,7 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 		return "", "", err
 	}
 
-	sink, err := m.ExchangeDeclare(v.GetString("results.name"), v.GetString("results.kind"))
+	sink, err := m.ExchangeDeclare(v.GetString("results.name"))
 	return q, sink, err
 }
 

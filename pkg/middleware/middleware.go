@@ -36,10 +36,10 @@ func (m *Middleware) SetExpectedEOFCount(count int) {
 	m.countEOF = count
 }
 
-func (m *Middleware) ExchangeDeclare(name, kind string) (string, error) {
+func (m *Middleware) ExchangeDeclare(name string) (string, error) {
 	return name, m.ch.ExchangeDeclare(
 		name,  // name
-		kind,  // type
+		"direct",  // type
 		true,  // durable
 		false, // delete when unused
 		false, // internal

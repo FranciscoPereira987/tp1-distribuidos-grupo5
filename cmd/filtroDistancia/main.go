@@ -63,7 +63,7 @@ func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, s
 		return
 	}
 	shardKey := []string{id, "control", "coord"}
-	mid.ExchangeDeclare(data, "direct")
+	mid.ExchangeDeclare(data)
 	err = mid.QueueBind(name, data, shardKey)
 	if err != nil {
 		return

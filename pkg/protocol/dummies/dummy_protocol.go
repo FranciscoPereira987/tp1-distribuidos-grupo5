@@ -41,12 +41,6 @@ func (proto *DummyProtocol) Read(buf []byte) (int, error) {
 }
 
 func (proto *DummyProtocol) Write(buf []byte) (int, error) {
-	if buf[0] == protocol.DATA_OP_CODE {
-		proto.ack = protocol.NewDataAckMessage().Marshal()
-	}
-	if buf[0] == protocol.FIN_OP_CODE {
-		proto.ack = protocol.NewFinAckMessage().Marshal()
-	}
 	if buf[0] == protocol.HELLO_OP_CODE {
 		proto.ack = protocol.NewHelloAckMessage().Marshal()
 		return len(buf), nil

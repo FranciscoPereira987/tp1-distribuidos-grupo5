@@ -42,6 +42,3 @@ func (fin *FinMessage) UnMarshal(stream []byte) error {
 	return nil
 }
 
-func (fin *FinMessage) Response() Message {
-	return NewFinAckMessage()
-}

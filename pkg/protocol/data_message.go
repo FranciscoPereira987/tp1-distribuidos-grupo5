@@ -71,9 +71,6 @@ func (multi *MultiData) UnMarshal(stream []byte) error {
 	return multi.last.UnMarshal(stream)
 }
 
-func (multi *MultiData) Response() Message {
-	return multi.last.Response()
-}
 
 func (multi *MultiData) AsRecord() []string {
 	return multi.last.AsRecord()
@@ -122,9 +119,6 @@ func (hello *DataMessage) UnMarshal(stream []byte) error {
 	return nil
 }
 
-func (hello *DataMessage) Response() Message {
-	return NewDataAckMessage()
-}
 
 func (data *DataMessage) AsRecord() []string {
 	return data.Type().AsRecord()

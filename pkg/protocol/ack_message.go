@@ -33,18 +33,6 @@ func NewHelloAckMessage() Message {
 	}
 }
 
-func NewDataAckMessage() Message {
-	return &AckMessage{
-		ack_body: &ack_types.DataAckType{},
-	}
-}
-
-func NewFinAckMessage() Message {
-	return &AckMessage{
-		ack_body: &ack_types.FinAckType{},
-	}
-}
-
 
 func (hello *AckMessage) Number() byte {
 	return ACK_OP_CODE

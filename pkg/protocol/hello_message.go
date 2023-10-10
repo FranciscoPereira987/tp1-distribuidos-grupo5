@@ -50,6 +50,3 @@ func (hello *HelloMessage) UnMarshal(stream []byte) error {
 	return nil
 }
 
-func (hello *HelloMessage) Response() Message {
-	return NewHelloAckMessage()
-}

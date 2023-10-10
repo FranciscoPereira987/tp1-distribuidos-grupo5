@@ -41,7 +41,3 @@ func (errMes *ErrMessage) UnMarshal(stream []byte) error {
 	}
 	return nil
 }
-
-func (errMes *ErrMessage) Response() Message {
-	return NewFinAckMessage()
-}

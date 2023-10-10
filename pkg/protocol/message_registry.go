@@ -9,7 +9,7 @@ type Registry struct {
 }
 
 func getStartingMessages() []Message {
-	messages := []Message{NewDataAckMessage(), NewFinAckMessage(), NewHelloAckMessage()}
+	messages := []Message{NewHelloAckMessage()}
 	messages = append(messages, NewHelloMessage(0))
 	messages = append(messages, &FinMessage{})
 	messages = append(messages, &ErrMessage{})

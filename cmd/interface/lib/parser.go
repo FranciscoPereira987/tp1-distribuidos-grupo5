@@ -160,12 +160,12 @@ func (parser *Parser) Run() error {
 			continue
 		}
 		messageType := message.Type()
-		switch messageType.(type) {
+		switch v := messageType.(type) {
 		case (*distance.CoordWrapper):
-			data := messageType.(*distance.CoordWrapper).Value
+			data := v.Value
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
-			data := messageType.(*typing.FlightDataType)
+			data := v
 			//err = parser.publishQuery1(data)
 			err = errors.Join(err, parser.publishQuery2(data))
 			//err = errors.Join(err, parser.publishQuery3(data))

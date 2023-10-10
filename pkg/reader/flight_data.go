@@ -162,11 +162,6 @@ func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilter
 	return
 }
 
-type AvgFilterData struct {
-	Origin      string
-	Destination string
-	Price       float32
-}
 
 func (flight *FlightDataType) IntoAvgFilterData() (data middleware.AvgFilterData) {
 	data.Origin = flight.origin.Value()

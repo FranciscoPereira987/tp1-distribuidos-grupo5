@@ -27,9 +27,9 @@ func (ack AckMessage) bodyNumber() byte {
 	return ack.ack_body.Number()
 }
 
-func NewHelloAckMessage(client_id uint32) Message {
+func NewHelloAckMessage() Message {
 	return &AckMessage{
-		ack_body: ack_types.NewHelloAck(client_id),
+		ack_body: &ack_types.HelloAckType{},
 	}
 }
 

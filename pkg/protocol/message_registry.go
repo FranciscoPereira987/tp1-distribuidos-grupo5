@@ -43,7 +43,7 @@ type ackRegistry struct {
 }
 
 func registerAcks(reg map[byte]Message) {
-	ack := NewHelloAckMessage(0).(*AckMessage)
+	ack := NewHelloAckMessage().(*AckMessage)
 	reg[ack.bodyNumber()] = ack
 	ack = NewDataAckMessage().(*AckMessage)
 	reg[ack.bodyNumber()] = ack

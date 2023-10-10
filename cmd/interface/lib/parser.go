@@ -73,7 +73,6 @@ func (parser *Parser) publishQuery1(data *typing.FlightDataType) (err error) {
 
 func (parser *Parser) publishQuery2(data *typing.FlightDataType) (err error) {
 	flight := data.IntoDistanceData()
-	logrus.Infof("data: %s", flight)
 	key := parser.query2Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, key, middleware.Q2Marshal(flight))
 	return

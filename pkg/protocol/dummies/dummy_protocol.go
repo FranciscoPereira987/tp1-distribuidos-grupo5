@@ -48,7 +48,7 @@ func (proto *DummyProtocol) Write(buf []byte) (int, error) {
 		proto.ack = protocol.NewFinAckMessage().Marshal()
 	}
 	if buf[0] == protocol.HELLO_OP_CODE {
-		proto.ack = protocol.NewHelloAckMessage(0).Marshal()
+		proto.ack = protocol.NewHelloAckMessage().Marshal()
 		return len(buf), nil
 	}
 

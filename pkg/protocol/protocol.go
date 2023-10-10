@@ -111,7 +111,7 @@ func (proto *Protocol) Accept() error {
 	if err := expected.UnMarshal(recovered); err != nil {
 		return err
 	}
-	response := NewHelloAckMessage(0) //Todo, define the user id (va a servir para multiples clientes)
+	response := NewHelloAckMessage() //Todo, define the user id (va a servir para multiples clientes)
 	if err := proto.sendMessage(response); err != nil {
 		return err
 	}

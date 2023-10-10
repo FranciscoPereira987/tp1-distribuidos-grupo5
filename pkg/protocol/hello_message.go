@@ -51,5 +51,5 @@ func (hello *HelloMessage) UnMarshal(stream []byte) error {
 }
 
 func (hello *HelloMessage) Response() Message {
-	return NewHelloAckMessage(hello.client_id)
+	return NewHelloAckMessage()
 }

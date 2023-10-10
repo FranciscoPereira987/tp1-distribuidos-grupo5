@@ -75,7 +75,7 @@ func TestUnconnectedCannotSendMessages(t *testing.T) {
 	defer connection.Close()
 	connector := protocol.NewProtocol(connection)
 
-	data := &typing.FloatType{8.9}
+	data := new(typing.FlightDataType)
 
 	message := protocol.NewDataMessage(data)
 
@@ -102,7 +102,7 @@ func TestClosingConnectionFromServerPOV(t *testing.T) {
 	defer connection.Close()
 	client := protocol.NewProtocol(connection)
 	server := protocol.NewProtocol(connection)
-	dataDummy := protocol.NewDataMessage(&typing.FloatType{Value: 0.0})
+	dataDummy := protocol.NewDataMessage(new(typing.FlightDataType))
 	go func() {
 		client.Connect()
 		client.Close()
@@ -128,7 +128,7 @@ func TestClosingConnectionFromClientPOV(t *testing.T) {
 	defer connection.Close()
 	client := protocol.NewProtocol(connection)
 	server := protocol.NewProtocol(connection)
-	dataDummy := protocol.NewDataMessage(&typing.FloatType{0.0})
+	dataDummy := protocol.NewDataMessage(new(typing.FlightDataType))
 	go func() {
 		server.Accept()
 		server.Recover(dataDummy)

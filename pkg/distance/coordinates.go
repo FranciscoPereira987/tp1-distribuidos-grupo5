@@ -45,8 +45,8 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 
 func (coord *CoordWrapper) AsRecord() []string {
 	record := []string{coord.Value.AirportCode}
-	record = append(record, fmt.Sprintf("%d", coord.Value.Latitude))
-	return append(record, fmt.Sprintf("%d", coord.Value.Longitud))
+	record = append(record, fmt.Sprintf("%f", coord.Value.Latitude))
+	return append(record, fmt.Sprintf("%f", coord.Value.Longitud))
 }
 
 func IntoData(coord Coordinates, name string) *protocol.DataMessage {

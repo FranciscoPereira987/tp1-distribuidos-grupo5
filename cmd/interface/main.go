@@ -43,7 +43,21 @@ var (
 		RESULTSPORT,
 		AGG_QUEUE,
 	}
+
+	WORKER_VARS = []string {
+		QUERY1WORKERS,
+		QUERY2WORKERS,
+		QUERY3WORKERS,
+		QUERY4WORKERS,
+	}
 )
+
+func getTotalWorkers(v *viper.Viper) (total int) {
+	for _, value := range WORKER_VARS {
+		total += v.GetInt(value)
+	}
+	return 
+}
 
 func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator, error) {
 	mid, err := middleware.Dial(v.GetString(SOURCE))
@@ -57,7 +71,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 	}
 	mid.ExchangeDeclare(v.GetString(AGG_QUEUE), "direct")
 	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
-	mid.SetExpectedEOFCount(1)
+	mid.SetExpectedEOFCount(getTotalWorkers(v))
 	config := lib.AgregatorConfig{
 		Mid:            mid,
 		AgregatorQueue: v.GetString(AGG_QUEUE),

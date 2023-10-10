@@ -83,7 +83,7 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 		return "", "", err
 	}
 
-	sink, err := m.ExchangeDeclare(v.GetString("results"))
+	sink, err := m.ExchangeDeclare(v.GetString("results.name"), v.GetString("results.kind"))
 	return q, sink, err
 }
 

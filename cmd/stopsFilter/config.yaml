@@ -5,6 +5,8 @@ source:
 queue: ""
 server:
   url: "amqp://guest:guest@rabbit:5672/"
-results: "results"
+results:
+  name: "results"
+  kind: "direct"
 log:
   level: "info"

@@ -17,6 +17,6 @@ func CheckMessageLength(stream []byte) (int, error) {
 	if len(stream) < 5 {
 		return 0, errors.New("invalid message")
 	}
-	length := int(binary.BigEndian.Uint32(stream[1:5]))
+	length := int(binary.LittleEndian.Uint32(stream[1:5]))
 	return length, nil
 }

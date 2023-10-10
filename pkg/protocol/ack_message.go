@@ -27,7 +27,7 @@ func (hello *AckMessage) Number() byte {
 
 func (hello *AckMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
-	header = binary.BigEndian.AppendUint32(header, 0)
+	header = binary.LittleEndian.AppendUint32(header, 0)
 
 	return header
 }

@@ -24,7 +24,7 @@ func (errMes *ErrMessage) Number() byte {
 
 func (errMes *ErrMessage) Marshal() []byte {
 	header := utils.GetHeader(errMes)
-	header = binary.BigEndian.AppendUint32(header, 0)
+	header = binary.LittleEndian.AppendUint32(header, 0)
 	return header
 }
 

@@ -21,8 +21,8 @@ type ClientConfig struct {
 	DataFile   string
 	CoordsFile string
 
-	ServerData    connection.Conn
-	ServerResults connection.Conn
+	ServerData    *connection.Conn
+	ServerResults *connection.Conn
 }
 
 type Client struct {

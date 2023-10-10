@@ -33,7 +33,7 @@ Agregar como parametro, para que se pueda configurar las N veces mayor que la
 directa que deberia tener el filtro.
 */
 
-func connecTo(addr string, port string) connection.Conn {
+func connecTo(addr string, port string) *connection.Conn {
 	conn, err := connection.Dial(addr, port)
 	if err != nil {
 		panic(err.Error())

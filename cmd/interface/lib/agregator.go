@@ -51,7 +51,6 @@ func (agg *Agregator) Run() error {
 		}
 		_, result, err := middleware.DistanceFilterUnmarshal(data)
 		if err == nil {
-			logrus.Infof("Sending Query2 results: %s", result)
 			value := result.(middleware.DataQ2)
 			dataType := typing.NewResultQ2()
 			dataType.Value = value

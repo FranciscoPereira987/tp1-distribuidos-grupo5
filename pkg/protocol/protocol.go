@@ -23,14 +23,14 @@ var ErrUnexpected = errors.New("unexpected message")
 type Protocol struct {
 	registry  *Registry
 	buf       bufio.ReadWriter
-	source    connection.Conn
+	source    *connection.Conn
 	connected bool
 }
 
-func NewProtocol(conn connection.Conn) *Protocol {
+func NewProtocol(conn *connection.Conn) *Protocol {
 	return &Protocol{
 		registry:  NewRegistry(),
-		buf:       bufio.NewReadWriter(conn, conn),
+		buf:       conn.Buffer(),
 		source:    conn,
 		connected: false,
 	}
@@ -51,8 +51,9 @@ func (proto *Protocol) readMessage() ([]byte, error) {
 		return nil, err
 	}
 	body_length, _ := CheckMessageLength(header)
+	logrus.Infof("waiting to read: %d", body_length)
 	body := make([]byte, body_length)
-	_, err := io.ReadFull(proto.buf, body)
+	_, err = io.ReadFull(proto.buf, body)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +64,7 @@ func (proto *Protocol) manageHelloAck(message Message) error {
 	if _, ok := message.(*AckMessage); !ok {
 		logrus.Infof("got %s", message)
 		if _, ok := message.(*FinMessage); ok {
+			proto.connected = false
 			return ErrConnectionClosed
 		}
 
@@ -154,7 +156,6 @@ func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 		proto.connected = false
 		return ErrConnectionClosed
 	}
-
 	proto.sendMessage(&ErrMessage{})
 
 	return err
@@ -170,6 +171,7 @@ func (proto *Protocol) Recover(data Data) error {
 	}
 	
 	if err := data.UnMarshal(stream); err != nil {
+		logrus.Info("Managed invalid data")
 		return proto.manageInvalidData(stream, err)
 	}
 	
@@ -192,8 +194,9 @@ func (proto *Protocol) Close() error {
 		return err
 	}
 	fin := &FinMessage{}
+	
 	err := proto.sendMessage(fin)
-
+	proto.buf.Flush()
 	proto.connected = false
 	return err
 }

@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func connecTo(addr string, port string) connection.Conn {
+func connecTo(addr string, port string) *connection.Conn {
 	conn, err := connection.Dial(addr,  port)
 	if err != nil {
 		logrus.Fatalf("error connecting: %s", err)

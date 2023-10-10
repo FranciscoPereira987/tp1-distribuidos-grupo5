@@ -24,7 +24,7 @@ func (fin *FinMessage) Number() byte {
 
 func (fin *FinMessage) Marshal() []byte {
 	header := utils.GetHeader(fin)
-	header = binary.BigEndian.AppendUint32(header, 0)
+	header = binary.LittleEndian.AppendUint32(header, 0)
 	return header
 }
 

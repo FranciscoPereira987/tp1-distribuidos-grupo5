@@ -97,7 +97,7 @@ func (hello *DataMessage) Number() byte {
 func (hello *DataMessage) Marshal() []byte {
 	header := utils.GetHeader(hello)
 	body := hello.data_type.Serialize()
-	header = binary.BigEndian.AppendUint32(header, uint32(len(body)))
+	header = binary.LittleEndian.AppendUint32(header, uint32(len(body)))
 	return append(header, body...)
 }
 

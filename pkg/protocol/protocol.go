@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 )

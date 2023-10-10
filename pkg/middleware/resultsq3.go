@@ -30,6 +30,17 @@ type ResultQ3 struct {
 	Stops       string
 }
 
+func ResultQ3Marshal(data ResultQ3) []byte {
+	filter := StopsFilterData{
+		ID: data.ID,
+		Origin: data.Origin,
+		Destination: data.Destination,
+		Duration: data.Duration,
+		Stops: data.Stops,
+	}
+	return Q3Marshal(filter)
+}
+
 func Q3Unmarshal(r *bytes.Reader) (data ResultQ3, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {

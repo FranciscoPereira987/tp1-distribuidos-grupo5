@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"regexp"
 	"strconv"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
+)
+
+const (
+	DURATION_EXP = "[0-9]+"
 )
 
 type FlightDataType struct {
@@ -96,7 +101,27 @@ func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilter
 	price, _ := strconv.ParseFloat(flight.Fare, 32)
 	data.Price = float32(price)
 	data.Stops = flight.Stops
+	duration, _ := ParseDuration(flight.Duration)
+	data.Duration = uint32(duration)
 	return
+}
+
+func ParseDuration(duration string) (int, error) {
+	exp, err := regexp.Compile(DURATION_EXP)
+	if err != nil {
+		return 0, err
+	}
+	values := exp.FindAllString(duration, 2)
+	if len(values) < 1 {
+		return 0, errors.New("invalid duration string")
+	}
+	if len(values) < 2 {
+		values = append(values, "0")
+	}
+	hours, _ := strconv.Atoi(values[0])
+	minutes, _ := strconv.Atoi(values[1])
+
+	return minutes + hours*60, nil
 }
 
 func (flight *FlightDataType) IntoDistanceData() (data middleware.DataQ2) {

@@ -1,15 +1,15 @@
-package reader_test
+package typing_test
 
 import (
 	"testing"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 func TestDurationParse(t *testing.T) {
 	duration := "PT6H55M"
 
-	value, err := reader.ParseDuration(duration)
+	value, err := typing.ParseDuration(duration)
 	if err != nil {
 		t.Fatalf("failed with error: %s", err)
 	}

@@ -32,6 +32,17 @@ type ResultQ1 struct {
 	Stops       string
 }
 
+func ResultQ1marshal(data ResultQ1) []byte {
+	filter := StopsFilterData{
+		ID: data.ID,
+		Origin: data.Origin,
+		Destination: data.Destination,
+		Price: data.Price,
+		Stops: data.Stops,
+	}
+	return Q1Marshal(filter)
+}
+
 func Q1Unmarshal(r *bytes.Reader) (data ResultQ1, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {

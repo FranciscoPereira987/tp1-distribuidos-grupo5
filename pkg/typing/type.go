@@ -11,7 +11,6 @@ type Type interface {
 	utils.Recorder
 	Serialize() []byte
 	Deserialize([]byte) error
-	Trim([]byte) []byte
 }
 
 func CheckTypeLength(typeLength int, stream []byte) error {
@@ -22,8 +21,3 @@ func CheckTypeLength(typeLength int, stream []byte) error {
 	return nil
 }
 
-func GetTypeFromStream(to Type, stream []byte) (value []byte, next []byte) {
-	next = to.Trim(stream)
-	value = stream[:len(stream)-len(next)]
-	return
-}

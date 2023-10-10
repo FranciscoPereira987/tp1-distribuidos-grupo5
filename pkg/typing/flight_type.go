@@ -90,10 +90,6 @@ func (flight *FlightDataType) Deserialize(r []byte)  error {
 	return err
 }
 
-func (flight *FlightDataType) Trim(s []byte) []byte {
-	return nil
-}
-
 func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilterData) {
 	data.ID = flight.Id
 	data.Origin = flight.Origin

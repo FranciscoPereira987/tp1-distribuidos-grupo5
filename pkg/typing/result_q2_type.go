@@ -41,7 +41,3 @@ func (r *ResultQ2) Deserialize(stream []byte) error {
 	r.Value = data
 	return err
 }
-
-func (r *ResultQ2) Trim(s []byte) []byte {
-	return nil
-} 

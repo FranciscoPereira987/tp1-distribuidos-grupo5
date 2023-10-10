@@ -76,7 +76,7 @@ func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, s
 
 func main() {
 	utils.DefaultLogger()
-	v, err := utils.InitConfig("distance", "./config/config.yaml")
+	v, err := utils.InitConfig("distance", "config")
 	if err != nil {
 		log.Fatalf("could not initialize config: %s", err)
 	}

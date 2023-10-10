@@ -38,7 +38,7 @@ func (coord *CoordWrapper) Deserialize(stream []byte) error {
 		return err
 	}
 	buffer := bytes.NewReader(stream[1:])
-	data, err :=  middleware.CoordUnmarshal(buffer)
+	data, err := middleware.CoordUnmarshal(buffer)
 	coord.Value = data
 	return err
 }
@@ -53,8 +53,8 @@ func IntoData(coord Coordinates, name string) *protocol.DataMessage {
 	wrapper := &CoordWrapper{
 		Value: middleware.CoordinatesData{
 			AirportCode: name,
-			Latitude: coord.Lat,
-			Longitud: coord.Lon,
+			Latitude:    coord.Lat,
+			Longitud:    coord.Lon,
 		},
 	}
 
@@ -73,4 +73,3 @@ func CoordsFromData(data protocol.Data) (*Coordinates, error) {
 	}
 	return coords, nil
 }
-

@@ -30,8 +30,8 @@ func Dial(host, port string) (con *Conn, err error) {
 }
 
 func FromListener(listener net.Listener) (*Conn, error) {
-	c, err := listener.Accept() 
-	
+	c, err := listener.Accept()
+
 	return fromSckt(c), err
 }
 

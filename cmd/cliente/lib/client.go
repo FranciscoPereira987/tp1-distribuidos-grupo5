@@ -94,7 +94,7 @@ func NewClient(config ClientConfig) (*Client, error) {
 func getClientMultiData() protocol.Data {
 	data := protocol.NewMultiData()
 	types := getResultTypes()
-	for _, value := range types{
+	for _, value := range types {
 		data.Register(protocol.NewDataMessage(value))
 	}
 	return data

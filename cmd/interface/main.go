@@ -45,7 +45,7 @@ var (
 		AGG_QUEUE,
 	}
 
-	WORKER_VARS = []string {
+	WORKER_VARS = []string{
 		QUERY1WORKERS,
 		QUERY2WORKERS,
 		QUERY3WORKERS,
@@ -64,7 +64,7 @@ func getTotalWorkers(v *viper.Viper) (total int) {
 	for _, value := range WORKER_VARS {
 		total += v.GetInt(value)
 	}
-	return 
+	return
 }
 
 func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator, error) {
@@ -93,9 +93,9 @@ func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.
 	for _, name := range EXCHANGE_VARS {
 		_, err = mid.ExchangeDeclare(name)
 		if err != nil {
-			return 
+			return
 		}
-	} 
+	}
 
 	return
 }
@@ -121,8 +121,8 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 		Query4:        v.GetString(QUERY4EXCHANGE),
 		Workers4:      v.GetInt(QUERY4WORKERS),
 		Mid:           mid,
-		WaitQueue: v.GetString(WAITQUEUE),
-		TotalWorkers: getTotalWorkers(v),
+		WaitQueue:     v.GetString(WAITQUEUE),
+		TotalWorkers:  getTotalWorkers(v),
 		Ctx:           list_context,
 		ListeningPort: v.GetString(LISTENINGPORT),
 		ResultsPort:   v.GetString(RESULTSPORT),

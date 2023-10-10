@@ -18,7 +18,7 @@ var (
 	RESULT_ADDR = "source.sink"
 	ID          = "id"
 	SOURCE      = "source.url"
-	STATUS = "source.status"
+	STATUS      = "source.status"
 	CONFIG_VARS = []string{
 		TIMES,
 		DATA_ADDR,

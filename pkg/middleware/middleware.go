@@ -38,13 +38,13 @@ func (m *Middleware) SetExpectedEOFCount(count int) {
 
 func (m *Middleware) ExchangeDeclare(name string) (string, error) {
 	return name, m.ch.ExchangeDeclare(
-		name,  // name
-		"direct",  // type
-		true,  // durable
-		false, // delete when unused
-		false, // internal
-		false, // no-wait
-		nil,   // arguments
+		name,     // name
+		"direct", // type
+		true,     // durable
+		false,    // delete when unused
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
 	)
 }
 

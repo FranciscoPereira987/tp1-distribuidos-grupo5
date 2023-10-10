@@ -12,7 +12,7 @@ type ResultQ4 struct {
 	Value middleware.ResultQ4
 }
 
-func NewResultQ4() *ResultQ4{
+func NewResultQ4() *ResultQ4 {
 	return new(ResultQ4)
 }
 
@@ -25,7 +25,7 @@ func (r *ResultQ4) AsRecord() []string {
 
 	record = append(record, r.Value.Origin, r.Value.Destination)
 
-	return append(record, fmt.Sprintf("%f", r.Value.AvgPrice),fmt.Sprintf("%f", r.Value.MaxPrice) )
+	return append(record, fmt.Sprintf("%f", r.Value.AvgPrice), fmt.Sprintf("%f", r.Value.MaxPrice))
 }
 
 func (r *ResultQ4) Serialize() []byte {

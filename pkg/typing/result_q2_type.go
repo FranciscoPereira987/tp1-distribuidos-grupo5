@@ -13,7 +13,7 @@ type ResultQ2 struct {
 	Value middleware.DataQ2
 }
 
-func NewResultQ2() *ResultQ2{
+func NewResultQ2() *ResultQ2 {
 	return new(ResultQ2)
 }
 

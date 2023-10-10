@@ -103,7 +103,7 @@ func (client *Client) runResults() {
 	data := getClientMultiData()
 	for {
 		if err := client.resultsConn.Recover(data); err != nil {
-			if err.Error() == errors.New("connection closed").Error() {
+			if err == protocol.ErrConnectionClosed {
 				break
 			}
 			logrus.Errorf("Error while recieving results: %s", err)
@@ -125,7 +125,7 @@ func (client *Client) runData() {
 		data, err := client.coordsReader.ReadData()
 
 		if err != nil {
-			if err.Error() == io.EOF.Error() {
+			if err == io.EOF {
 				logrus.Info("action: coordinate's data | result: success")
 				break
 			}
@@ -143,7 +143,7 @@ func (client *Client) runData() {
 	for {
 		data, err := client.dataReader.ReadData()
 		if err != nil {
-			if err.Error() == io.EOF.Error() {
+			if err == io.EOF {
 				logrus.Infof("action: data sending | result: success")
 				break
 			}

@@ -149,7 +149,7 @@ func (parser *Parser) Run() error {
 
 		if err := data.Recover(message); err != nil {
 
-			if err.Error() == "connection closed" {
+			if err == protocol.ErrConnectionClosed {
 				logrus.Info("client finished sending its data")
 				//err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
 				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))

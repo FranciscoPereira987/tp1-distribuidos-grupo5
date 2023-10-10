@@ -6,6 +6,10 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/conection"
 )
 
+var ErrNotConnected = errors.New("not connected")
+var ErrConnectionClosed = errors.New("connection closed")
+var ErrUnexpected = errors.New("unexpected message")
+
 /*
 |OP_CODE| => 1 byte
 |Message Length| => 4 bytes
@@ -51,18 +55,18 @@ func (proto *Protocol) manageResponse(message Message, sent Message) error {
 
 		if _, ok := message.(*FinMessage); ok {
 			proto.sendMessage(NewFinAckMessage())
-			return errors.New("connection closed")
+			return ErrConnectionClosed
 		}
 
 		proto.sendMessage(&ErrMessage{})
-		return errors.New("got unexpected message from stream")
+		return fmt.Errorf("got %w from stream", ErrUnexpected)
 	}
 	return nil
 }
 
 func (proto Protocol) checkConnected() (err error) {
 	if !proto.connected {
-		err = errors.New("not connected")
+		err = ErrNotConnected
 	}
 	return
 }
@@ -135,7 +139,7 @@ func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 	if finM, ok := fin.(*FinMessage); ok {
 		proto.sendMessage(finM.Response())
 		proto.connected = false
-		return errors.New("connection closed")
+		return ErrConnectionClosed
 	}
 
 	proto.sendMessage(&ErrMessage{})

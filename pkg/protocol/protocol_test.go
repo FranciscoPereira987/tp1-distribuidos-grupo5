@@ -117,7 +117,7 @@ func TestClosingConnectionFromServerPOV(t *testing.T) {
 		t.Fatalf("server recovered data on closing connection")
 	}
 
-	if err.Error() != errors.New("connection closed").Error() {
+	if err != protocol.ErrConnectionClosed {
 		t.Fatalf("recieved unexpected error: %s", err)
 	}
 

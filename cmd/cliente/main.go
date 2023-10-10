@@ -10,10 +10,10 @@ import (
 
 var (
 	RESULTS_DIR = "results.dir"
-	//QUERY1 = "results.first"
+	QUERY1 = "results.first"
 	QUERY2 = "results.second"
-	//QUERY3 = "results.third"
-	//QUERY4 = "results.fourth"
+	QUERY3 = "results.third"
+	QUERY4 = "results.fourth"
 	DATA_FILE   = "datafile"
 	COORDS_FILE = "coordsfile"
 
@@ -42,7 +42,10 @@ func connecTo(addr string, port string) *connection.Conn {
 
 func getConfig(v *viper.Viper) *lib.ClientConfig {
 	config := &lib.ClientConfig{}
+	config.Query1File = v.GetString(QUERY1)
 	config.Query2File = v.GetString(QUERY2)
+	config.Query3File = v.GetString(QUERY3)
+	config.Query4File = v.GetString(QUERY4)
 	config.ResultsDir = v.GetString(RESULTS_DIR)
 	config.ServerData = connecTo(v.GetString(SERVER_ADDR), v.GetString(DATA_PORT))
 	config.ServerResults = connecTo(v.GetString(SERVER_ADDR), v.GetString(RESULTS_PORT))

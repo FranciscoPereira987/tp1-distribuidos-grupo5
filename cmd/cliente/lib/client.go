@@ -13,10 +13,10 @@ import (
 
 type ClientConfig struct {
 	ResultsDir string
-	//Query1File string
+	Query1File string
 	Query2File string
-	//Query3File string
-	//Query4File string
+	Query3File string
+	Query4File string
 
 	DataFile   string
 	CoordsFile string
@@ -38,12 +38,12 @@ type Client struct {
 }
 
 func getFiles(config ClientConfig) []string {
-	files := []string{config.Query2File}
+	files := []string{config.Query1File, config.Query2File, config.Query3File, config.Query4File}
 	return files
 }
 
 func getResultTypes() []typing.Type {
-	types := []typing.Type{typing.NewResultQ2()}
+	types := []typing.Type{typing.NewResultQ1(), typing.NewResultQ2(), typing.NewResultQ3(), typing.NewResultQ4()}
 	return types
 }
 
@@ -93,11 +93,10 @@ func NewClient(config ClientConfig) (*Client, error) {
 
 func getClientMultiData() protocol.Data {
 	data := protocol.NewMultiData()
-	query1 := protocol.NewDataMessage(typing.NewResultQ1())
-	query2 := protocol.NewDataMessage(typing.NewResultQ2())
-	query3 := protocol.NewDataMessage(typing.NewResultQ3())
-	query4 := protocol.NewDataMessage(typing.NewResultQ4())
-	data.Register(query1, query2, query3, query4)
+	types := getResultTypes()
+	for _, value := range types{
+		data.Register(protocol.NewDataMessage(value))
+	}
 	return data
 }
 

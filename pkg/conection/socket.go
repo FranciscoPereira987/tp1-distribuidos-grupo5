@@ -1,6 +1,7 @@
 package conection
 
 import (
+	"bytes"
 	"io"
 	"net"
 )
@@ -51,18 +52,7 @@ Safe write implementation, either writes the whole buffer
 or returns an error
 */
 func (s *socket) Write(buf []byte) (writen int, err error) {
-	for len(buf) > 0 {
-		newlyWriten, writeErr := s.dial.Write(buf)
-
-		if writeErr != nil {
-			err = writeErr
-			break
-		}
-		buf = buf[newlyWriten:]
-		writen += newlyWriten
-	}
-
-	return
+	return io.Copy(s.dial, bytes.NewReader(buf))
 }
 
 func (s *socket) Close() error {

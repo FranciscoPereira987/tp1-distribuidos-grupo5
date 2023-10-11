@@ -15,7 +15,7 @@ build: GOOS=linux go build -0 ./bin/ ./cmd/$(CMD)/
 build-image: 
 	docker build -t server -f cmd/interface/Dockerfile .
 	docker build -t distance_filter -f cmd/filtroDistancia/Dockerfile .
-	docker build -t stops_filter -f cmd/stopsFilter/Dockerfile .
+	docker build -t fastest_filter -f cmd/fastestFilter/Dockerfile .
 	docker build -t avg_filter -f cmd/avgFilter/Dockerfile .
 	docker build -t client -f cmd/cliente/Dockerfile .
 .PHONY: build-image

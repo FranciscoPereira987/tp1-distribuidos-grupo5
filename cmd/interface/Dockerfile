@@ -7,15 +7,11 @@ FROM golang:1.21 AS builder
 # we are adding a very specific label to the image to then find these kind of images and delete them
 LABEL intermediateStageToBeDeleted=true
 
-RUN mkdir -p /build
 WORKDIR /build/
 COPY pkg/ pkg/
-COPY cmd/interface/lib/ cmd/interface/lib/
-COPY cmd/interface/main.go cmd/interface/main.go
-COPY go.mod go.mod
-COPY go.sum go.sum
-RUN go mod tidy
-RUN go mod vendor
+COPY cmd/interface/ cmd/interface/
+COPY go.mod go.sum /build/
+RUN go mod tidy && go mod vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/interface github.com/franciscopereira987/tp1-distribuidos/cmd/interface
 
 

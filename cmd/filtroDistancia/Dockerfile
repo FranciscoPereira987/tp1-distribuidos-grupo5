@@ -8,11 +8,11 @@ FROM golang:1.21 AS builder
 LABEL intermediateStageToBeDeleted=true
 
 WORKDIR /build/
+COPY go.mod go.sum /build/
+RUN go mod download
 COPY pkg/ pkg/
 COPY cmd/filtroDistancia/ cmd/filtroDistancia/
-COPY go.mod go.sum /build/
-RUN go mod tidy && go mod vendor
-RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/filtroDistancia github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/filtroDistancia github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia
 
 
 FROM busybox:latest

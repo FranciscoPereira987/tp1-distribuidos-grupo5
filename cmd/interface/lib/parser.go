@@ -193,10 +193,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 
 			if err == protocol.ErrConnectionClosed {
 				logrus.Info("client finished sending its data")
-				err = parser.config.Mid.Control(parser.config.Ctx, parser.config.ResultsQueue)
-				err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query2))
-				err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query3))
-				err = errors.Join(err, parser.publishQuery4Avg(totalPrice, totalFlights))
+				err = parser.publishQuery4Avg(totalPrice, totalFlights)
 				break
 			}
 			logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
@@ -223,5 +220,9 @@ func (parser *Parser) Run(workers <-chan error) error {
 			}
 		}
 	}
+	err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.ResultsQueue))
+	err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query2))
+	err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query3))
+	err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query4))
 	return err
 }

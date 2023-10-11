@@ -37,24 +37,23 @@ loop:
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		case msg, more := <-ch:
-			
+			if !more {
+				break loop
+			}
 			if mid.IsAvgPriceMessage(msg) {
 				avg, err = mid.AvgUnmarshal(msg)
 				if err != nil {
 					return err
 				}
-				break loop
-			}
-			data, err = mid.AvgFilterUnmarshal(msg)
-			if err != nil {
-				return err
-			}
-			if !more {
-				break loop
+			} else {
+				data, err = mid.AvgFilterUnmarshal(msg)
+				if err != nil {
+					return err
+				}
+				key := data.Origin + "." + data.Destination
+				prices[key] = append(prices[key], data.Price)
 			}
 		}
-		key := data.Origin + "." + data.Destination
-		prices[key] = append(prices[key], data.Price)
 	}
 	for k, a := range aggregate(prices, avg) {
 		origin, destination, _ := strings.Cut(k, ".")

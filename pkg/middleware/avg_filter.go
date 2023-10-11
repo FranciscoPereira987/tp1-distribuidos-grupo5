@@ -15,6 +15,12 @@ func IsAvgPriceMessage(msg []byte) bool {
 	return len(msg) == 4
 }
 
+func AvgPriceMarshal(avgPrice float32, count int) []byte {
+	var w bytes.Buffer
+	binary.Write(&w, binary.LittleEndian, avgPrice / float32(count))
+	return w.Bytes()
+}
+
 func AvgUnmarshal(msg []byte) (float32, error) {
 	var avgPrice float32
 	err := binary.Read(bytes.NewReader(msg), binary.LittleEndian, &avgPrice)
@@ -26,7 +32,7 @@ func AvgMarshal(data AvgFilterData) []byte {
 	buf = AppendString(buf, data.Origin)
 	buf = AppendString(buf, data.Destination)
 	var w bytes.Buffer
-	binary.Write(&w, binary.LittleEndian, &data.Price)
+	binary.Write(&w, binary.LittleEndian, data.Price)
 	buf = append(buf, w.Bytes()...)
 	return buf
 }

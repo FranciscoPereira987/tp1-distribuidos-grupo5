@@ -1,8 +1,9 @@
 # id: 1
 source: "avg"
+status: "status"
+results: "results"
 queue: ""
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"
-results: "results"
 log:
   level: "info"

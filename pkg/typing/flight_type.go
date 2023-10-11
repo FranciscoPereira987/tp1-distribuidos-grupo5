@@ -109,13 +109,13 @@ func ParseDuration(duration string) (minutes int, err error) {
 
 	days, hours, minutes := 0, 0, 0
 	if values[1] != "" {
-		days, err = strconv.Atoi(values[1][:len(values[1]-1)])
+		days, err = strconv.Atoi(values[1][:len(values[1])-1])
 	}
 	if err == nil && values[2] != "" {
-		hours, err = strconv.Atoi(values[2][:len(values[2]-1)])
+		hours, err = strconv.Atoi(values[2][:len(values[2])-1])
 	}
 	if err == nil && values[3] != "" {
-		minutes, err = strconv.Atoi(values[3][:len(values[3]-1)])
+		minutes, err = strconv.Atoi(values[3][:len(values[3])-1])
 	}
 
 	return days*24*60 + hours*60 + minutes, err

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 
@@ -11,9 +13,8 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
-const (
-	DURATION_EXP = "[0-9]+"
-)
+var DurationRegexp = regexp.MustCompile(`P(\d+D)?T(\d+H)?(\d+M)?`)
+var ErrInvalidDuration = errors.New("invalid duration format")
 
 type FlightDataType struct {
 	Id          [16]byte
@@ -60,7 +61,7 @@ func (flight *FlightDataType) Deserialize(r []byte) error {
 		return err
 	}
 	if len(r) < 17 {
-		return errors.New("invalid stream")
+		return io.ErrUnexpectedEOF
 	}
 	var err error
 	flight.Id = [16]byte(r[1:17])
@@ -100,22 +101,24 @@ func (flight *FlightDataType) IntoResultQ1() (data middleware.ResultQ1) {
 	return
 }
 
-func ParseDuration(duration string) (int, error) {
-	exp, err := regexp.Compile(DURATION_EXP)
-	if err != nil {
-		return 0, err
+func ParseDuration(duration string) (minutes int, err error) {
+	values := DurationRegexp.FindStringSubmatch(duration)
+	if len(values) == 0 {
+		return 0, fmt.Errorf("%w: '%s'", ErrInvalidDuration, duration)
 	}
-	values := exp.FindAllString(duration, 2)
-	if len(values) < 1 {
-		return 0, errors.New("invalid duration string")
-	}
-	if len(values) < 2 {
-		values = append(values, "0")
-	}
-	hours, _ := strconv.Atoi(values[0])
-	minutes, _ := strconv.Atoi(values[1])
 
-	return minutes + hours*60, nil
+	days, hours, minutes := 0, 0, 0
+	if values[1] != "" {
+		days, err = strconv.Atoi(values[1][:len(values[1]-1)])
+	}
+	if err == nil && values[2] != "" {
+		hours, err = strconv.Atoi(values[2][:len(values[2]-1)])
+	}
+	if err == nil && values[3] != "" {
+		minutes, err = strconv.Atoi(values[3][:len(values[3]-1)])
+	}
+
+	return days*24*60 + hours*60 + minutes, err
 }
 
 func (flight *FlightDataType) IntoFastestFilterData() (data middleware.FastestFilterData) {

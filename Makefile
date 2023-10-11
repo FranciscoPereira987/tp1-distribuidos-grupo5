@@ -32,6 +32,10 @@ setup:
 	./setup/setup.bash > docker-compose-dev.yaml
 .PHONY: setup
 
+run-client:
+	docker run --rm -v ./client:/client --network tp1_testing_net --entrypoint /cliente client
+.PHONY: run-client
+
 docker-compose-up:
 	# Hay que agregar la creacion de todas las imagenes
 	# Supongo que estan creadas

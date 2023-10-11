@@ -1,6 +1,6 @@
 name: tp1
 services:
-  
+
   server:
     container_name: server
     image: server:latest
@@ -17,7 +17,7 @@ services:
           condition: service_healthy
     volumes:
       - ./cmd/interface/config:/config
-      
+
   distanceFilter:
     container_name: distance_filter
     image: distance_filter:latest
@@ -53,7 +53,7 @@ services:
     environment:
       - AVG_ID=1
     volumes:
-      - ./cmd/avgFilter:/cmd/avgFilter
+      - ./cmd/avgFilter/config.yaml:/config.yaml
     depends_on:
       - server
 

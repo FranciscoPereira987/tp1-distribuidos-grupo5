@@ -15,12 +15,10 @@ import (
 var (
 	SOURCE = "source"
 
-	QUERY1EXCHANGE = "exchange.first"
 	QUERY2EXCHANGE = "exchange.second"
 	QUERY3EXCHANGE = "exchange.third"
 	QUERY4EXCHANGE = "exchange.fourth"
 
-	QUERY1WORKERS = "workers.first"
 	QUERY2WORKERS = "workers.second"
 	QUERY3WORKERS = "workers.third"
 	QUERY4WORKERS = "workers.fourth"
@@ -32,11 +30,9 @@ var (
 	WAITQUEUE = "exchange.status"
 
 	CONFIG_VARS = []string{
-		QUERY1EXCHANGE,
 		QUERY3EXCHANGE,
 		QUERY2EXCHANGE,
 		QUERY4EXCHANGE,
-		QUERY1WORKERS,
 		QUERY2WORKERS,
 		QUERY3WORKERS,
 		QUERY4WORKERS,
@@ -46,14 +42,12 @@ var (
 	}
 
 	WORKER_VARS = []string{
-		QUERY1WORKERS,
 		QUERY2WORKERS,
 		QUERY3WORKERS,
 		QUERY4WORKERS,
 	}
 
 	EXCHANGE_VARS = []string{
-		QUERY1EXCHANGE,
 		QUERY2EXCHANGE,
 		QUERY3EXCHANGE,
 		QUERY4EXCHANGE,
@@ -113,8 +107,7 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 	mid.ExchangeDeclare(name)
 	mid.QueueBind(name, name, []string{"control"})
 	config := lib.ParserConfig{
-		Query1:        v.GetString(QUERY1EXCHANGE),
-		Workers1:      v.GetInt(QUERY1WORKERS),
+		ResultsQueue:  v.GetString(AGG_QUEUE),
 		Query2:        v.GetString(QUERY2EXCHANGE),
 		Workers2:      v.GetInt(QUERY2WORKERS),
 		Query3:        v.GetString(QUERY3EXCHANGE),

@@ -6,7 +6,15 @@ import (
 	"io"
 )
 
-func Q1Marshal(data StopsFilterData) []byte {
+type ResultQ1 struct {
+	ID          [16]byte
+	Origin      string
+	Destination string
+	Price       float32
+	Stops       string
+}
+
+func ResultQ1Marshal(data ResultQ1) []byte {
 	buf := make([]byte, 1, 40)
 	buf[0] = Query1Flag
 
@@ -22,25 +30,6 @@ func Q1Marshal(data StopsFilterData) []byte {
 	buf = AppendString(buf, data.Stops)
 
 	return buf
-}
-
-type ResultQ1 struct {
-	ID          [16]byte
-	Origin      string
-	Destination string
-	Price       float32
-	Stops       string
-}
-
-func ResultQ1marshal(data ResultQ1) []byte {
-	filter := StopsFilterData{
-		ID:          data.ID,
-		Origin:      data.Origin,
-		Destination: data.Destination,
-		Price:       data.Price,
-		Stops:       data.Stops,
-	}
-	return Q1Marshal(filter)
 }
 
 func Q1Unmarshal(r *bytes.Reader) (data ResultQ1, err error) {

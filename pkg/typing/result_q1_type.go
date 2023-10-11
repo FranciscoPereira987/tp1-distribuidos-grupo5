@@ -30,7 +30,7 @@ func (r *ResultQ1) AsRecord() []string {
 }
 
 func (r *ResultQ1) Serialize() []byte {
-	return middleware.ResultQ1marshal(r.Value)
+	return middleware.ResultQ1Marshal(r.Value)
 }
 
 func (r *ResultQ1) Deserialize(stream []byte) error {

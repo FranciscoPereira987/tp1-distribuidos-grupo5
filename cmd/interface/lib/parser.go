@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
@@ -15,8 +16,8 @@ import (
 )
 
 type ParserConfig struct {
-	Query1   string
-	Workers1 int
+	ResultsQueue string
+
 	Query2   string
 	Workers2 int
 	Query3   string
@@ -43,7 +44,6 @@ to the diferent workers
 type Parser struct {
 	config     ParserConfig
 	listener   *Listener
-	query1Keys middleware.KeyGenerator
 	query2Keys middleware.KeyGenerator
 	query3Keys middleware.KeyGenerator
 	query4Keys middleware.KeyGenerator
@@ -59,7 +59,6 @@ func NewParser(config ParserConfig) (*Parser, error) {
 	return &Parser{
 		config:     config,
 		listener:   listener,
-		query1Keys: middleware.NewKeyGenerator(config.Workers1),
 		query2Keys: middleware.NewKeyGenerator(config.Workers2),
 		query3Keys: middleware.NewKeyGenerator(config.Workers3),
 		query4Keys: middleware.NewKeyGenerator(config.Workers4),
@@ -68,9 +67,13 @@ func NewParser(config ParserConfig) (*Parser, error) {
 }
 
 func (parser *Parser) publishQuery1(data *typing.FlightDataType) (err error) {
-	flight := data.IntoStopsFilterData()
-	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
-	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query1, key, middleware.Q1Marshal(flight))
+	flight := data.IntoResultQ1()
+	err = parser.config.Mid.PublishWithContext(
+		parser.config.Ctx,
+		parser.config.ResultsQueue,
+		parser.config.ResultsQueue,
+		middleware.ResultQ1Marshal(flight),
+	)
 	return
 }
 
@@ -82,10 +85,9 @@ func (parser *Parser) publishQuery2(data *typing.FlightDataType) (err error) {
 }
 
 func (parser *Parser) publishQuery3(data *typing.FlightDataType) (err error) {
-	flight := data.IntoStopsFilterData()
-	key := parser.query1Keys.KeyFrom(flight.Origin, flight.Destination)
-	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query3, key, middleware.Q1Marshal(flight))
-
+	flight := data.IntoFastestFilterData()
+	key := parser.query3Keys.KeyFrom(flight.Origin, flight.Destination)
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query3, key, middleware.Q3Marshal(flight))
 	return
 }
 
@@ -178,10 +180,9 @@ func (parser *Parser) Run(workers <-chan error) error {
 	for {
 		if err := data.Recover(message); err != nil {
 
-			if err.Error() == protocol.ErrConnectionClosed.Error() {
+			if err == protocol.ErrConnectionClosed {
 				logrus.Info("client finished sending its data")
-				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query1)
-				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))
+				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2)
 				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
 				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query4))
 				break
@@ -196,9 +197,11 @@ func (parser *Parser) Run(workers <-chan error) error {
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := v
-			err = parser.publishQuery1(data)
-			err = errors.Join(err, parser.publishQuery2(data))
-			err = errors.Join(err, parser.publishQuery3(data))
+			err = parser.publishQuery2(data)
+			if strings.Count(data.Stops, "||") >= 3 {
+				err = errors.Join(err, parser.publishQuery1(data))
+				err = errors.Join(err, parser.publishQuery3(data))
+			}
 			err = errors.Join(err, parser.publishQuery4(data))
 			if err != nil {
 				return err

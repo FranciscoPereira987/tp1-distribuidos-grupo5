@@ -10,9 +10,9 @@ LABEL intermediateStageToBeDeleted=true
 RUN mkdir -p /build
 WORKDIR /build/
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/stopsFilter github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter
+RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/fastestFilter github.com/franciscopereira987/tp1-distribuidos/cmd/fastestFilter
 
 
 FROM busybox:latest
-COPY --from=builder /build/bin/stopsFilter /stopsFilter
+COPY --from=builder /build/bin/fastestFilter /fastestFilter
 ENTRYPOINT ["/bin/sh"]

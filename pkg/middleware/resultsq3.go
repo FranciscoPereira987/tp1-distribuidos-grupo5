@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-func Q3Marshal(data StopsFilterData) []byte {
+func Q3Marshal(data FastestFilterData) []byte {
 	buf := make([]byte, 1, 40)
 	buf[0] = Query3Flag
 
@@ -31,13 +31,7 @@ type ResultQ3 struct {
 }
 
 func ResultQ3Marshal(data ResultQ3) []byte {
-	filter := StopsFilterData{
-		ID:          data.ID,
-		Origin:      data.Origin,
-		Destination: data.Destination,
-		Duration:    data.Duration,
-		Stops:       data.Stops,
-	}
+	filter := FastestFilterData(data)
 	return Q3Marshal(filter)
 }
 

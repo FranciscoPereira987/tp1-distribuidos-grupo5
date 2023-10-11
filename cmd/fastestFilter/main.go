@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter/common"
+	"github.com/franciscopereira987/tp1-distribuidos/cmd/fastestFilter/common"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -40,7 +40,7 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 }
 
 func main() {
-	v, err := utils.InitConfig("stops", "cmd/stopsFilter")
+	v, err := utils.InitConfig("fast", "cmd/fastestFilter")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
-		log.Fatal(fmt.Errorf("Could not parse STOPS_ID env var as int: %w", err))
+		log.Fatal(fmt.Errorf("Could not parse FAST_ID env var as int: %w", err))
 	}
 
 	middleware, err := mid.Dial(v.GetString("server.url"))

@@ -12,7 +12,7 @@ COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
 COPY cmd/cliente/ cmd/cliente/
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/cliente github.com/franciscopereira987/tp1-distribuidos/cmd/cliente
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/cliente ./cmd/cliente
 
 
 FROM busybox:latest

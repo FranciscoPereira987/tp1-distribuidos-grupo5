@@ -12,7 +12,7 @@ COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
 COPY cmd/avgFilter/ cmd/avgFilter/
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/avgFilter github.com/franciscopereira987/tp1-distribuidos/cmd/avgFilter
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/avgFilter ./cmd/avgFilter
 
 
 FROM busybox:latest

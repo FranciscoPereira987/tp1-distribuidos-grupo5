@@ -1,7 +1,6 @@
 SHELL := /bin/bash
-PWD := $(shell pwd)
 
-GIT_REMOTE = github.com/franciscopereira987/tp1-distribuidos
+GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 
 CMD := cliente interface filtroDistancia fastestFilter avgFilter
 BIN := $(addprefix bin/,$(CMD))
@@ -10,7 +9,7 @@ all: $(BIN)
 .PHONY: all
 
 $(BIN):
-	go build -o $@ $(GIT_REMOTE)/cmd/$(notdir $@)
+	go build -o $@ ./cmd/$(notdir $@)
 
 build-image:
 	docker build -t server -f cmd/interface/Dockerfile .
@@ -21,11 +20,11 @@ build-image:
 .PHONY: build-image
 
 fmt:
-	go fmt $(PWD)/...
+	go fmt ./...
 .PHONY: fmt
 
 test:
-	go test $(PWD)/... -timeout 10s
+	go test ./... -timeout 10s
 .PHONY: test
 
 setup:

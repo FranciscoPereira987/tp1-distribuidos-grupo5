@@ -12,7 +12,7 @@ COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
 COPY cmd/filtroDistancia/ cmd/filtroDistancia/
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/filtroDistancia github.com/franciscopereira987/tp1-distribuidos/cmd/filtroDistancia
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/filtroDistancia ./cmd/filtroDistancia
 
 
 FROM busybox:latest

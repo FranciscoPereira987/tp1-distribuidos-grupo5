@@ -12,7 +12,7 @@ COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
 COPY cmd/interface/ cmd/interface/
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/interface github.com/franciscopereira987/tp1-distribuidos/cmd/interface
+RUN CGO_ENABLED=0 GOOS=linux go build -o bin/interface ./cmd/interface
 
 
 FROM busybox:latest

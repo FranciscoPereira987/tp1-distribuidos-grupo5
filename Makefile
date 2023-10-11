@@ -1,18 +1,18 @@
 SHELL := /bin/bash
 PWD := $(shell pwd)
 
-GIT_REMOTE = github.com/franciscopereira987/tp1-distribuidos.git
+GIT_REMOTE = github.com/franciscopereira987/tp1-distribuidos
 
-CMD ?= hello
+CMD := cliente interface filtroDistancia fastestFilter avgFilter
+BIN := $(addprefix bin/,$(CMD))
 
+all: $(BIN)
+.PHONY: all
 
-default: build
+$(BIN):
+	go build -o $@ $(GIT_REMOTE)/cmd/$(notdir $@)
 
-
-build: GOOS=linux go build -0 ./bin/ ./cmd/$(CMD)/
-.PHONY: build
-
-build-image: 
+build-image:
 	docker build -t server -f cmd/interface/Dockerfile .
 	docker build -t distance_filter -f cmd/filtroDistancia/Dockerfile .
 	docker build -t fastest_filter -f cmd/fastestFilter/Dockerfile .
@@ -28,7 +28,7 @@ test:
 	go test $(PWD)/... -timeout 10s
 .PHONY: test
 
-docker-compose-up: 
+docker-compose-up:
 	# Hay que agregar la creacion de todas las imagenes
 	# Supongo que estan creadas
 	docker compose -f docker-compose-dev.yaml up -d

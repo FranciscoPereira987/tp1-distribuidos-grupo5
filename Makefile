@@ -28,6 +28,10 @@ test:
 	go test $(PWD)/... -timeout 10s
 .PHONY: test
 
+setup:
+	./setup/setup.bash > docker-compose-dev.yaml
+.PHONY: setup
+
 docker-compose-up:
 	# Hay que agregar la creacion de todas las imagenes
 	# Supongo que estan creadas

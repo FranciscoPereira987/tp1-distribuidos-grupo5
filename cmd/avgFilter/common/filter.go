@@ -37,9 +37,7 @@ loop:
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		case msg, more := <-ch:
-			if !more {
-				return context.Cause(ctx)
-			}
+			
 			if mid.IsAvgPriceMessage(msg) {
 				avg, err = mid.AvgUnmarshal(msg)
 				if err != nil {
@@ -50,6 +48,9 @@ loop:
 			data, err = mid.AvgFilterUnmarshal(msg)
 			if err != nil {
 				return err
+			}
+			if !more {
+				break loop
 			}
 		}
 		key := data.Origin + "." + data.Destination

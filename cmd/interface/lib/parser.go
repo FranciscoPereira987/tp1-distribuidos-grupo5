@@ -113,9 +113,9 @@ func (parser *Parser) waitForWorkers() (wait chan error) {
 
 	go func() {
 		defer close(wait)
-		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers, parser.config.WaitQueue)
+		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers-1, parser.config.WaitQueue)
 		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
-		parser.config.Mid.SetExpectedControlCount(parser.config.TotalWorkers)
+		parser.config.Mid.SetExpectedControlCount(parser.config.TotalWorkers-1)
 		missing := parser.config.TotalWorkers
 		for _, more := <-ch; more; _, more = <-ch {
 			missing--

@@ -47,6 +47,9 @@ func (agg *Agregator) Run() error {
 			data := protocol.NewDataMessage(result)
 			results.Send(data)
 		}
+		if err != nil {
+			logrus.Errorf("action: sending results | error: %s", err)
+		}
 		if !more {
 			logrus.Info("action: sending results | status: finished")
 			break

@@ -8,7 +8,7 @@ services:
     networks:
       - testing_net
     environment:
-      - IFZ_WORKERS_FIRST=0
+      - IFZ_WORKERS_FIRST=1
       - IFZ_WORKERS_SECOND=1
       - IFZ_WORKERS_THIRD=1
       - IFZ_WORKERS_FOURTH=1
@@ -31,16 +31,16 @@ services:
     depends_on:
       - server
 
-  stopsFilter:
-    container_name: stops_filter
-    image: stops_filter:latest
-    entrypoint: /stopsFilter
+  fastestFilter:
+    container_name: fastest_filter
+    image: fastest_filter:latest
+    entrypoint: /fastestFilter
     networks:
       - testing_net
     environment:
-      - STOPS_ID=1
+      - FAST_ID=1
     volumes:
-      - ./cmd/stopsFilter:/cmd/stopsFilter
+      - ./cmd/fastestFilter:/cmd/fastestFilter
     depends_on:
       - server
 

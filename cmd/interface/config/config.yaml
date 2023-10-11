@@ -1,7 +1,7 @@
 exchange:
   first: "stops"
   second: "distance"
-  third: "duration"
+  third: "fastest"
   fourth: "avg"
   agregator: "results"
   status: "status"

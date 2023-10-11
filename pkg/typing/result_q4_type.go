@@ -17,7 +17,7 @@ func NewResultQ4() *ResultQ4 {
 }
 
 func (r *ResultQ4) Number() byte {
-	return middleware.Query3Flag
+	return middleware.Query4Flag
 }
 
 func (r *ResultQ4) AsRecord() []string {

@@ -9,8 +9,8 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY cmd/stopsFilter/common/ cmd/stopsFilter/common/
-COPY cmd/stopsFilter/main.go cmd/stopsFilter/main.go
+COPY cmd/fastestFilter/common/ cmd/fastestFilter/common/
+COPY cmd/fastestFilter/main.go cmd/fastestFilter/main.go
 COPY pkg/ pkg/
 COPY go.mod go.mod
 COPY go.sum go.sum

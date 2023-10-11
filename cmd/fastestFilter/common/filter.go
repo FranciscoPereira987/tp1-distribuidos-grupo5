@@ -52,11 +52,12 @@ loop:
 			if !more {
 				break loop
 			}
-			data, err = mid.FastestFilterUnmarshal(msg)
+			data, err = mid.FastestFilterUnmarshal(msg[1:])
 			if err != nil {
 				return err
 			}
 		}
+		//logrus.Info("updating fastest")
 		updateFastest(fastest, data)
 	}
 	for _, arr := range fastest {

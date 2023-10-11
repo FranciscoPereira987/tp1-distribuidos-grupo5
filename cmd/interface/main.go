@@ -19,6 +19,7 @@ var (
 	QUERY3EXCHANGE = "exchange.third"
 	QUERY4EXCHANGE = "exchange.fourth"
 
+	QUERY1WORKERS = "workers.first"
 	QUERY2WORKERS = "workers.second"
 	QUERY3WORKERS = "workers.third"
 	QUERY4WORKERS = "workers.fourth"
@@ -42,6 +43,7 @@ var (
 	}
 
 	WORKER_VARS = []string{
+		QUERY1WORKERS,
 		QUERY2WORKERS,
 		QUERY3WORKERS,
 		QUERY4WORKERS,
@@ -72,7 +74,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 		return nil, err
 	}
 	mid.ExchangeDeclare(v.GetString(AGG_QUEUE))
-	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control"})
+	mid.QueueBind(name, v.GetString(AGG_QUEUE), []string{"", "control", v.GetString(AGG_QUEUE)})
 	mid.SetExpectedControlCount(getTotalWorkers(v))
 	config := lib.AgregatorConfig{
 		Mid:            mid,

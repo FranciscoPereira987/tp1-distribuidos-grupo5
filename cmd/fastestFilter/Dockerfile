@@ -8,8 +8,6 @@ FROM golang:1.21 AS builder
 LABEL intermediateStageToBeDeleted=true
 
 WORKDIR /build/
-COPY cmd/fastestFilter/common/ cmd/fastestFilter/common/
-COPY cmd/fastestFilter/main.go cmd/fastestFilter/main.go
 COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/

@@ -115,7 +115,7 @@ func (parser *Parser) waitForWorkers() (wait chan error) {
 		defer close(wait)
 		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers-1, parser.config.WaitQueue)
 		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
-		parser.config.Mid.SetExpectedControlCount(parser.config.TotalWorkers-1)
+		parser.config.Mid.SetExpectedControlCount(parser.config.TotalWorkers - 1)
 		missing := parser.config.TotalWorkers
 		for _, more := <-ch; more; _, more = <-ch {
 			missing--
@@ -188,7 +188,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 
 	message := getDataMessages()
 	totalPrice, totalFlights := float32(0), 0
-	for ;; totalFlights++ {
+	for ; ; totalFlights++ {
 		if err := data.Recover(message); err != nil {
 
 			if err == protocol.ErrConnectionClosed {

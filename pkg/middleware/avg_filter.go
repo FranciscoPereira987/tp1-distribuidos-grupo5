@@ -17,7 +17,7 @@ func IsAvgPriceMessage(msg []byte) bool {
 
 func AvgPriceMarshal(avgPrice float32, count int) []byte {
 	var w bytes.Buffer
-	binary.Write(&w, binary.LittleEndian, avgPrice / float32(count))
+	binary.Write(&w, binary.LittleEndian, avgPrice/float32(count))
 	return w.Bytes()
 }
 

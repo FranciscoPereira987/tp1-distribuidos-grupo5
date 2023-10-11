@@ -9,8 +9,8 @@ import (
 )
 
 type Middleware struct {
-	conn     *amqp.Connection
-	ch       *amqp.Channel
+	conn *amqp.Connection
+	ch   *amqp.Channel
 
 	controlCount int
 }

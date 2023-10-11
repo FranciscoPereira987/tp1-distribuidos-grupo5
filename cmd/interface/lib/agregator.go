@@ -54,7 +54,7 @@ func (agg *Agregator) Run() error {
 			logrus.Info("action: sending results | status: finished")
 			break
 		}
-		
+
 	}
 
 	return nil

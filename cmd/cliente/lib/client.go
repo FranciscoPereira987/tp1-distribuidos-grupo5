@@ -142,7 +142,7 @@ func (client *Client) runData() {
 	client.coordsReader.Close()
 	for {
 		data, err := client.dataReader.ReadData()
-		
+
 		if err != nil {
 			if err == io.EOF {
 				logrus.Infof("action: data sending | result: success")

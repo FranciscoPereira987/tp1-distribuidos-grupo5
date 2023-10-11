@@ -197,7 +197,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 				break
 			}
 			logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
-			continue
+			break
 		}
 		messageType := message.Type()
 		switch v := messageType.(type) {

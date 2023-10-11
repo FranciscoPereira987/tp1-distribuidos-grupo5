@@ -27,9 +27,11 @@ test:
 	go test ./... -timeout 10s
 .PHONY: test
 
-setup:
-	./setup/setup.bash > docker-compose-dev.yaml
+setup: docker-compose-dev.yaml
 .PHONY: setup
+
+docker-compose-dev.yaml: setup/setup.bash
+	./setup/setup.bash > $@
 
 run-client:
 	docker run --rm -v ./client:/client --network tp1_testing_net --entrypoint /cliente client

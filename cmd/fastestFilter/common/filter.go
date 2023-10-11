@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 )
@@ -23,12 +22,12 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 	}
 }
 
-type FastestFlightsMap map[string][]mid.StopsFilterData
+type FastestFlightsMap map[string][]mid.FastestFilterData
 
-func updateFastest(fastest FastestFlightsMap, data mid.StopsFilterData) {
+func updateFastest(fastest FastestFlightsMap, data mid.FastestFilterData) {
 	key := data.Origin + "." + data.Destination
 	if fast, ok := fastest[key]; !ok {
-		tmp := [2]mid.StopsFilterData{data}
+		tmp := [2]mid.FastestFilterData{data}
 		fastest[key] = tmp[:1]
 	} else if data.Duration < fast[0].Duration {
 		_ = append(fast[:0], data, fast[0])
@@ -45,7 +44,7 @@ func (f *Filter) Run(ctx context.Context) error {
 	}
 loop:
 	for {
-		var data mid.StopsFilterData
+		var data mid.FastestFilterData
 		select {
 		case <-ctx.Done():
 			return context.Cause(ctx)
@@ -53,18 +52,12 @@ loop:
 			if !more {
 				break loop
 			}
-			data, err = mid.StopsFilterUnmarshal(msg)
+			data, err = mid.FastestFilterUnmarshal(msg)
 			if err != nil {
 				return err
 			}
 		}
-		if strings.Count(data.Stops, stopsSep) >= 3 {
-			err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q1Marshal(data))
-			if err != nil {
-				return err
-			}
-			updateFastest(fastest, data)
-		}
+		updateFastest(fastest, data)
 	}
 	for _, arr := range fastest {
 		for _, v := range arr {

@@ -20,8 +20,8 @@ func CoordMarshal(coords CoordinatesData) (buf []byte) {
 	buf = AppendString(buf, coords.AirportCode)
 
 	var w bytes.Buffer
-	binary.Write(&w, binary.LittleEndian, &coords.Latitude)
-	binary.Write(&w, binary.LittleEndian, &coords.Longitud)
+	binary.Write(&w, binary.LittleEndian, coords.Latitude)
+	binary.Write(&w, binary.LittleEndian, coords.Longitud)
 
 	buf = append(buf, w.Bytes()...)
 

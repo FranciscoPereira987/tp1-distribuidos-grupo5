@@ -6,16 +6,9 @@ import (
 	"io"
 )
 
-type StopsFilterData struct {
-	ID          [16]byte
-	Origin      string
-	Destination string
-	Duration    uint32
-	Price       float32
-	Stops       string
-}
+type FastestFilterData ResultQ3
 
-func StopsFilterUnmarshal(buf []byte) (data StopsFilterData, err error) {
+func FastestFilterUnmarshal(buf []byte) (data FastestFilterData, err error) {
 	r := bytes.NewReader(buf)
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {
@@ -26,9 +19,6 @@ func StopsFilterUnmarshal(buf []byte) (data StopsFilterData, err error) {
 	}
 	if err == nil {
 		err = binary.Read(r, binary.LittleEndian, &(data.Duration))
-	}
-	if err == nil {
-		err = binary.Read(r, binary.LittleEndian, &(data.Price))
 	}
 	if err == nil {
 		data.Stops, err = ReadString(r)

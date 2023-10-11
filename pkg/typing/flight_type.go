@@ -90,15 +90,13 @@ func (flight *FlightDataType) Deserialize(r []byte) error {
 	return err
 }
 
-func (flight *FlightDataType) IntoStopsFilterData() (data middleware.StopsFilterData) {
+func (flight *FlightDataType) IntoResultQ1() (data middleware.ResultQ1) {
 	data.ID = flight.Id
 	data.Origin = flight.Origin
 	data.Destination = flight.Destination
 	price, _ := strconv.ParseFloat(flight.Fare, 32)
 	data.Price = float32(price)
 	data.Stops = flight.Stops
-	duration, _ := ParseDuration(flight.Duration)
-	data.Duration = uint32(duration)
 	return
 }
 
@@ -118,6 +116,16 @@ func ParseDuration(duration string) (int, error) {
 	minutes, _ := strconv.Atoi(values[1])
 
 	return minutes + hours*60, nil
+}
+
+func (flight *FlightDataType) IntoFastestFilterData() (data middleware.FastestFilterData) {
+	data.ID = flight.Id
+	data.Origin = flight.Origin
+	data.Destination = flight.Destination
+	data.Stops = flight.Stops
+	duration, _ := ParseDuration(flight.Duration)
+	data.Duration = uint32(duration)
+	return
 }
 
 func (flight *FlightDataType) IntoDistanceData() (data middleware.DataQ2) {

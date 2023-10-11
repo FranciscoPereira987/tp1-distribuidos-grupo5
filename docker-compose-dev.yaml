@@ -1,6 +1,6 @@
 name: tp1
 services:
-  
+
   server:
     container_name: server
     image: server:latest
@@ -17,7 +17,7 @@ services:
           condition: service_healthy
     volumes:
       - ./cmd/interface/config:/config
-      
+
   distanceFilter:
     container_name: distance_filter
     image: distance_filter:latest
@@ -31,16 +31,16 @@ services:
     depends_on:
       - server
 
-  stopsFilter:
-    container_name: stops_filter
-    image: stops_filter:latest
-    entrypoint: /stopsFilter
+  fastestFilter:
+    container_name: fastest_filter
+    image: fastest_filter:latest
+    entrypoint: /fastestFilter
     networks:
       - testing_net
     environment:
-      - STOPS_ID=1
+      - FAST_ID=1
     volumes:
-      - ./cmd/stopsFilter:/cmd/stopsFilter
+      - ./cmd/fastestFilter/config.yaml:/config.yaml
     depends_on:
       - server
 
@@ -53,7 +53,7 @@ services:
     environment:
       - AVG_ID=1
     volumes:
-      - ./cmd/avgFilter:/cmd/avgFilter
+      - ./cmd/avgFilter/config.yaml:/config.yaml
     depends_on:
       - server
 

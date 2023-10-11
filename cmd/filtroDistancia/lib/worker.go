@@ -67,7 +67,7 @@ func (worker *Worker) handleFilter(value middleware.DataQ2) {
 func (worker *Worker) handleFinData() {
 
 	logrus.Info("action: filtering | result: finished")
-	worker.config.Mid.EOF(worker.config.Ctx, worker.config.Sink)
+	worker.config.Mid.Control(worker.config.Ctx, worker.config.Sink)
 	worker.finished = true
 
 }
@@ -122,7 +122,7 @@ func (worker *Worker) Run() error {
 	if err != nil {
 		return err
 	}
-	worker.config.Mid.EOF(worker.config.Ctx, worker.config.Status)
+	worker.config.Mid.Control(worker.config.Ctx, worker.config.Status)
 	logrus.Info("distance filter worker up")
 	for !worker.finished {
 		select {

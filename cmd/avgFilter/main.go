@@ -17,7 +17,7 @@ import (
 )
 
 // Describes the topology around this node.
-func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) {
+func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
 	source, err := m.ExchangeDeclare(v.GetString("source"))
 	if err != nil {
 		return "", "", err
@@ -30,13 +30,27 @@ func setupMiddleware(m *mid.Middleware, v *viper.Viper) (string, string, error) 
 
 	// Subscribe to shards specific and EOF events.
 	shardKey := mid.ShardKey(v.GetString("id"))
-	err = m.QueueBind(q, source, []string{shardKey, "avg", "control"})
+	if err := m.QueueBind(q, source, []string{shardKey, "avg", "control"}); err != nil {
+		return "", "", err
+	}
+	sink, err := m.ExchangeDeclare(v.GetString("results"))
 	if err != nil {
 		return "", "", err
 	}
 
-	sink, err := m.ExchangeDeclare(v.GetString("results"))
-	return q, sink, err
+	status, err := m.QueueDeclare(v.GetString("status"))
+	if err != nil {
+		return "", "", err
+	}
+	if _, err := m.ExchangeDeclare(status); err != nil {
+		return "", "", err
+	}
+	if err := m.QueueBind(status, status, []string{"control"}); err != nil {
+		return "", "", err
+	}
+
+	log.Info("average filter worker up")
+	return q, sink, m.Control(ctx, status)
 }
 
 func main() {
@@ -57,27 +71,27 @@ func main() {
 	}
 	defer middleware.Close()
 
-	source, sink, err := setupMiddleware(middleware, v)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	filter := common.NewFilter(middleware, source, sink)
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-
-	ctx, cancel := context.WithCancelCause(context.Background())
-	defer cancel(nil)
 
 	go func() {
 		<-sig
 		cancel(fmt.Errorf("Signal received"))
 	}()
 
+	source, sink, err := setupMiddleware(ctx, middleware, v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filter := common.NewFilter(middleware, source, sink)
+
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)
-	} else if err := middleware.EOF(ctx, sink); err != nil {
+	} else if err := middleware.Control(ctx, sink); err != nil {
 		log.Error(err)
 	}
 }

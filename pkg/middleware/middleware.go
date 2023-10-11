@@ -11,7 +11,8 @@ import (
 type Middleware struct {
 	conn     *amqp.Connection
 	ch       *amqp.Channel
-	countEOF int
+
+	controlCount int
 }
 
 func Dial(url string) (*Middleware, error) {
@@ -32,8 +33,8 @@ func Dial(url string) (*Middleware, error) {
 	}, nil
 }
 
-func (m *Middleware) SetExpectedEOFCount(count int) {
-	m.countEOF = count
+func (m *Middleware) SetExpectedControlCount(count int) {
+	m.controlCount = count
 }
 
 func (m *Middleware) ExchangeDeclare(name string) (string, error) {
@@ -110,9 +111,9 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 				return
 			case d := <-msgs:
 				if d.RoutingKey == "control" {
-					m.countEOF--
+					m.controlCount--
 					logrus.Info("recieved control message")
-					if m.countEOF <= 0 {
+					if m.controlCount <= 0 {
 						return
 					}
 				}
@@ -124,7 +125,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 	return ch, nil
 }
 
-func (m *Middleware) EOF(ctx context.Context, exchange string) error {
+func (m *Middleware) Control(ctx context.Context, exchange string) error {
 	return m.PublishWithContext(ctx, exchange, "control", []byte{})
 }
 

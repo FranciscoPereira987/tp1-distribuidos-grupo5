@@ -115,7 +115,7 @@ func (parser *Parser) waitForWorkers() (wait chan error) {
 		defer close(wait)
 		logrus.Infof("action: waiting for %d workers at %s | result: in progress", parser.config.TotalWorkers, parser.config.WaitQueue)
 		ch, err := parser.config.Mid.ConsumeWithContext(parser.config.Ctx, parser.config.WaitQueue)
-		parser.config.Mid.SetExpectedEOFCount(parser.config.TotalWorkers)
+		parser.config.Mid.SetExpectedControlCount(parser.config.TotalWorkers)
 		missing := parser.config.TotalWorkers
 		for _, more := <-ch; more; _, more = <-ch {
 			missing--
@@ -193,9 +193,9 @@ func (parser *Parser) Run(workers <-chan error) error {
 
 			if err == protocol.ErrConnectionClosed {
 				logrus.Info("client finished sending its data")
-				err = parser.config.Mid.EOF(parser.config.Ctx, parser.config.ResultsQueue)
-				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query2))
-				err = errors.Join(err, parser.config.Mid.EOF(parser.config.Ctx, parser.config.Query3))
+				err = parser.config.Mid.Control(parser.config.Ctx, parser.config.ResultsQueue)
+				err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query2))
+				err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.Query3))
 				err = errors.Join(err, parser.publishQuery4Avg(totalPrice, totalFlights))
 				break
 			}

@@ -9,7 +9,13 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY . .
+COPY cmd/stopsFilter/common/ cmd/stopsFilter/common/
+COPY cmd/stopsFilter/main.go cmd/stopsFilter/main.go
+COPY pkg/ pkg/
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod tidy
+RUN go mod vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/stopsFilter github.com/franciscopereira987/tp1-distribuidos/cmd/stopsFilter
 
 

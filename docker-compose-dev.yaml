@@ -10,8 +10,8 @@ services:
     environment:
       - IFZ_WORKERS_FIRST=0
       - IFZ_WORKERS_SECOND=1
-      - IFZ_WORKERS_THIRD=0
-      - IFZ_WORKERS_FOURTH=0
+      - IFZ_WORKERS_THIRD=1
+      - IFZ_WORKERS_FOURTH=1
     depends_on:
       rabbitmq:
           condition: service_healthy
@@ -29,8 +29,33 @@ services:
     volumes:
       - ./cmd/filtroDistancia/config:/config
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - server
+
+  stopsFilter:
+    container_name: stops_filter
+    image: stops_filter:latest
+    entrypoint: /stopsFilter
+    networks:
+      - testing_net
+    environment:
+      - STOPS_ID=1
+    volumes:
+      - ./cmd/stopsFilter:/cmd/stopsFilter
+    depends_on:
+      - server
+
+  avgFilter:
+    container_name: avg_filter
+    image: avg_filter:latest
+    entrypoint: /avgFilter
+    networks:
+      - testing_net
+    environment:
+      - AVG_ID=1
+    volumes:
+      - ./cmd/avgFilter:/cmd/avgFilter
+    depends_on:
+      - server
 
   rabbitmq:
     container_name: rabbitmq

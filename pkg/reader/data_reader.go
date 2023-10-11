@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	ID          = 1
-	ORIGIN      = 4
-	DESTINATION = 5
-	DURATION    = 7
-	FARE        = 13
-	DISTANCE    = 15
-	STOPS       = 20
+	ID          = 0
+	ORIGIN      = 3
+	DESTINATION = 4
+	DURATION    = 6
+	FARE        = 12
+	DISTANCE    = 14
+	STOPS       = 19
 )
 
 type DataReader struct {
@@ -30,7 +30,9 @@ func NewDataReader(filepath string) (Reader, error) {
 		return nil, err
 	}
 	csv := csv.NewReader(file)
-	csv.Read()
+	if _, err := csv.Read(); err != nil {
+		return nil, err
+	}
 	return &DataReader{
 		file,
 		csv,

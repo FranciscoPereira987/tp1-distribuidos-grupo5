@@ -2,7 +2,7 @@
 source: "stops"
 queue: ""
 server:
-  url: "amqp://guest:guest@rabbit:5672/"
+  url: "amqp://guest:guest@rabbitmq:5672/"
 results: "results"
 log:
   level: "info"

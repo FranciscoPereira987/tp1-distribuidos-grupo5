@@ -9,7 +9,13 @@ LABEL intermediateStageToBeDeleted=true
 
 RUN mkdir -p /build
 WORKDIR /build/
-COPY . .
+COPY cmd/avgFilter/common/ cmd/avgFilter/common/
+COPY cmd/avgFilter/main.go cmd/avgFilter/main.go
+COPY pkg/ pkg/
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod tidy
+RUN go mod vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -o bin/avgFilter github.com/franciscopereira987/tp1-distribuidos/cmd/avgFilter
 
 

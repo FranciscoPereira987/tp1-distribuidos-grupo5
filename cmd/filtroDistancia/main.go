@@ -50,27 +50,28 @@ func getConfig(v *viper.Viper) (config lib.WorkerConfig, cancel context.CancelFu
 	return
 }
 
-func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (data string, sink string, err error) {
-	data = v.GetString("source.data")
+func setupMiddleware(mid *middleware.Middleware, v *viper.Viper) (name, sink string, err error) {
+	data := v.GetString("source.data")
 	sink = v.GetString("source.sink")
 	id := v.GetString("id")
-	name, err := mid.QueueDeclare("")
-	if err != nil {
+	if name, err = mid.QueueDeclare(""); err != nil {
 		return
 	}
 	status, err := mid.QueueDeclare(v.GetString(STATUS))
 	if err != nil {
 		return
 	}
-	mid.ExchangeDeclare(status)
-	mid.QueueBind(status, status, []string{"control"})
-	shardKey := []string{id, "control", "coord"}
-	mid.ExchangeDeclare(data)
-	err = mid.QueueBind(name, data, shardKey)
-	if err != nil {
+	if _, err = mid.ExchangeDeclare(status); err != nil {
 		return
 	}
-	data = name
+	if err = mid.QueueBind(status, status, []string{"control"}); err != nil {
+		return
+	}
+	if _, err = mid.ExchangeDeclare(data); err != nil {
+		return
+	}
+	shardKey := middleware.ShardKey(id)
+	err = mid.QueueBind(name, data, []string{shardKey, "control", "coord"})
 	return
 }
 

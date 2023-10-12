@@ -16,6 +16,10 @@
 
 ![fotoDespliegue](img/DiagramaDespliegue.png)
 
+### Diagrama de paquetes
+
+![fotoPaquetes](img/DiagramaPaquetes.png)
+
 ### Actividades
 
 ![fotoActividades](img/DiagramaActividades.png)

@@ -3,10 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
 	"strconv"
-	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -71,16 +68,10 @@ func main() {
 	}
 	defer middleware.Close()
 
-	ctx, cancel := context.WithCancelCause(context.Background())
-	defer cancel(nil)
+	parentCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-sig
-		cancel(fmt.Errorf("Signal received"))
-	}()
+	ctx := utils.WithSignal(parentCtx)
 
 	source, sink, err := setupMiddleware(ctx, middleware, v)
 	if err != nil {

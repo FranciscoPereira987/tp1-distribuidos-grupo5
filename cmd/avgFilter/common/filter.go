@@ -7,8 +7,6 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 )
 
-const stopsSep = "||"
-
 type Filter struct {
 	m      *mid.Middleware
 	source string
@@ -55,13 +53,30 @@ loop:
 			}
 		}
 	}
-	for k, a := range aggregate(prices, avg) {
+	return f.aggregate(ctx, prices, avg)
+}
+
+func (f *Filter) aggregate(ctx context.Context, prices map[string][]float32, avg float32) error {
+	for k, arr := range prices {
+		priceSum, priceMax, count := 0.0, float32(0), 0
+
+		for _, v := range arr {
+			if avg < v {
+				priceSum += float64(v)
+				count++
+				priceMax = max(priceMax, v)
+			}
+		}
+		if count == 0 {
+			continue
+		}
+
 		origin, destination, _ := strings.Cut(k, ".")
 		v := mid.ResultQ4{
 			Origin:      origin,
 			Destination: destination,
-			AvgPrice:    a.Sum / float32(a.Count),
-			MaxPrice:    a.Max,
+			AvgPrice:    float32(priceSum / float64(count)),
+			MaxPrice:    priceMax,
 		}
 		err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q4Marshal(v))
 		if err != nil {
@@ -69,26 +84,4 @@ loop:
 		}
 	}
 	return nil
-}
-
-func aggregate(prices map[string][]float32, avg float32) map[string]resultAggregator {
-	acc := make(map[string]resultAggregator)
-	for k, arr := range prices {
-		for _, v := range arr {
-			if avg < v {
-				a := acc[k]
-				a.Count++
-				a.Sum += v
-				a.Max = max(a.Max, v)
-				acc[k] = a
-			}
-		}
-	}
-	return acc
-}
-
-type resultAggregator struct {
-	Count uint
-	Sum   float32
-	Max   float32
 }

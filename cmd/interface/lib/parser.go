@@ -91,19 +91,19 @@ func (parser *Parser) publishQuery3(data *typing.FlightDataType) (err error) {
 	return
 }
 
-func (parser *Parser) publishQuery4(data *typing.FlightDataType) (price float32, err error) {
+func (parser *Parser) publishQuery4(data *typing.FlightDataType) (price float64, err error) {
 	flight := data.IntoAvgFilterData()
 	key := parser.query4Keys.KeyFrom(flight.Origin, flight.Destination)
 	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query4, key, middleware.AvgMarshal(flight))
-	return flight.Price, err
+	return float64(flight.Price), err
 }
 
-func (parser *Parser) publishQuery4Avg(avgPrice float32, count int) (err error) {
+func (parser *Parser) publishQuery4Avg(totalPrice float64, count int) (err error) {
 	err = parser.config.Mid.PublishWithContext(
 		parser.config.Ctx,
 		parser.config.Query4,
 		"avg",
-		middleware.AvgPriceMarshal(avgPrice, count),
+		middleware.AvgPriceMarshal(totalPrice, count),
 	)
 	return err
 }
@@ -187,7 +187,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 	parser.config.ResultsChan <- results
 
 	message := getDataMessages()
-	totalPrice, totalFlights := float32(0), 0
+	totalPrice, totalFlights := float64(0), 0
 	for ; ; totalFlights++ {
 		if err := data.Recover(message); err != nil {
 
@@ -216,7 +216,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 			err = errors.Join(err, errQ4)
 			totalPrice += price
 			if err != nil {
-				return err
+				break
 			}
 		}
 	}

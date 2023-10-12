@@ -36,6 +36,8 @@ type Client struct {
 	dataConn     *protocol.Protocol
 	resultsConn  *protocol.Protocol
 
+
+	notifyClose	   chan bool
 	resultsEnd     chan bool
 	dataSendingEnd chan bool
 }
@@ -88,6 +90,7 @@ func NewClient(config ClientConfig) (*Client, error) {
 		coordsReader:   coordsReader,
 		dataConn:       dataConn,
 		resultsConn:    resultsConn,
+		notifyClose: make(chan bool),
 		resultsEnd:     make(chan bool),
 		dataSendingEnd: make(chan bool),
 	}, nil
@@ -105,6 +108,11 @@ func getClientMultiData() protocol.Data {
 func (client *Client) runResults() {
 	data := getClientMultiData()
 	for {
+		select {
+		case <- client.notifyClose:
+			return
+		default:
+		}
 		if err := client.resultsConn.Recover(data); err != nil {
 			if err == protocol.ErrConnectionClosed {
 				break
@@ -125,6 +133,11 @@ func (client *Client) runResults() {
 
 func (client *Client) runData() {
 	for {
+		select {
+		case <- client.notifyClose:
+			return
+		default:
+		}
 		data, err := client.coordsReader.ReadData()
 
 		if err != nil {
@@ -144,6 +157,11 @@ func (client *Client) runData() {
 
 	client.coordsReader.Close()
 	for {
+		select {
+		case <- client.notifyClose:
+			return
+		default:
+		}
 		data, err := client.dataReader.ReadData()
 
 		if err != nil {
@@ -180,8 +198,14 @@ func (client *Client) finished() chan bool {
 func (client *Client) waiter() error {
 	defer close(client.dataSendingEnd)
 	defer close(client.resultsEnd)
-	defer client.dataConn.Shutdown()
-	defer client.resultsConn.Shutdown()
+	defer func() {
+		client.dataConn.Close()
+		client.dataConn.Shutdown()
+	}()
+	defer func() {
+		client.resultsConn.Close()
+		client.resultsConn.Shutdown()
+	}()
 	defer client.coordsReader.Close()
 	defer client.dataReader.Close()
 	defer client.writer.Close()
@@ -195,6 +219,8 @@ func (client *Client) waiter() error {
 	case <- finished:
 	case <- sig:
 		logrus.Info("action: shutting_down | result: recieved signal")
+		client.notifyClose <- true
+		client.notifyClose <- true
 	}
 	return nil
 }

@@ -2,6 +2,8 @@
 
 - [enunciado](docs/Enunciado.pdf)
 - [Diagramas C4](docs/informes/c4.md)
+- [Instrucciones de uso](docs/informes/instrucciones.md)
+
 
 ### Dependencias (DAG)
 

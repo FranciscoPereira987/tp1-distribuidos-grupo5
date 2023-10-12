@@ -164,7 +164,7 @@ func (parser *Parser) Start(agg *Agregator) error {
 		return context.Cause(parser.config.Ctx)
 	case <-sig:
 		logrus.Info("action: shutting down | reason: recieved signal")
-		err := parser.Shutdown()
+		err := parser.Shutdown(agg)
 		logrus.Info("action: shutting down | result: success")
 		return err
 	case err := <-endResult:
@@ -173,11 +173,13 @@ func (parser *Parser) Start(agg *Agregator) error {
 
 }
 
-func (parser *Parser) Shutdown() (err error) {
+func (parser *Parser) Shutdown(agg *Agregator) (err error) {
 	err = parser.listener.Close()
 	parser.config.Mid.Close()
+	agg.Shutdown()
 	if parser.dataConn != nil {
 		err = errors.Join(err, parser.dataConn.Close())
+		err = errors.Join(err, parser.dataConn.Shutdown())
 	}
 	return
 }

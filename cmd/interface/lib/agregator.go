@@ -18,6 +18,7 @@ type AgregatorConfig struct {
 type Agregator struct {
 	config        AgregatorConfig
 	listeningChan chan *protocol.Protocol
+	resultsConn	  *protocol.Protocol
 }
 
 func NewAgregator(config AgregatorConfig) *Agregator {
@@ -29,6 +30,15 @@ func NewAgregator(config AgregatorConfig) *Agregator {
 
 func (agg *Agregator) GetChan() chan<- *protocol.Protocol {
 	return agg.listeningChan
+}
+
+func (agg *Agregator) Shutdown() {
+	agg.config.Mid.Close()
+	close(agg.listeningChan)
+	if agg.resultsConn != nil {
+		agg.resultsConn.Close()
+		agg.resultsConn.Shutdown()
+	}
 }
 
 func (agg *Agregator) Run() error {

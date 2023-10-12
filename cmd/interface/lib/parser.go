@@ -48,6 +48,8 @@ type Parser struct {
 	query3Keys middleware.KeyGenerator
 	query4Keys middleware.KeyGenerator
 
+	dataConn *protocol.Protocol
+
 	processed uint32
 }
 
@@ -161,11 +163,23 @@ func (parser *Parser) Start(agg *Agregator) error {
 	case <-parser.config.Ctx.Done():
 		return context.Cause(parser.config.Ctx)
 	case <-sig:
-		return nil
+		logrus.Info("action: shutting down | reason: recieved signal")
+		err := parser.Shutdown()
+		logrus.Info("action: shutting down | result: success")
+		return err
 	case err := <-endResult:
 		return err
 	}
 
+}
+
+func (parser *Parser) Shutdown() (err error) {
+	err = parser.listener.Close()
+	parser.config.Mid.Close()
+	if parser.dataConn != nil {
+		err = errors.Join(err, parser.dataConn.Close())
+	}
+	return
 }
 
 func (parser *Parser) Run(workers <-chan error) error {
@@ -173,6 +187,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 	defer parser.listener.Close()
 	logrus.Info("action: waiting connection | result: in progress")
 	data, results, err := parser.listener.Accept()
+	parser.dataConn = data
 	defer data.Close()
 	if err != nil {
 		logrus.Errorf("action: waiting connection | result: failed | reason: %s", err)

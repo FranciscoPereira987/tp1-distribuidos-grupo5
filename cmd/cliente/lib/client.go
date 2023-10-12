@@ -2,6 +2,9 @@ package lib
 
 import (
 	"io"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
@@ -162,6 +165,18 @@ func (client *Client) runData() {
 	client.dataSendingEnd <- true
 }
 
+func (client *Client) finished() chan bool {
+	finished := make(chan bool)
+	
+	go func() {
+		data := <- client.dataSendingEnd
+		result := <- client.resultsEnd
+		finished <- result || data
+	}()
+	
+	return finished
+}
+
 func (client *Client) waiter() error {
 	defer close(client.dataSendingEnd)
 	defer close(client.resultsEnd)
@@ -170,8 +185,17 @@ func (client *Client) waiter() error {
 	defer client.coordsReader.Close()
 	defer client.dataReader.Close()
 	defer client.writer.Close()
-	<-client.dataSendingEnd
-	<-client.resultsEnd
+	finished := client.finished()
+	sig := make(chan os.Signal, 1)
+	defer close(sig)
+	defer close(finished)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+	
+	select {
+	case <- finished:
+	case <- sig:
+		logrus.Info("action: shutting_down | result: recieved signal")
+	}
 	return nil
 }
 

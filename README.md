@@ -3,14 +3,18 @@
 - [enunciado](docs/Enunciado.pdf)
 - [Draw.io diagramas](https://app.diagrams.net/#G13VKjgcZEqJwXDUkWIrwqLVkPhrMyS7iD#%7B%22pageId%22%3A%228LiTAJ71kR8NW8oMs1Q8%22%7D)
 
-### Dependencia entre operaciones
+### Dependencias (DAG)
 
-![fotoDependencias](img/DiagramaOperaciones.png)
+![fotoDependencias](img/DAG.png)
 
 
 ### Sistema
 
 ![fotoSistema](img/DiagramaRobustez.png)
+
+### Despliegue
+
+![fotoDespliegue](img/DiagramaDespliegue.png)
 
 ### Actividades
 

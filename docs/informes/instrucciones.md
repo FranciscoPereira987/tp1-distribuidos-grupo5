@@ -24,6 +24,7 @@ Para ejecutar el sistema es necesario correr los siguientes comandos:
         WORKERS_QUERY2=N WORKERS_QUERY3=M WORKERS_QUERY4=P make setup 
     ```
     - Este comando construye el archivo de docker compose. Se puede ejecutar sin necesidad de setear las variables. Pero al setear las variables se puede cambiar la cantidad de workers para cada una de las queries.
+    - Se debe asegurar que no existe un documento *docker-compose-dev.yaml* para que este comando pueda ejecutarse correctamente.
 3. ```bash
         make docker-compose-up
     ```

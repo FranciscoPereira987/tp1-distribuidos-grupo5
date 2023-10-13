@@ -36,8 +36,7 @@ type Client struct {
 	dataConn     *protocol.Protocol
 	resultsConn  *protocol.Protocol
 
-
-	notifyClose	   chan bool
+	notifyClose    chan bool
 	resultsEnd     chan bool
 	dataSendingEnd chan bool
 }
@@ -90,7 +89,7 @@ func NewClient(config ClientConfig) (*Client, error) {
 		coordsReader:   coordsReader,
 		dataConn:       dataConn,
 		resultsConn:    resultsConn,
-		notifyClose: make(chan bool),
+		notifyClose:    make(chan bool),
 		resultsEnd:     make(chan bool),
 		dataSendingEnd: make(chan bool),
 	}, nil
@@ -109,7 +108,7 @@ func (client *Client) runResults() {
 	data := getClientMultiData()
 	for {
 		select {
-		case <- client.notifyClose:
+		case <-client.notifyClose:
 			return
 		default:
 		}
@@ -134,7 +133,7 @@ func (client *Client) runResults() {
 func (client *Client) runData() {
 	for {
 		select {
-		case <- client.notifyClose:
+		case <-client.notifyClose:
 			return
 		default:
 		}
@@ -158,7 +157,7 @@ func (client *Client) runData() {
 	client.coordsReader.Close()
 	for {
 		select {
-		case <- client.notifyClose:
+		case <-client.notifyClose:
 			return
 		default:
 		}
@@ -177,7 +176,7 @@ func (client *Client) runData() {
 			break
 		}
 	}
-	client.dataConn.Send(protocol.NewDataMessage(reader.FinData()))
+	client.dataConn.Send(protocol.NewDataMessage(typing.FinData()))
 	client.dataConn.Close()
 	logrus.Infof("action: data sending | result: finished")
 	client.dataSendingEnd <- true
@@ -185,13 +184,13 @@ func (client *Client) runData() {
 
 func (client *Client) finished() chan bool {
 	finished := make(chan bool)
-	
+
 	go func() {
-		data := <- client.dataSendingEnd
-		result := <- client.resultsEnd
+		data := <-client.dataSendingEnd
+		result := <-client.resultsEnd
 		finished <- result || data
 	}()
-	
+
 	return finished
 }
 
@@ -214,10 +213,10 @@ func (client *Client) waiter() error {
 	defer close(sig)
 	defer close(finished)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-	
+
 	select {
-	case <- finished:
-	case <- sig:
+	case <-finished:
+	case <-sig:
 		logrus.Info("action: shutting_down | result: recieved signal")
 		client.notifyClose <- true
 		client.notifyClose <- true

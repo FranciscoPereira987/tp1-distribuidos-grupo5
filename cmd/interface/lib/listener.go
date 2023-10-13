@@ -7,7 +7,6 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
 )
@@ -39,7 +38,7 @@ func getDataMessages() protocol.Data {
 	query2Type := typing.NewResultQ2()
 	flightType := typing.NewFlightData()
 	flightData := protocol.NewDataMessage(flightType)
-	endData := protocol.NewDataMessage(reader.FinData())
+	endData := protocol.NewDataMessage(typing.FinData())
 	multi.Register(flightData, endData, protocol.NewDataMessage(coordinatesType), protocol.NewDataMessage(query2Type))
 	return multi
 }

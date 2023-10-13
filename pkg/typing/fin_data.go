@@ -1,7 +1,6 @@
-package reader
+package typing
 
 import (
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -31,7 +30,7 @@ func (data *DataFin) Deserialize(stream []byte) error {
 	if err := utils.CheckHeader(data, stream); err != nil {
 		return err
 	}
-	if err := typing.CheckTypeLength(1, stream); err != nil {
+	if err := CheckTypeLength(1, stream); err != nil {
 		return err
 	}
 	return nil

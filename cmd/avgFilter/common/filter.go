@@ -22,38 +22,36 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 }
 
 func (f *Filter) Run(ctx context.Context) error {
-	prices := make(map[string][]float32)
-	var avg float32
+	prices, priceSum, count := make(map[string][]float32), 0.0, 0
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
 	}
-loop:
-	for {
-		var data mid.AvgFilterData
-		select {
-		case <-ctx.Done():
-			return context.Cause(ctx)
-		case msg, more := <-ch:
-			if !more {
-				break loop
+
+	for msg := range ch {
+		if mid.IsAvgPriceMessage(msg) {
+			priceSubtotal, priceCount, err := mid.AvgPriceUnmarshal(msg)
+			if err != nil {
+				return err
 			}
-			if mid.IsAvgPriceMessage(msg) {
-				avg, err = mid.AvgUnmarshal(msg)
-				if err != nil {
-					return err
-				}
-			} else {
-				data, err = mid.AvgFilterUnmarshal(msg)
-				if err != nil {
-					return err
-				}
-				key := data.Origin + "." + data.Destination
-				prices[key] = append(prices[key], data.Price)
+			priceSum += priceSubtotal
+			count += priceCount
+		} else {
+			data, err := mid.AvgFilterUnmarshal(msg)
+			if err != nil {
+				return err
 			}
+			key := data.Origin + "." + data.Destination
+			prices[key] = append(prices[key], data.Price)
 		}
 	}
-	return f.aggregate(ctx, prices, avg)
+
+	select {
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	default:
+		return f.aggregate(ctx, prices, float32(priceSum/float64(count)))
+	}
 }
 
 func (f *Filter) aggregate(ctx context.Context, prices map[string][]float32, avg float32) error {

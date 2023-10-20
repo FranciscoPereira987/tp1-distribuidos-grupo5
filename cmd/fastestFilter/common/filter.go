@@ -6,8 +6,6 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 )
 
-const stopsSep = "||"
-
 type Filter struct {
 	m      *mid.Middleware
 	source string
@@ -42,24 +40,22 @@ func (f *Filter) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-loop:
-	for {
-		var data mid.FastestFilterData
-		select {
-		case <-ctx.Done():
-			return context.Cause(ctx)
-		case msg, more := <-ch:
-			if !more {
-				break loop
-			}
-			data, err = mid.FastestFilterUnmarshal(msg[1:])
-			if err != nil {
-				return err
-			}
+
+	for msg := range ch {
+		data, err := mid.FastestFilterUnmarshal(msg[1:])
+		if err != nil {
+			return err
 		}
 		//logrus.Info("updating fastest")
 		updateFastest(fastest, data)
 	}
+
+	select {
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	default:
+	}
+
 	for _, arr := range fastest {
 		for _, v := range arr {
 			err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q3Marshal(v))

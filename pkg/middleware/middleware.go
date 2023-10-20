@@ -105,21 +105,18 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 	ch := make(chan []byte)
 	go func() {
 		defer close(ch)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-msgs:
-				if d.RoutingKey == "control" {
-					m.controlCount--
-					logrus.Info("recieved control message")
-					if m.controlCount <= 0 {
-						return
-					}
+		for d := range msgs {
+			if d.RoutingKey == "control" {
+				logrus.Info("recieved control message")
+				m.controlCount--
+				if m.controlCount <= 0 {
+					return
 				}
+			} else {
 				ch <- d.Body
 			}
 		}
+		logrus.Error("rabbitmq channel closed")
 	}()
 
 	return ch, nil

@@ -18,7 +18,7 @@ type AgregatorConfig struct {
 type Agregator struct {
 	config        AgregatorConfig
 	listeningChan chan *protocol.Protocol
-	resultsConn	  *protocol.Protocol
+	resultsConn   *protocol.Protocol
 }
 
 func NewAgregator(config AgregatorConfig) *Agregator {

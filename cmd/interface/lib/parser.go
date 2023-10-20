@@ -96,7 +96,7 @@ func (parser *Parser) publishQuery3(data *typing.FlightDataType) (err error) {
 func (parser *Parser) publishQuery4(data *typing.FlightDataType) (price float64, err error) {
 	flight := data.IntoAvgFilterData()
 	key := parser.query4Keys.KeyFrom(flight.Origin, flight.Destination)
-	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query4, key, middleware.AvgMarshal(flight))
+	err = parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query4, key, middleware.AvgFilterMarshal(flight))
 	return float64(flight.Price), err
 }
 

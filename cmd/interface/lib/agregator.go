@@ -43,7 +43,10 @@ func (agg *Agregator) Shutdown() {
 
 func (agg *Agregator) Run() error {
 	defer agg.config.Mid.Close()
-	results := <-agg.listeningChan
+	results, ok := <-agg.listeningChan
+	if !ok {
+		return nil
+	}
 	defer results.Close()
 	ch, err := agg.config.Mid.ConsumeWithContext(agg.config.Ctx, agg.config.AgregatorQueue)
 	if err != nil {

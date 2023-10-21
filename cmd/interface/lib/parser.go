@@ -138,21 +138,24 @@ func (parser *Parser) Start(agg *Agregator) error {
 	endResult := make(chan error, 1)
 
 	defer close(sig)
-	defer close(result)
-	defer close(aggResult)
-	defer close(endResult)
+	//defer close(result)
+	//defer close(aggResult)
+	//defer close(endResult)
 
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	workers := parser.waitForWorkers()
 	go func() {
+		defer close(result)
 		result <- parser.Run(workers)
 	}()
 
 	go func() {
+		defer close(aggResult)
 		aggResult <- agg.Run()
 	}()
 
 	go func() {
+		defer close(endResult)
 		parserResult := <-result
 		agregatorResult := <-aggResult
 
@@ -189,13 +192,13 @@ func (parser *Parser) Run(workers <-chan error) error {
 	defer parser.listener.Close()
 	logrus.Info("action: waiting connection | result: in progress")
 	data, results, err := parser.listener.Accept()
-	parser.dataConn = data
-	defer data.Close()
 	if err != nil {
 		logrus.Errorf("action: waiting connection | result: failed | reason: %s", err)
 
 		return err
 	}
+	parser.dataConn = data
+	defer data.Close()
 	if err := <-workers; err != nil {
 		logrus.Infof("action: waiting for workers | result: failed | reason: %s", err)
 		return err
@@ -223,7 +226,6 @@ func (parser *Parser) Run(workers <-chan error) error {
 			parser.config.Mid.PublishWithContext(parser.config.Ctx, parser.config.Query2, "coord", middleware.CoordMarshal(data))
 		case (*typing.FlightDataType):
 			data := v
-			logrus.Info("sending data")
 			err = parser.publishQuery2(data)
 			if strings.Count(data.Stops, "||") >= 3 {
 				err = errors.Join(err, parser.publishQuery1(data))

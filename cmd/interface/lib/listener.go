@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
@@ -34,12 +33,10 @@ func NewListener(dataAt string, resultsAt string) (*Listener, error) {
 
 func getDataMessages() protocol.Data {
 	multi := protocol.NewMultiData()
-	coordinatesType := new(distance.CoordWrapper)
-	query2Type := typing.NewResultQ2()
-	flightType := typing.NewFlightData()
+	flightType := typing.NewData(0, "")
 	flightData := protocol.NewDataMessage(flightType)
 	endData := protocol.NewDataMessage(typing.FinData())
-	multi.Register(flightData, endData, protocol.NewDataMessage(coordinatesType), protocol.NewDataMessage(query2Type))
+	multi.Register(flightData, endData)
 	return multi
 }
 

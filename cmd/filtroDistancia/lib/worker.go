@@ -42,7 +42,7 @@ func NewWorker(config WorkerConfig) (*Worker, error) {
 }
 
 func (worker *Worker) handleCoords(value middleware.CoordinatesData) {
-	logrus.Infof("Adding airport: %s", value.AirportCode)
+
 	coords := &haversine.Coord{
 		Lat: value.Latitude,
 		Lon: value.Longitud,
@@ -58,7 +58,7 @@ func (worker *Worker) handleFilter(value middleware.DataQ2) {
 		return
 	}
 	if greaterThanX {
-		logrus.Infof("filtered flight: %s", string(value.ID[:]))
+
 		worker.config.Mid.PublishWithContext(worker.config.Ctx, "",
 			worker.config.Sink, middleware.Q2Marshal(value))
 	}

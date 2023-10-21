@@ -1,27 +1,33 @@
 package reader
 
 import (
-	"encoding/csv"
+	"bufio"
 	"encoding/hex"
+	"errors"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 const (
-	ID          = 0
-	ORIGIN      = 3
-	DESTINATION = 4
-	DURATION    = 6
-	FARE        = 12
-	DISTANCE    = 14
-	STOPS       = 19
+	ID           = 0
+	ORIGIN       = 3
+	DESTINATION  = 4
+	DURATION     = 6
+	FARE         = 12
+	DISTANCE     = 14
+	STOPS        = 19
+	FLIGHTFIELDS = 27
 )
+
+var ErrField error = errors.New("invalid number of fields")
 
 type DataReader struct {
 	file *os.File
-	csv  *csv.Reader
+	buf  *bufio.Scanner
 }
 
 func NewDataReader(filepath string) (Reader, error) {
@@ -29,35 +35,48 @@ func NewDataReader(filepath string) (Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	csv := csv.NewReader(file)
-	if _, err := csv.Read(); err != nil {
-		return nil, err
+	buf := bufio.NewScanner(file)
+	buf.Split(bufio.ScanLines)
+	if !buf.Scan() {
+		return nil, io.ErrUnexpectedEOF
 	}
+	buf.Bytes()
 	return &DataReader{
 		file,
-		csv,
+		buf,
 	}, nil
 }
+func IntoFlightData(stream string) (data *typing.FlightDataType, err error) {
+	data = new(typing.FlightDataType)
+	line := strings.Split(stream, ",")
+	if len(line) != FLIGHTFIELDS {
+		err = ErrField
+	}
 
+	if err == nil {
+		var id []byte
+		id, err = hex.DecodeString(line[ID])
+		if err != nil {
+			return
+		}
+		data.Id = [16]byte(id)
+		data.Origin = line[ORIGIN]
+		data.Destination = line[DESTINATION]
+		data.Duration = line[DURATION]
+		data.Fare = line[FARE]
+		data.Distance = line[DISTANCE]
+		data.Stops = line[STOPS]
+	}
+	return
+}
 func (reader *DataReader) ReadData() (protocol.Data, error) {
-	line, err := reader.csv.Read()
-	//log.Printf("line: %s, len: %d, field: %s", line, len(line), line[DISTANCE])
-	if err != nil {
+	if !reader.buf.Scan() {
+		err := io.EOF
 		return nil, err
 	}
-	data := typing.NewFlightData()
+	line := reader.buf.Text()
+	data := typing.NewData(typing.FLIGHT, line)
 
-	id, err := hex.DecodeString(line[ID])
-	if err != nil {
-		return nil, err
-	}
-	data.Id = [16]byte(id)
-	data.Origin = line[ORIGIN]
-	data.Destination = line[DESTINATION]
-	data.Duration = line[DURATION]
-	data.Fare = line[FARE]
-	data.Distance = line[DISTANCE]
-	data.Stops = line[STOPS]
 	return protocol.NewDataMessage(data), nil
 }
 

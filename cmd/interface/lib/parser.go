@@ -11,6 +11,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/reader"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/sirupsen/logrus"
 )
@@ -219,7 +220,11 @@ func (parser *Parser) Run(workers <-chan error) error {
 			logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
 			break
 		}
-		messageType := message.Type()
+		messageType, err := reader.GetType(message.Type())
+		if err != nil {
+			logrus.Errorf("action: retrieving data | error: %s", err)
+			break
+		}
 		switch v := messageType.(type) {
 		case (*distance.CoordWrapper):
 			data := v.Value

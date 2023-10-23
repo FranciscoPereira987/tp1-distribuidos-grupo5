@@ -78,7 +78,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, source, sink)
+	filter, err := common.NewFilter(middleware, source, sink, v.GetString("fares.dir"))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)

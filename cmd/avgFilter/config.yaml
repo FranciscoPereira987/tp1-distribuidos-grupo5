@@ -2,8 +2,12 @@
 source: "avg"
 status: "status"
 results: "results"
-queue: ""
+
+fares:
+  dir: "fares"
+
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"
+
 log:
   level: "info"

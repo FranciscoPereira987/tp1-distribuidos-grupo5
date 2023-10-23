@@ -16,6 +16,10 @@ type Reader interface {
 func GetType(data typing.Type) (typing.Type, error) {
 	rd, ok := data.(*typing.RawData)
 	if !ok {
+		fin, ok := data.(*typing.DataFin)
+		if ok {
+			return fin, nil
+		}
 		return nil, fmt.Errorf("not raw data type: %s", data)
 	}
 	switch rd.DataType {

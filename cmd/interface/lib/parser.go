@@ -209,20 +209,18 @@ func (parser *Parser) Run(workers <-chan error) error {
 
 	message := getDataMessages()
 	totalPrice, totalFlights := float64(0), 0
+loop:
 	for ; ; totalFlights++ {
 		if err := data.Recover(message); err != nil {
-
-			if err == protocol.ErrConnectionClosed {
-				logrus.Info("client finished sending its data")
-				err = parser.publishQuery4Avg(totalPrice, totalFlights)
-				break
+			if err != nil {
+				logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
 			}
-			logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
 			break
 		}
+
 		messageType, err := reader.GetType(message.Type())
 		if err != nil {
-			logrus.Errorf("action: retrieving data | error: %s", err)
+			logrus.Errorf("action: retrieving data | error: %s | type: %s", err, message.Type())
 			break
 		}
 		switch v := messageType.(type) {
@@ -240,8 +238,16 @@ func (parser *Parser) Run(workers <-chan error) error {
 			err = errors.Join(err, errQ4)
 			totalPrice += price
 			if err != nil {
-				break
+				logrus.Errorf("action: sending data | result: failed | reason: %s", err)
+				break loop
 			}
+		case (*typing.DataFin):
+			logrus.Info("action: sending data | result: success | reason: client finished sending data")
+			err = parser.publishQuery4Avg(totalPrice, totalFlights)
+			if err != nil {
+				logrus.Errorf("action: sending avg price | result: failed | reason: %s", err)
+			}
+			break loop
 		}
 	}
 	err = errors.Join(err, parser.config.Mid.Control(parser.config.Ctx, parser.config.ResultsQueue))

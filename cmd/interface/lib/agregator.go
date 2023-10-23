@@ -37,7 +37,6 @@ func (agg *Agregator) Shutdown() {
 	close(agg.listeningChan)
 	if agg.resultsConn != nil {
 		agg.resultsConn.Close()
-		agg.resultsConn.Shutdown()
 	}
 }
 
@@ -56,12 +55,12 @@ func (agg *Agregator) Run() error {
 		data, more := <-ch
 		result, err := typing.ResultsUnmarshal(data)
 		if err == nil {
-			logrus.Info("action: sending results | action: sending new result")
+			//logrus.Info("action: sending results | action: sending new result")
 			data := protocol.NewDataMessage(result)
 			results.Send(data)
 		}
-		if err != nil {
-			logrus.Errorf("action: sending results | error: %s", err)
+		if err != nil && more {
+			logrus.Errorf("action: sending results | error: %s | data: %s", err)
 		}
 		if !more {
 			logrus.Info("action: sending results | status: finished")

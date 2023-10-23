@@ -36,8 +36,12 @@ func NewProtocol(conn *connection.Conn) *Protocol {
 }
 
 func (proto *Protocol) Shutdown() error {
+	if !proto.connected {
+		return nil
+	}
 	errFlush := proto.buf.Flush()
 	errClose := proto.source.Close()
+	proto.connected = false
 	return errors.Join(errFlush, errClose)
 }
 
@@ -150,7 +154,7 @@ func (proto *Protocol) manageInvalidData(stream []byte, err error) error {
 	fin, _ := proto.registry.GetMessage(stream)
 
 	if _, ok := fin.(*FinMessage); ok {
-		proto.connected = false
+		proto.Shutdown()
 		return ErrConnectionClosed
 	}
 	proto.sendMessage(&ErrMessage{})
@@ -184,7 +188,7 @@ func (proto *Protocol) Send(data Data) error {
 }
 
 /*
-Should not be think of as closing underlying resource (source)
+Closes the connection logically and then frees resources
 */
 func (proto *Protocol) Close() error {
 	if err := proto.checkConnected(); err != nil {
@@ -194,6 +198,6 @@ func (proto *Protocol) Close() error {
 
 	err := proto.sendMessage(fin)
 	proto.buf.Flush()
-	proto.connected = false
-	return err
+
+	return errors.Join(err, proto.Shutdown())
 }

@@ -2,3 +2,5 @@ cmd/**/config.yaml
 cmd/*/Dockerfile
 client
 test
+docs
+img

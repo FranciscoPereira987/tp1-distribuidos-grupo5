@@ -8,51 +8,60 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/franciscopereira987/tp1-distribuidos/cmd/fastestFilter/common"
+	"github.com/franciscopereira987/tp1-distribuidos/cmd/distanceFilter/common"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
 // Describes the topology around this node.
-func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
+func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
 	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	q, err := m.QueueDeclare(v.GetString("queue"))
+	qCoords, err := m.QueueDeclare(v.GetString("queue.coords"))
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
+	}
+	// Subscribe to coordinates and EOF events.
+	if err := m.QueueBind(qCoords, source, []string{"coords", mid.ControlRoutingKey}); err != nil {
+		return "", "", "", err
+	}
+
+	qFlights, err := m.QueueDeclare(v.GetString("queue.flights"))
+	if err != nil {
+		return "", "", "", err
 	}
 	// Subscribe to shards specific and EOF events.
 	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(q, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
-		return "", "", err
+	if err := m.QueueBind(qFlights, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
+		return "", "", "", err
 	}
-	m.SetExpectedControlCount(q, v.GetInt("demuxers"))
+	m.SetExpectedControlCount(qFlights, v.GetInt("demuxers"))
 
 	sink, err := m.ExchangeDeclare(v.GetString("exchange.sink"))
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	log.Info("fastest filter worker up")
-	return q, sink, m.Control(ctx, status)
+	log.Info("distance filter worker up")
+	return qCoords, qFlights, sink, m.Control(ctx, status)
 }
 
 func main() {
-	v, err := utils.InitConfig("fast", "cmd/fastestFilter")
+	v, err := utils.InitConfig("distance", "cmd/distanceFilter")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,7 +69,7 @@ func main() {
 		log.Fatal(err)
 	}
 	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
-		log.Fatal(fmt.Errorf("Could not parse FAST_ID env var as int: %w", err))
+		log.Fatal(fmt.Errorf("Could not parse DISTANCE_ID env var as int: %w", err))
 	}
 
 	middleware, err := mid.Dial(v.GetString("server.url"))
@@ -74,12 +83,12 @@ func main() {
 
 	ctx := utils.WithSignal(parentCtx)
 
-	source, sink, err := setupMiddleware(ctx, middleware, v)
+	coordsSource, flightsSource, sink, err := setupMiddleware(ctx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, source, sink)
+	filter := common.NewFilter(middleware, coordsSource, flightsSource, sink)
 
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)

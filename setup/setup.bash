@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+WORKERS_QUERY1=${WORKERS_QUERY1:-1}
 WORKERS_QUERY2=${WORKERS_QUERY2:-1}
 WORKERS_QUERY3=${WORKERS_QUERY3:-1}
 WORKERS_QUERY4=${WORKERS_QUERY4:-1}
@@ -23,22 +24,55 @@ services:
       start_period: 50s'
 
 echo "
-  server:
-    container_name: server
-    image: server:latest
-    entrypoint: /server
+  inputBoundary:
+    container_name: input
+    image: input_boundary:latest
+    entrypoint: /inputBoundary
     networks:
       - testing_net
     environment:
-      - IFZ_WORKERS_FIRST=1
-      - IFZ_WORKERS_SECOND=${WORKERS_QUERY2}
-      - IFZ_WORKERS_THIRD=${WORKERS_QUERY3}
-      - IFZ_WORKERS_FOURTH=${WORKERS_QUERY4}
+      - IN_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
+      - IN_DEMUXERS=$WORKERS_QUERY1
     depends_on:
       rabbitmq:
-          condition: service_healthy
+        condition: service_healthy
     volumes:
-      - ./cmd/interface/config:/config"
+      - ./cmd/inputBoundary/config.yaml:/config.yaml"
+
+echo "
+  outputBoundary:
+    container_name: output
+    image: output_boundary:latest
+    entrypoint: /outputBoundary
+    networks:
+      - testing_net
+    environment:
+      - OUT_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./cmd/outputBoundary/config.yaml:/config.yaml"
+
+for ((n = 1; n <= WORKERS_QUERY1; n++))
+do
+    echo "
+  demuxFilter$n:
+    container_name: demux_filter$n
+    image: demux_filter:latest
+    entrypoint: /demuxFilter
+    networks:
+      - testing_net
+    environment:
+      - DEMUX_WORKERS_Q2=$WORKERS_QUERY2
+      - DEMUX_WORKERS_Q3=$WORKERS_QUERY3
+      - DEMUX_WORKERS_Q4=$WORKERS_QUERY4
+    volumes:
+      - ./cmd/demuxFilter/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy"
+done
 
 for ((n = 1; n <= WORKERS_QUERY2; n++))
 do
@@ -46,15 +80,17 @@ do
   distanceFilter$n:
     container_name: distance_filter$n
     image: distance_filter:latest
-    entrypoint: /filter
+    entrypoint: /distanceFilter
     networks:
       - testing_net
     environment:
       - DISTANCE_ID=$n
+      - DISTANCE_DEMUXERS=$WORKERS_QUERY1
     volumes:
-      - ./cmd/filtroDistancia/config:/config
+      - ./cmd/distanceFilter/config.yaml:/config.yaml
     depends_on:
-      - server"
+      rabbitmq:
+        condition: service_healthy"
 done
 
 for ((n = 1; n <= WORKERS_QUERY3; n++))
@@ -68,10 +104,12 @@ do
       - testing_net
     environment:
       - FAST_ID=$n
+      - FAST_DEMUXERS=$WORKERS_QUERY1
     volumes:
-      - ./cmd/fastestFilter:/cmd/fastestFilter
+      - ./cmd/fastestFilter/config.yaml:/config.yaml
     depends_on:
-      - server"
+      rabbitmq:
+        condition: service_healthy"
 done
 
 for ((n = 1; n <= WORKERS_QUERY4; n++))
@@ -85,10 +123,12 @@ do
       - testing_net
     environment:
       - AVG_ID=$n
+      - AVG_DEMUXERS=$WORKERS_QUERY1
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
     depends_on:
-      - server"
+      rabbitmq:
+        condition: service_healthy"
 done
 
 echo '

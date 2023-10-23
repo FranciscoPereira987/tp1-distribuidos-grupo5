@@ -1,15 +1,18 @@
+data:
+  coords: "client/data/airports-codepublic.csv"
+  flights: "client/data/test.csv"
+
 results:
-  dir: "./client/results/"
-  first: "first.csv"
-  second: "second.csv"
-  third: "third.csv"
-  fourth: "fourth.csv"
-
-datafile: "./client/data/test.csv"
-
-coordsfile: "./client/data/airports-codepublic.csv"
+  dir: "client/results/"
+  files:
+    - "first.csv"
+    - "second.csv"
+    - "third.csv"
+    - "fourth.csv"
 
 server:
-  addr: "server"
-  data: "6666"
-  results: "7777"
+  input: "input:6666"
+  output: "output:7777"
+
+log:
+  level: "info"

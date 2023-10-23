@@ -8,11 +8,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const ControlRoutingKey = "control"
+
 type Middleware struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
 
-	controlCount int
+	controlCount map[string]int
 }
 
 func Dial(url string) (*Middleware, error) {
@@ -28,13 +30,14 @@ func Dial(url string) (*Middleware, error) {
 	}
 
 	return &Middleware{
-		conn: conn,
-		ch:   ch,
+		conn:         conn,
+		ch:           ch,
+		controlCount: make(map[string]int),
 	}, nil
 }
 
-func (m *Middleware) SetExpectedControlCount(count int) {
-	m.controlCount = count
+func (m *Middleware) SetExpectedControlCount(queue string, count int) {
+	m.controlCount[queue] = count
 }
 
 func (m *Middleware) ExchangeDeclare(name string) (string, error) {
@@ -103,13 +106,18 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 	}
 
 	ch := make(chan []byte)
-	go func() {
+	go func(cc int) {
 		defer close(ch)
 		for d := range msgs {
-			if d.RoutingKey == "control" {
+			if d.RoutingKey == ControlRoutingKey {
 				logrus.Info("recieved control message")
-				m.controlCount--
-				if m.controlCount <= 0 {
+				cc--
+				// The shared queue needs to have the same name
+				// as the exchange it's bound to.
+				if len(d.Body) > 0 && d.Body[0] > 1 {
+					m.SharedQueueEOF(ctx, name, d.Body[0]-1)
+				}
+				if cc <= 0 {
 					return
 				}
 			} else {
@@ -117,13 +125,9 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 			}
 		}
 		logrus.Error("rabbitmq channel closed")
-	}()
+	}(m.controlCount[name])
 
 	return ch, nil
-}
-
-func (m *Middleware) Control(ctx context.Context, exchange string) error {
-	return m.PublishWithContext(ctx, exchange, "control", []byte{})
 }
 
 func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {
@@ -138,6 +142,18 @@ func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key strin
 			Body:        body,
 		},
 	)
+}
+
+func (m *Middleware) Control(ctx context.Context, exchange string) error {
+	return m.PublishWithContext(ctx, exchange, ControlRoutingKey, nil)
+}
+
+func (m *Middleware) EOF(ctx context.Context, exchange string) error {
+	return m.Control(ctx, exchange)
+}
+
+func (m *Middleware) SharedQueueEOF(ctx context.Context, name string, eof byte) error {
+	return m.PublishWithContext(ctx, name, ControlRoutingKey, []byte{eof})
 }
 
 func (m *Middleware) Close() {

@@ -48,6 +48,7 @@ func (f *Filter) Run(ctx context.Context) error {
 			}
 			priceSum += priceSubtotal
 			count += priceCount
+			log.Infof("updating average: %f", priceSum/float64(count))
 		} else {
 			data, err := mid.AvgFilterUnmarshal(msg)
 			if err != nil {
@@ -78,6 +79,7 @@ func (f *Filter) Run(ctx context.Context) error {
 }
 
 func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, avg float32) error {
+	log.Infof("average: %f", avg)
 	for file := range fares {
 		if err := f.aggregate(ctx, file, avg); err != nil {
 			return err

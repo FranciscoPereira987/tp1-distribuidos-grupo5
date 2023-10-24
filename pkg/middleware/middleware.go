@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const ControlRoutingKey = "control"
@@ -111,7 +111,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 		defer close(ch)
 		for d := range msgs {
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
-				logrus.Info("recieved control message")
+				log.Infof("recieved control message for queue %q", name)
 				cc--
 				// The shared queue needs to have the same name
 				// as the exchange it's bound to.
@@ -125,7 +125,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 				ch <- d.Body
 			}
 		}
-		logrus.Error("rabbitmq channel closed")
+		log.Error("rabbitMQ channel closed")
 	}(m.controlCount[name])
 
 	return ch, nil
@@ -150,22 +150,23 @@ func (m *Middleware) Control(ctx context.Context, exchange string) error {
 }
 
 func (m *Middleware) EOF(ctx context.Context, exchange string) error {
-	logrus.Infof("sending EOF into exchange %q", exchange)
+	log.Infof("sending EOF into exchange %q", exchange)
 	return m.Control(ctx, exchange)
 }
 
 func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic string) error {
-	logrus.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
+	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
 	return m.PublishWithContext(ctx, exchange, rKey, nil)
 }
 
 func (m *Middleware) SharedQueueEOF(ctx context.Context, name string, eof byte) error {
-	logrus.Infof("sending EOF(%d) into queue %q", eof, name)
+	log.Infof("sending EOF(%d) into queue %q", eof, name)
 	return m.PublishWithContext(ctx, name, ControlRoutingKey, []byte{eof})
 }
 
 func (m *Middleware) Close() {
-	m.ch.Close()
+	// the corresponding Channel is closed along with the Connection
 	m.conn.Close()
+	log.Info("closed rabbitMQ Connection")
 }

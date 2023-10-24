@@ -21,7 +21,7 @@ var FlightFields = []string{
 	"segmentsDepartureAirportCode",
 }
 
-var DurationRegexp = regexp.MustCompile(`P(\d+D)?T(\d+H)?(\d+M)?`)
+var DurationRegexp = regexp.MustCompile(`P(\d+D)?T?(\d+H)?(\d+M)?`)
 var ErrInvalidDuration = errors.New("invalid duration format")
 var ErrMissingDistance = errors.New("missing field 'totalTravelDistance'")
 

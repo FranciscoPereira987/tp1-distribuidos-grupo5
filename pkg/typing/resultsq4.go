@@ -33,7 +33,8 @@ func ResultQ4Unmarshal(r *bytes.Reader) (record []string, err error) {
 	if err == nil {
 		var avgFare float32
 		err = binary.Read(r, binary.LittleEndian, &avgFare)
-		record[3] = strconv.FormatFloat(float64(avgFare), 'f', 2, 32)
+		// Average may have extra decimal digits, return exact value
+		record[3] = strconv.FormatFloat(float64(avgFare), 'f', -1, 32)
 	}
 
 	if err == nil {

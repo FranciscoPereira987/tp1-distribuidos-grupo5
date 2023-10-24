@@ -39,8 +39,17 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(f.dir)
 }
 
-func (f *Filter) Run(ctx context.Context) error {
+func (f *Filter) Run(ctx context.Context) (err error) {
 	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
+	defer func() {
+		var errs []error
+		for _, fw := range fares {
+			errs = append(errs, fw.Close())
+		}
+		if err == nil {
+			err = errors.Join(errs...)
+		}
+	}()
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
@@ -60,7 +69,9 @@ func (f *Filter) Run(ctx context.Context) error {
 			log.Infof("updated average fare: %f", fareSum/float64(count))
 		case typing.AverageFilterFlight:
 			key := v.Origin + "." + v.Destination
-			f.appendFare(fares, key, v.Fare)
+			if err := f.appendFare(fares, key, v.Fare); err != nil {
+				return err
+			}
 			log.Debugf("new fare for route %s-%s: %d", v.Origin, v.Destination, v.Fare)
 		}
 	}
@@ -72,7 +83,7 @@ func (f *Filter) Run(ctx context.Context) error {
 	default:
 		var errs []error
 		for _, fw := range fares {
-			errs = append(errs, fw.Close())
+			errs = append(errs, fw.Flush())
 		}
 		if err := errors.Join(errs...); err != nil {
 			return err
@@ -157,10 +168,7 @@ func (fw *fareWriter) Flush() error {
 }
 
 func (fw *fareWriter) Close() error {
-	errFlush := fw.Flush()
-	errClose := fw.file.Close()
-
-	return errors.Join(errFlush, errClose)
+	return fw.file.Close()
 }
 
 func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32) (err error) {

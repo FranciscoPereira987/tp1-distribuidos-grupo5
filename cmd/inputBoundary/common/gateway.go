@@ -93,7 +93,8 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 			return err
 		}
 
-		if err := typing.FlightMarshal(&b, record, indices); err != nil {
+		err = typing.FlightMarshal(&b, record, indices)
+		if err != nil && err != typing.ErrMissingDistance {
 			return err
 		}
 		if err := g.m.PublishWithContext(ctx, g.flights, g.flights, b.Bytes()); err != nil {

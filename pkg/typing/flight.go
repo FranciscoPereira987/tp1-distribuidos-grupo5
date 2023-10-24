@@ -23,6 +23,7 @@ var FlightFields = []string{
 
 var DurationRegexp = regexp.MustCompile(`P(\d+D)?T(\d+H)?(\d+M)?`)
 var ErrInvalidDuration = errors.New("invalid duration format")
+var ErrMissingDistance = errors.New("missing field 'totalTravelDistance'")
 
 type Flight struct {
 	ID          [16]byte
@@ -47,9 +48,10 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	if err != nil {
 		return err
 	}
+	// maybe None, ignore error
 	distance, err := strconv.Atoi(record[indices[5]])
-	if err != nil {
-		return err
+	if err != nil && record[indices[5]] == "" {
+		err = ErrMissingDistance
 	}
 
 	b.Write(id)
@@ -60,7 +62,7 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	binary.Write(b, binary.LittleEndian, uint32(distance))
 	WriteString(b, record[indices[6]])
 
-	return nil
+	return err
 }
 
 func FlightUnmarshal(p []byte) (data Flight, err error) {

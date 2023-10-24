@@ -76,6 +76,10 @@ func (f *Filter) Run(ctx context.Context) error {
 }
 
 func (f *Filter) sendDistanceFilter(ctx context.Context, data *typing.Flight) error {
+	// ignore possibly missing field
+	if data.Distance == 0 {
+		return nil
+	}
 	var b bytes.Buffer
 	key := f.keyGens[Query2].KeyFrom(data.Origin, data.Destination)
 	typing.DistanceFilterMarshal(&b, data)

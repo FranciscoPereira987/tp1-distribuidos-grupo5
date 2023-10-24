@@ -111,7 +111,7 @@ func (parser *Parser) publishQuery4Avg(totalPrice float64, count int) (err error
 	return err
 }
 
-func (parser *Parser) waitForWorkers() (<-chan error) {
+func (parser *Parser) waitForWorkers() <-chan error {
 	wait := make(chan error, 1)
 
 	go func() {

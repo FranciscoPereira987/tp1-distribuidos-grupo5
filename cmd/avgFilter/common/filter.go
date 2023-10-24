@@ -1,17 +1,17 @@
 package common
 
 import (
-	"encoding/binary"
 	"bufio"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	log "github.com/sirupsen/logrus"
 )
 
 type Filter struct {
@@ -168,7 +168,7 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 }
 
 type fareReader struct {
-	br   *bufio.Reader
+	br *bufio.Reader
 }
 
 func newFareReader(r io.Reader) fareReader {

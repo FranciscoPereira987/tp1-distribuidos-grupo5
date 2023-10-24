@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/interface/lib"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -88,7 +87,7 @@ func getAggregator(v *viper.Viper, agg_context context.Context) (*lib.Agregator,
 func DeclareExchanges(mid *middleware.Middleware, ctx context.Context, v *viper.Viper) (err error) {
 	for _, name := range EXCHANGE_VARS {
 		eName, err := mid.ExchangeDeclare(v.GetString(name))
-		logrus.Infof("action: exchange declaration | info: declared: %s", eName)
+		log.Infof("action: exchange declaration | info: declared: %s", eName)
 		if err != nil {
 			return err
 		}
@@ -131,27 +130,27 @@ func getListener(v *viper.Viper, aggregator_chan chan<- *protocol.Protocol, list
 func main() {
 	err := utils.DefaultLogger()
 	if err != nil {
-		logrus.Fatalf("could not initialize logger: %s", err)
+		log.Fatalf("could not initialize logger: %s", err)
 	}
 	v, err := utils.InitConfig("ifz", "config")
 	if err != nil {
-		logrus.Fatalf("could not initialize config: %s", err)
+		log.Fatalf("could not initialize config: %s", err)
 	}
 	utils.PrintConfig(v, CONFIG_VARS...)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	agg, err := getAggregator(v, ctx)
 	if err != nil {
-		logrus.Fatalf("error creating agregator: %s", err)
+		log.Fatalf("error creating agregator: %s", err)
 	}
 	aggC := agg.GetChan()
 
 	parser, err := getListener(v, aggC, ctx)
-
 	if err != nil {
-		logrus.Fatalf("error creating parser: %s", err)
+		log.Fatalf("error creating parser: %s", err)
 	}
+
 	if err := parser.Start(agg); err != nil {
-		log.Fatalf("error during run: %s", err)
+		log.Errorf("error during run: %s", err)
 	}
 }

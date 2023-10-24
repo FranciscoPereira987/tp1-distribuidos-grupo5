@@ -1,3 +1,4 @@
+.git
 cmd/**/config.yaml
 cmd/*/Dockerfile
 client

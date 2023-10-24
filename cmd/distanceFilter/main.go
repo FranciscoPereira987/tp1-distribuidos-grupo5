@@ -40,9 +40,9 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 	m.SetExpectedControlCount(qFlights, v.GetInt("demuxers"))
 
-	sink, err := m.ExchangeDeclare(v.GetString("exchange.sink"))
-	if err != nil {
-		return "", "", "", err
+	sink := v.GetString("exchange.sink")
+	if sink == "" {
+		return "", "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.sink")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))

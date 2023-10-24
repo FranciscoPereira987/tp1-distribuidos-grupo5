@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -39,9 +40,9 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err != nil {
 		return "", nil, err
 	}
-	results, err := m.ExchangeDeclare(v.GetString("exchange.results"))
-	if err != nil {
-		return "", nil, err
+	results := v.GetString("exchange.results")
+	if results == "" {
+		return "", nil, fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.results")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))

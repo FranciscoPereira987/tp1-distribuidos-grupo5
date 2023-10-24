@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/viper"
 )
+
+var ErrMissingConfig = errors.New("missing configuration variable")
 
 func InitConfig(prefix, configPath string) (*viper.Viper, error) {
 	v := viper.New()

@@ -75,9 +75,8 @@ func (worker *Worker) handleFinData() {
 func (worker *Worker) Start() error {
 	runChan := make(chan error)
 	sigChan := make(chan os.Signal, 1)
-	defer close(runChan)
-	defer close(sigChan)
 	go func() {
+		defer close(runChan)
 		runChan <- worker.Run()
 	}()
 

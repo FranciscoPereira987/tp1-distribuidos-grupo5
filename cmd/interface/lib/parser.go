@@ -111,8 +111,8 @@ func (parser *Parser) publishQuery4Avg(totalPrice float64, count int) (err error
 	return err
 }
 
-func (parser *Parser) waitForWorkers() (wait chan error) {
-	wait = make(chan error, 1)
+func (parser *Parser) waitForWorkers() (<-chan error) {
+	wait := make(chan error, 1)
 
 	go func() {
 		defer close(wait)
@@ -128,7 +128,7 @@ func (parser *Parser) waitForWorkers() (wait chan error) {
 		wait <- err
 	}()
 
-	return
+	return wait
 }
 
 func (parser *Parser) Start(agg *Agregator) error {
@@ -137,11 +137,6 @@ func (parser *Parser) Start(agg *Agregator) error {
 	aggResult := make(chan error, 1)
 
 	endResult := make(chan error, 1)
-
-	defer close(sig)
-	//defer close(result)
-	//defer close(aggResult)
-	//defer close(endResult)
 
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	workers := parser.waitForWorkers()

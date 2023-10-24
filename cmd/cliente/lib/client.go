@@ -105,6 +105,7 @@ func getClientMultiData() protocol.Data {
 }
 
 func (client *Client) runResults() {
+	defer close(client.resultsEnd)
 	data := getClientMultiData()
 	for {
 		select {
@@ -131,6 +132,7 @@ func (client *Client) runResults() {
 }
 
 func (client *Client) runData() {
+	defer close(client.dataSendingEnd)
 	for {
 		select {
 		case <-client.notifyClose:
@@ -182,10 +184,11 @@ func (client *Client) runData() {
 	client.dataSendingEnd <- true
 }
 
-func (client *Client) finished() chan bool {
+func (client *Client) finished() <-chan bool {
 	finished := make(chan bool)
 
 	go func() {
+		defer close(finished)
 		data := <-client.dataSendingEnd
 		result := <-client.resultsEnd
 		finished <- result || data
@@ -195,8 +198,6 @@ func (client *Client) finished() chan bool {
 }
 
 func (client *Client) waiter() error {
-	defer close(client.dataSendingEnd)
-	defer close(client.resultsEnd)
 	defer func() {
 		client.dataConn.Close()
 		client.dataConn.Shutdown()
@@ -210,8 +211,6 @@ func (client *Client) waiter() error {
 	defer client.writer.Close()
 	finished := client.finished()
 	sig := make(chan os.Signal, 1)
-	defer close(sig)
-	defer close(finished)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
 	select {

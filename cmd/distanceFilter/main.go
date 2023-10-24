@@ -25,7 +25,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", "", "", err
 	}
 	// Subscribe to coordinates and EOF events.
-	if err := m.QueueBind(qCoords, source, []string{"coords", mid.ControlRoutingKey}); err != nil {
+	if err := m.QueueBind(qCoords, source, []string{"coords", mid.ControlRoutingKey+".coords"}); err != nil {
 		return "", "", "", err
 	}
 

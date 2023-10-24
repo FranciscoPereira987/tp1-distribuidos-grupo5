@@ -35,6 +35,10 @@ func NewFilter(m *mid.Middleware, source, sink, dir string) (*Filter, error) {
 	}, nil
 }
 
+func (f *Filter) Close() error {
+	return os.RemoveAll(f.dir)
+}
+
 func (f *Filter) Run(ctx context.Context) error {
 	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)

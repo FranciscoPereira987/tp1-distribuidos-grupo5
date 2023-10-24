@@ -10,6 +10,7 @@ all: $(BIN)
 
 $(BIN):
 	go build -o $@ ./cmd/$(notdir $@)
+.PHONY: $(BIN)
 
 build-image:
 	docker build -t input_boundary -f cmd/inputBoundary/Dockerfile .

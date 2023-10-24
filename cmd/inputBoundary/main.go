@@ -33,7 +33,8 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
-	m.SetExpectedControlCount(status, v.GetInt("workers"))
+	// wait for workers + 1*(outputBoundary)
+	m.SetExpectedControlCount(status, v.GetInt("workers")+1)
 
 	ch, err := m.ConsumeWithContext(ctx, status)
 	if err != nil {

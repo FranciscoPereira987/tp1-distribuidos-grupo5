@@ -83,6 +83,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer filter.Close()
 
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)

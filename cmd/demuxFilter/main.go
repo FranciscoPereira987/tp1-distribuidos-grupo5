@@ -95,6 +95,12 @@ func main() {
 		log.Error(err)
 	}
 
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	// send EOF to sinks
 	errs := make([]error, 0, len(sinks))
 	for _, exchange := range sinks {

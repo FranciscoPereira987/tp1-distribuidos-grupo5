@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
@@ -109,7 +110,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 	go func(cc int) {
 		defer close(ch)
 		for d := range msgs {
-			if d.RoutingKey == ControlRoutingKey {
+			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
 				logrus.Info("recieved control message")
 				cc--
 				// The shared queue needs to have the same name
@@ -149,10 +150,18 @@ func (m *Middleware) Control(ctx context.Context, exchange string) error {
 }
 
 func (m *Middleware) EOF(ctx context.Context, exchange string) error {
+	logrus.Infof("sending EOF into exchange %q", exchange)
 	return m.Control(ctx, exchange)
 }
 
+func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic string) error {
+	logrus.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
+	rKey := ControlRoutingKey + "." + topic
+	return m.PublishWithContext(ctx, exchange, rKey, nil)
+}
+
 func (m *Middleware) SharedQueueEOF(ctx context.Context, name string, eof byte) error {
+	logrus.Infof("sending EOF(%d) into queue %q", eof, name)
 	return m.PublishWithContext(ctx, name, ControlRoutingKey, []byte{eof})
 }
 

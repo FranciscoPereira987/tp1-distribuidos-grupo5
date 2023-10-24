@@ -6,7 +6,7 @@ import (
 	"context"
 	"io"
 
-	// log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
@@ -33,10 +33,12 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err != nil {
 		return err
 	}
-	if err := g.ForwardCoords(ctx, &coordsReader); err != nil {
+	n, err := g.ForwardCoords(ctx, &coordsReader)
+	log.Infof("received %d airport coordinates records", n)
+	if err != nil {
 		return err
 	}
-	if err := g.m.EOF(ctx, g.coords); err != nil {
+	if err := g.m.TopicEOF(ctx, g.coords, "coords"); err != nil {
 		return err
 	}
 
@@ -50,27 +52,27 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	return g.m.SharedQueueEOF(ctx, g.flights, byte(demuxers))
 }
 
-func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) error {
+func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) {
 	r, indices, err := protocol.NewCsvReader(in, ';', typing.CoordinatesFields)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	for {
+	for n := 0; ; n++ {
 		var b bytes.Buffer
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				return n, nil
 			}
-			return err
+			return n, err
 		}
 
 		if err := typing.AirportCoordsMarshal(&b, record, indices); err != nil {
-			return err
+			return n, err
 		}
 		if err := g.m.PublishWithContext(ctx, g.coords, "coords", b.Bytes()); err != nil {
-			return err
+			return n, err
 		}
 	}
 }

@@ -210,7 +210,7 @@ func (parser *Parser) Run(workers <-chan error) error {
 	message := getDataMessages()
 	totalPrice, totalFlights := float64(0), 0
 loop:
-	for ; ; totalFlights++ {
+	for {
 		if err := data.Recover(message); err != nil {
 			if err != nil {
 				logrus.Errorf("action: recovering message | result: failed | reason: %s", err)
@@ -241,8 +241,10 @@ loop:
 				logrus.Errorf("action: sending data | result: failed | reason: %s", err)
 				break loop
 			}
+			totalFlights++
 		case (*typing.DataFin):
 			logrus.Info("action: sending data | result: success | reason: client finished sending data")
+			logrus.Infof("total: %f | flights: %d", totalPrice, totalFlights)
 			err = parser.publishQuery4Avg(totalPrice, totalFlights)
 			if err != nil {
 				logrus.Errorf("action: sending avg price | result: failed | reason: %s", err)

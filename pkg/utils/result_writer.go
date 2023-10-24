@@ -35,6 +35,9 @@ func mapWriters(writers []*csv.Writer, results []Numbered) (map[byte]*csv.Writer
 }
 
 func NewResultWriter(dir string, files []string, results []Numbered) (*ResultWriter, error) {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
 	fds, err := openFiles(dir, files)
 	if err != nil {
 		for _, fd := range fds {

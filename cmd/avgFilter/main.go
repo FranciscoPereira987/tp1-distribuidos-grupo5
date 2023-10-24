@@ -30,9 +30,9 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err := m.QueueBind(q, source, []string{shardKey, "avg", "control"}); err != nil {
 		return "", "", err
 	}
-	sink, err := m.ExchangeDeclare(v.GetString("results"))
-	if err != nil {
-		return "", "", err
+	sink := v.GetString("results")
+	if sink == "" {
+		return "", "", fmt.Errorf("%w: %s", utils.ErrMissingConfig, "results")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))

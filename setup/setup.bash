@@ -84,7 +84,6 @@ do
     networks:
       - testing_net
     environment:
-      - DISTANCE_ID=$n
       - DISTANCE_DEMUXERS=$WORKERS_QUERY1
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -15,7 +14,7 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
+	source, err := m.ExchangeDeclare(v.GetString("source"))
 	if err != nil {
 		return "", "", "", err
 	}
@@ -29,13 +28,12 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", "", "", err
 	}
 
-	qFlights, err := m.QueueDeclare(v.GetString("queue.flights"))
+	qFlights, err := m.QueueDeclare(source)
 	if err != nil {
 		return "", "", "", err
 	}
-	// Subscribe to shards specific and EOF events.
-	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(qFlights, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
+	// Subscribe to filter specific and EOF events.
+	if err := m.QueueBind(qFlights, source, []string{source, mid.ControlRoutingKey}); err != nil {
 		return "", "", "", err
 	}
 	m.SetExpectedControlCount(qFlights, v.GetInt("demuxers"))
@@ -67,9 +65,6 @@ func main() {
 	}
 	if err := utils.InitLogger(v.GetString("log.level")); err != nil {
 		log.Fatal(err)
-	}
-	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
-		log.Fatal(fmt.Errorf("Could not parse DISTANCE_ID env var as int: %w", err))
 	}
 
 	middleware, err := mid.Dial(v.GetString("server.url"))

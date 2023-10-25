@@ -76,14 +76,15 @@ func (f *Filter) Run(ctx context.Context) error {
 }
 
 func (f *Filter) sendDistanceFilter(ctx context.Context, data *typing.Flight) error {
-	// ignore possibly missing field
+	// ignore flights with missing required field
 	if data.Distance == 0 {
 		return nil
 	}
+
 	var b bytes.Buffer
-	key := f.keyGens[Query2].KeyFrom(data.Origin, data.Destination)
+	sink := f.sinks[Query2]
 	typing.DistanceFilterMarshal(&b, data)
-	return f.m.PublishWithContext(ctx, f.sinks[Query2], key, b.Bytes())
+	return f.m.PublishWithContext(ctx, sink, sink, b.Bytes())
 }
 
 func (f *Filter) sendAverageFilter(ctx context.Context, data *typing.Flight) error {

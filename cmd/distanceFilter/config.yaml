@@ -1,9 +1,8 @@
-# id: j
 # demuxers: x
 
 status: "status"
+source: "distance"
 exchange:
-  source: "distance"
   sink: "results"
 
 server:

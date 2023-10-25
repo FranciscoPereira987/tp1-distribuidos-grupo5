@@ -12,6 +12,10 @@ $(BIN):
 	go build -o $@ ./cmd/$(notdir $@)
 .PHONY: $(BIN)
 
+clean:
+	rm $(BIN)
+.PHONY: clean
+
 build-image:
 	docker build -t input_boundary -f cmd/inputBoundary/Dockerfile .
 	docker build -t output_boundary -f cmd/outputBoundary/Dockerfile .

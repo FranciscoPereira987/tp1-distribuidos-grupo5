@@ -8,6 +8,16 @@ import (
 	"strconv"
 )
 
+const resultQ2Field = "2"
+
+var ResultQ2Header = []string{
+	resultQ2Field,
+	"legId",
+	"startingAirport",
+	"destinationAirport",
+	"totalTravelDistance",
+}
+
 // reuse marshaled msg
 func ResultQ2Marshal(b *bytes.Buffer, msg []byte) {
 	b.WriteByte(Query2Flag)
@@ -16,7 +26,7 @@ func ResultQ2Marshal(b *bytes.Buffer, msg []byte) {
 
 func ResultQ2Unmarshal(r *bytes.Reader) ([]string, error) {
 	record := make([]string, 5)
-	record[0] = "2"
+	record[0] = resultQ2Field
 
 	var id [16]byte
 	_, err := io.ReadFull(r, id[:])

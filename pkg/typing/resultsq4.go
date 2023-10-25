@@ -13,6 +13,16 @@ type ResultQ4 struct {
 	MaxFare     float32
 }
 
+const resultQ4Field = "4"
+
+var ResultQ4Header = []string{
+	resultQ4Field,
+	"startingAirport",
+	"destinationAirport",
+	"averageFare",
+	"maxFare",
+}
+
 func ResultQ4Marshal(b *bytes.Buffer, data *ResultQ4) {
 	b.WriteByte(Query4Flag)
 	WriteString(b, data.Origin)
@@ -23,7 +33,7 @@ func ResultQ4Marshal(b *bytes.Buffer, data *ResultQ4) {
 
 func ResultQ4Unmarshal(r *bytes.Reader) (record []string, err error) {
 	record = make([]string, 5)
-	record[0] = "4"
+	record[0] = resultQ4Field
 
 	record[1], err = ReadString(r)
 	if err == nil {

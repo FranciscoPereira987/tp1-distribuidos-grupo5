@@ -8,6 +8,17 @@ import (
 	"strconv"
 )
 
+const resultQ3Field = "3"
+
+var ResultQ3Header = []string{
+	resultQ3Field,
+	"legId",
+	"startingAirport",
+	"destinationAirport",
+	"travelDuration",
+	"segmentsDepartureAirportCode",
+}
+
 func ResultQ3Marshal(b *bytes.Buffer, data *FastestFilter) {
 	b.WriteByte(Query3Flag)
 	b.Write(data.ID[:])
@@ -19,7 +30,7 @@ func ResultQ3Marshal(b *bytes.Buffer, data *FastestFilter) {
 
 func ResultQ3Unmarshal(r *bytes.Reader) ([]string, error) {
 	record := make([]string, 6)
-	record[0] = "3"
+	record[0] = resultQ3Field
 
 	var id [16]byte
 	_, err := io.ReadFull(r, id[:])

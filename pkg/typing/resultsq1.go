@@ -8,6 +8,17 @@ import (
 	"strconv"
 )
 
+const resultQ1Field = "1"
+
+var ResultQ1Header = []string{
+	resultQ1Field,
+	"legId",
+	"startingAirport",
+	"destinationAirport",
+	"totalFare",
+	"segmentsDepartureAirportCode",
+}
+
 func ResultQ1Marshal(b *bytes.Buffer, data *Flight) {
 	b.WriteByte(Query1Flag)
 	b.Write(data.ID[:])
@@ -19,7 +30,7 @@ func ResultQ1Marshal(b *bytes.Buffer, data *Flight) {
 
 func ResultQ1Unmarshal(r *bytes.Reader) ([]string, error) {
 	record := make([]string, 6)
-	record[0] = "1"
+	record[0] = resultQ1Field
 
 	var id [16]byte
 	_, err := io.ReadFull(r, id[:])

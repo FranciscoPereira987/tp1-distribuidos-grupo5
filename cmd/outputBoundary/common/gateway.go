@@ -38,6 +38,10 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer) (err error) {
 		}
 	}()
 
+	if err := writeHeaders(w); err != nil {
+		return err
+	}
+
 	for msg := range ch {
 		result, err := typing.ResultUnmarshal(msg)
 		if err != nil {
@@ -49,4 +53,18 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer) (err error) {
 	}
 
 	return w.Write(protocol.ResultEOF)
+}
+
+func writeHeaders(w *csv.Writer) error {
+	err := w.Write(typing.ResultQ1Header)
+	if err == nil {
+		w.Write(typing.ResultQ2Header)
+	}
+	if err == nil {
+		w.Write(typing.ResultQ3Header)
+	}
+	if err == nil {
+		w.Write(typing.ResultQ4Header)
+	}
+	return err
 }

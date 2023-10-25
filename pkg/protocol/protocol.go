@@ -21,12 +21,12 @@ func SplitRecord(record []byte) (int, []byte, error) {
 	}
 
 	tag := int(head[0] - '0')
-	if tag < 0 || tag > 4 {
-		return 0, nil, fmt.Errorf("%w: tag=%d", ErrNotQueryResult, tag)
+	if tag > 0 && tag < 5 {
+		return tag, tail, nil
 	}
 	if tag == 0 {
 		return 0, nil, io.EOF
 	}
 
-	return tag, tail, nil
+	return 0, nil, fmt.Errorf("%w: tag=%d", ErrNotQueryResult, tag)
 }

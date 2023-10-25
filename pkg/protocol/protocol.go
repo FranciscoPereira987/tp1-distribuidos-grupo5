@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -140,9 +139,11 @@ func (proto *Protocol) Accept() error {
 	return nil
 }
 
-// Protocol should be safe to write to (not producing short writes)
+// It is an error in Go to write less than the requested number of bytes.
+// The writer handles short writes internally, so a short write is indicative
+// of a network error.
 func (proto *Protocol) sendMessage(message Message) error {
-	_, err := io.Copy(proto.buf, bytes.NewReader(message.Marshal()))
+	_, err := proto.buf.Write(message.Marshal())
 
 	return err
 }

@@ -2,7 +2,6 @@ package common
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -68,8 +67,7 @@ func (rr *ResultsReader) ReadResults(r io.Reader) error {
 		log.Infof("query: %d | value: %s", index, record)
 		// Add back the newline removed by the scanner
 		record = append(record, '\n')
-		_, err = io.Copy(rr.bws[index-1], bytes.NewReader(record))
-		if err != nil {
+		if _, err := rr.bws[index-1].Write(record); err != nil {
 			return err
 		}
 	}

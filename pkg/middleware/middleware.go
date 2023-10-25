@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type Middleware struct {
@@ -107,7 +107,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 		defer close(ch)
 		for d := range msgs {
 			if d.RoutingKey == "control" {
-				logrus.Info("recieved control message")
+				log.Info("recieved control message")
 				m.controlCount--
 				if m.controlCount <= 0 {
 					return
@@ -116,7 +116,7 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 				ch <- d.Body
 			}
 		}
-		logrus.Error("rabbitmq channel closed")
+		log.Error("rabbitmq channel closed")
 	}()
 
 	return ch, nil
@@ -141,6 +141,7 @@ func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key strin
 }
 
 func (m *Middleware) Close() {
-	m.ch.Close()
+	// the corresponding Channel is closed along with the Connection
 	m.conn.Close()
+	log.Info("closed rabbitMQ Connection")
 }

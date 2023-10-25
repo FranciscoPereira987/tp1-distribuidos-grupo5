@@ -54,7 +54,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer reader.Close()
 
 	go func() {
 		if err := writer.WriteData(data); err != nil {
@@ -74,5 +73,8 @@ func main() {
 		}
 	} else {
 		log.Info("finished reading results")
+	}
+	if err := reader.Close(); err != nil {
+		log.Error(err)
 	}
 }

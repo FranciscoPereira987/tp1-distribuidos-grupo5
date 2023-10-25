@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrResultFiles = errors.New("need 4 result files")

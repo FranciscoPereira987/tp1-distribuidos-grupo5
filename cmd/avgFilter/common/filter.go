@@ -1,10 +1,10 @@
 package common
 
 import (
-	"encoding/binary"
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"os"
@@ -185,7 +185,7 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 }
 
 type fareReader struct {
-	br   *bufio.Reader
+	br *bufio.Reader
 }
 
 func newFareReader(r io.Reader) fareReader {

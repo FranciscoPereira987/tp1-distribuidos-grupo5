@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	Query1Flag = iota + 1
+	_ = iota
+	Query1Flag
 	Query2Flag
 	Query3Flag
 	Query4Flag

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 )
 
@@ -21,7 +22,7 @@ type ResultsReader struct {
 
 func NewResultsReader(dir string, files []string) (*ResultsReader, error) {
 	if len(files) != 4 {
-		return nil, fmt.Errorf("%w: got %v", ErrResultFiles, files)
+		return nil, fmt.Errorf("%w: have %v", ErrResultFiles, files)
 	}
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		return nil, err
@@ -64,6 +65,7 @@ func (rr *ResultsReader) ReadResults(r io.Reader) error {
 			}
 			return err
 		}
+		log.Infof("query: %d | value: %s", index, record)
 		// Add back the newline removed by the scanner
 		record = append(record, '\n')
 		_, err = io.Copy(rr.bws[index-1], bytes.NewReader(record))

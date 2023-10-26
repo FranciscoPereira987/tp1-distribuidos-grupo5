@@ -94,8 +94,13 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 		}
 
 		err = typing.FlightMarshal(&b, record, indices)
-		if err != nil && err != typing.ErrMissingDistance {
-			return err
+		switch err {
+		case nil:
+		case typing.ErrMissingDistance:
+			log.Warnf("action: ignore_error | id: %x | error: %s", record[0], err)
+		default:
+			log.Errorf("action: skip_flight | id: %x | error: %s", record[0], err)
+			continue
 		}
 		if err := g.m.PublishWithContext(ctx, g.flights, g.flights, b.Bytes()); err != nil {
 			return err

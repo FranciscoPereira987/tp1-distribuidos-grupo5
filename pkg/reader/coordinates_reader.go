@@ -68,7 +68,10 @@ func IntoCoordinates(stream string) (data *distance.CoordWrapper, err error) {
 
 func (reader *CoordinatesReader) ReadData() (protocol.Data, error) {
 	if !reader.buf.Scan() {
-		err := errors.Join(io.EOF, reader.buf.Err())
+		err := reader.buf.Err()
+		if err == nil {
+			err = io.EOF
+		}
 		return nil, err
 	}
 	line := reader.buf.Text()

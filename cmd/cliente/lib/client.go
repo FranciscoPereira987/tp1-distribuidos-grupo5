@@ -108,7 +108,7 @@ func (client *Client) runResults() {
 	defer close(client.resultsEnd)
 	defer func() {
 		client.resultsConn.Close()
-		client.dataSendingEnd <- true
+		client.resultsEnd <- true
 	}()
 	data := getClientMultiData()
 	for {

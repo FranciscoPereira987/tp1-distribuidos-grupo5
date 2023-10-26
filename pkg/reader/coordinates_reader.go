@@ -2,7 +2,6 @@ package reader
 
 import (
 	"bufio"
-	"errors"
 	"io"
 	"os"
 	"strconv"

@@ -106,6 +106,10 @@ func getClientMultiData() protocol.Data {
 
 func (client *Client) runResults() {
 	defer close(client.resultsEnd)
+	defer func() {
+		client.resultsConn.Close()
+		client.dataSendingEnd <- true
+	}()
 	data := getClientMultiData()
 	for {
 		select {
@@ -126,13 +130,17 @@ func (client *Client) runResults() {
 		}
 
 	}
-	client.resultsConn.Close()
+
 	logrus.Info("Results listener exiting succesfuly")
 	client.resultsEnd <- true
 }
 
 func (client *Client) runData() {
 	defer close(client.dataSendingEnd)
+	defer func() {
+		client.dataConn.Close()
+		client.dataSendingEnd <- true
+	}()
 	for {
 		select {
 		case <-client.notifyClose:
@@ -179,9 +187,9 @@ func (client *Client) runData() {
 		}
 	}
 	client.dataConn.Send(protocol.NewDataMessage(typing.FinData()))
-	client.dataConn.Close()
+
 	logrus.Infof("action: data sending | result: finished")
-	client.dataSendingEnd <- true
+
 }
 
 func (client *Client) finished() <-chan bool {

@@ -80,7 +80,7 @@ func cacheKey(a, b string) uint32 {
 	h1.Write([]byte(a))
 	h2.Write([]byte(b))
 
-	return (h1.Sum32() + h2.Sum32()) % cacheSize
+	return (h1.Sum32() ^ h2.Sum32()) % cacheSize
 }
 
 func (comp *DistanceComputer) CacheStore(a, b string, dist float64) {

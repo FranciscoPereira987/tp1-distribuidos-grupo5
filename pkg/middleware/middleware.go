@@ -12,8 +12,6 @@ import (
 
 const ControlRoutingKey = "control"
 
-var ControlCountNotFoundError = errors.New("Control value not found")
-
 type Middleware struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
@@ -109,9 +107,6 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 		return nil, err
 	}
 
-	if _, ok := m.controlCount[name]; !ok {
-		return nil, ControlCountNotFoundError
-	}
 	ch := make(chan []byte)
 	go func(cc int) {
 		defer close(ch)

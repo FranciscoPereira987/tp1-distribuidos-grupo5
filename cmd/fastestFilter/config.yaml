@@ -1,9 +1,13 @@
-# id: 1
-source: "fastest"
+# id: k
+# demuxers: x
+
 status: "status"
-results: "results"
-queue: ""
+exchange:
+  source: "fastest"
+  sink: "results"
+
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"
+
 log:
   level: "info"

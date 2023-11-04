@@ -1,9 +1,12 @@
 package common
 
 import (
+	"bytes"
 	"context"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
+	log "github.com/sirupsen/logrus"
 )
 
 type Filter struct {
@@ -20,18 +23,21 @@ func NewFilter(m *mid.Middleware, source, sink string) *Filter {
 	}
 }
 
-type FastestFlightsMap map[string][]mid.FastestFilterData
+type FastestFlightsMap map[string][]typing.FastestFilter
 
-func updateFastest(fastest FastestFlightsMap, data mid.FastestFilterData) {
+func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) {
 	key := data.Origin + "." + data.Destination
 	if fast, ok := fastest[key]; !ok {
-		tmp := [2]mid.FastestFilterData{data}
+		tmp := [2]typing.FastestFilter{data}
 		fastest[key] = tmp[:1]
 	} else if data.Duration < fast[0].Duration {
 		fastest[key] = append(fast[:0], data, fast[0])
 	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
 		fastest[key] = append(fast[:1], data)
+	} else {
+		return
 	}
+	log.Debugf("updated fastest flights for route %s-%s", data.Origin, data.Destination)
 }
 
 func (f *Filter) Run(ctx context.Context) error {
@@ -41,14 +47,15 @@ func (f *Filter) Run(ctx context.Context) error {
 		return err
 	}
 
+	log.Infof("start consuming messages from %q queue", f.source)
 	for msg := range ch {
-		data, err := mid.FastestFilterUnmarshal(msg[1:])
+		data, err := typing.FastestFilterUnmarshal(msg)
 		if err != nil {
 			return err
 		}
-		//logrus.Info("updating fastest")
 		updateFastest(fastest, data)
 	}
+	log.Infof("finished consuming messages from %q queue", f.source)
 
 	select {
 	case <-ctx.Done():
@@ -56,13 +63,18 @@ func (f *Filter) Run(ctx context.Context) error {
 	default:
 	}
 
+	log.Infof("start publishing results into %q queue", f.sink)
 	for _, arr := range fastest {
 		for _, v := range arr {
-			err := f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q3Marshal(v))
+			var b bytes.Buffer
+			typing.ResultQ3Marshal(&b, &v)
+			err := f.m.PublishWithContext(ctx, f.sink, f.sink, b.Bytes())
 			if err != nil {
 				return err
 			}
 		}
 	}
+	log.Infof("finished publishing results into %q queue", f.sink)
+
 	return nil
 }

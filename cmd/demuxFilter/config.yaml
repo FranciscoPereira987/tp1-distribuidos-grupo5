@@ -1,0 +1,18 @@
+# workers:
+#   q2: y
+#   q3: z
+#   q4: w
+
+status: "status"
+source: "demux"
+exchange:
+  distance: "distance"
+  fastest: "fastest"
+  average: "average"
+  results: "results"
+
+server:
+  url: "amqp://guest:guest@rabbitmq:5672/"
+
+log:
+  level: "info"

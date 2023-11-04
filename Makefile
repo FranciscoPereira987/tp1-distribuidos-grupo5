@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 
-CMD := cliente interface filtroDistancia fastestFilter avgFilter
+CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter
 BIN := $(addprefix bin/,$(CMD))
 
 all: $(BIN)
@@ -10,13 +10,20 @@ all: $(BIN)
 
 $(BIN):
 	go build -o $@ ./cmd/$(notdir $@)
+.PHONY: $(BIN)
+
+clean:
+	rm $(BIN)
+.PHONY: clean
 
 build-image:
-	docker build -t server -f cmd/interface/Dockerfile .
-	docker build -t distance_filter -f cmd/filtroDistancia/Dockerfile .
+	docker build -t input_boundary -f cmd/inputBoundary/Dockerfile .
+	docker build -t output_boundary -f cmd/outputBoundary/Dockerfile .
+	docker build -t demux_filter -f cmd/demuxFilter/Dockerfile .
+	docker build -t distance_filter -f cmd/distanceFilter/Dockerfile .
 	docker build -t fastest_filter -f cmd/fastestFilter/Dockerfile .
 	docker build -t avg_filter -f cmd/avgFilter/Dockerfile .
-	docker build -t client -f cmd/cliente/Dockerfile .
+	docker build -t client -f cmd/client/Dockerfile .
 .PHONY: build-image
 
 fmt:
@@ -28,10 +35,8 @@ test:
 .PHONY: test
 
 setup: docker-compose-dev.yaml
+	setup/setup.bash > $^
 .PHONY: setup
-
-docker-compose-dev.yaml: setup/setup.bash
-	$< > $@
 
 run-client:
 	docker run --rm -v ./client:/client --network tp1_testing_net --entrypoint /cliente client

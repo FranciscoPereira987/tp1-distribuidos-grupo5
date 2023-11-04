@@ -1,13 +1,10 @@
-# id: i
-# demuxers: x
+# workers: x + y + z + w
 
 status: "status"
 exchange:
-  source: "average"
-  sink: "results"
+  source: "results"
 
-fares:
-  dir: "fares"
+port: "7777"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

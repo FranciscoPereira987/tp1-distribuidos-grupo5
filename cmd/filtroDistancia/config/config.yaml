@@ -1,7 +1,0 @@
-times: 4
-
-source:
-  url: "amqp://guest:guest@rabbitmq:5672/"
-  data: "distance"
-  sink: "results"
-  status: "status"

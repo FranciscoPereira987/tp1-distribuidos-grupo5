@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,34 +35,47 @@ func NewFilter(m *mid.Middleware, source, sink, dir string) (*Filter, error) {
 	}, nil
 }
 
-func (f *Filter) Run(ctx context.Context) error {
-	fares, priceSum, count := make(map[string]fareWriter), 0.0, 0
+func (f *Filter) Close() error {
+	return os.RemoveAll(f.dir)
+}
+
+func (f *Filter) Run(ctx context.Context) (err error) {
+	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
+	defer func() {
+		var errs []error
+		for _, fw := range fares {
+			errs = append(errs, fw.Close())
+		}
+		if err == nil {
+			err = errors.Join(errs...)
+		}
+	}()
 	ch, err := f.m.ConsumeWithContext(ctx, f.source)
 	if err != nil {
 		return err
 	}
 
+	log.Infof("start consuming messages from %q queue", f.source)
 	for msg := range ch {
-		if mid.IsAvgPriceMessage(msg) {
-			priceSubtotal, priceCount, err := mid.AvgPriceUnmarshal(msg)
-			if err != nil {
+		data, err := typing.AverageFilterUnmarshal(msg)
+		if err != nil {
+			return err
+		}
+
+		switch v := data.(type) {
+		case typing.AverageFare:
+			fareSum += v.Sum
+			count += int(v.Count)
+			log.Infof("updated average fare: %f", fareSum/float64(count))
+		case typing.AverageFilterFlight:
+			key := v.Origin + "." + v.Destination
+			if err := f.appendFare(fares, key, v.Fare); err != nil {
 				return err
 			}
-			priceSum += priceSubtotal
-			count += priceCount
-			log.Infof("updating average: %f", priceSum/float64(count))
-		} else {
-			data, err := mid.AvgFilterUnmarshal(msg)
-			if err != nil {
-				return err
-			}
-			key := data.Origin + "." + data.Destination
-			if err := f.appendFare(fares, key, data.Price); err != nil {
-				return err
-			}
-			log.Debugf("new fare for route: %s-%s | fare: %f", data.Origin, data.Destination, data.Price)
+			log.Debugf("new fare for route %s-%s: %d", v.Origin, v.Destination, v.Fare)
 		}
 	}
+	log.Infof("finished consuming messages from %q queue", f.source)
 
 	select {
 	case <-ctx.Done():
@@ -68,23 +83,25 @@ func (f *Filter) Run(ctx context.Context) error {
 	default:
 		var errs []error
 		for _, fw := range fares {
-			errs = append(errs, fw.Close())
+			errs = append(errs, fw.Flush())
 		}
 		if err := errors.Join(errs...); err != nil {
 			return err
 		}
 	}
 
-	return f.sendResults(ctx, fares, float32(priceSum/float64(count)))
+	return f.sendResults(ctx, fares, float32(fareSum/float64(count)))
 }
 
 func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, avg float32) error {
-	log.Infof("average: %f", avg)
+	log.Infof("start publishing results into %q queue", f.sink)
 	for file := range fares {
 		if err := f.aggregate(ctx, file, avg); err != nil {
 			return err
 		}
 	}
+	log.Infof("finished publishing results into %q queue", f.sink)
+
 	return nil
 }
 
@@ -96,7 +113,7 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 	defer faresFile.Close()
 
 	r := newFareReader(faresFile)
-	priceSum, priceMax, count := 0.0, float32(0), 0
+	fareSum, fareMax, count := 0.0, float32(0), 0
 
 	for {
 		v, err := r.ReadFloat()
@@ -107,24 +124,27 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 			return err
 		}
 		if avg < v {
-			priceSum += float64(v)
+			fareSum += float64(v)
 			count++
-			priceMax = max(priceMax, v)
+			fareMax = max(fareMax, v)
 		}
 	}
+	origin, destination, _ := strings.Cut(file, ".")
 	if count == 0 {
+		log.Debugf("no flights with above average fare for route %s-%s", origin, destination)
 		return nil
 	}
 
-	origin, destination, _ := strings.Cut(file, ".")
-	v := mid.ResultQ4{
+	var b bytes.Buffer
+	v := typing.ResultQ4{
 		Origin:      origin,
 		Destination: destination,
-		AvgPrice:    float32(priceSum / float64(count)),
-		MaxPrice:    priceMax,
+		AverageFare: float32(fareSum / float64(count)),
+		MaxFare:     fareMax,
 	}
-	log.Infof("route: %s-%s | average: %f | max: %f", origin, destination, v.AvgPrice, priceMax)
-	return f.m.PublishWithContext(ctx, f.sink, f.sink, mid.Q4Marshal(v))
+	typing.ResultQ4Marshal(&b, &v)
+	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)
+	return f.m.PublishWithContext(ctx, f.sink, f.sink, b.Bytes())
 }
 
 type fareWriter struct {
@@ -148,10 +168,7 @@ func (fw *fareWriter) Flush() error {
 }
 
 func (fw *fareWriter) Close() error {
-	errFlush := fw.Flush()
-	errClose := fw.file.Close()
-
-	return errors.Join(errFlush, errClose)
+	return fw.file.Close()
 }
 
 func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32) (err error) {

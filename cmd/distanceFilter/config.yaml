@@ -1,13 +1,9 @@
-# id: i
 # demuxers: x
 
 status: "status"
+source: "distance"
 exchange:
-  source: "average"
   sink: "results"
-
-fares:
-  dir: "fares"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

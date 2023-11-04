@@ -15,7 +15,7 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("source"))
+	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
 	if err != nil {
 		return "", "", err
 	}
@@ -24,15 +24,16 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err != nil {
 		return "", "", err
 	}
-
 	// Subscribe to shards specific and EOF events.
 	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(q, source, []string{shardKey, "avg", "control"}); err != nil {
+	if err := m.QueueBind(q, source, []string{shardKey, "average", mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
-	sink := v.GetString("results")
+	m.SetExpectedControlCount(q, v.GetInt("demuxers"))
+
+	sink := v.GetString("exchange.sink")
 	if sink == "" {
-		return "", "", fmt.Errorf("%w: %s", utils.ErrMissingConfig, "results")
+		return "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.sink")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
@@ -42,7 +43,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if _, err := m.ExchangeDeclare(status); err != nil {
 		return "", "", err
 	}
-	if err := m.QueueBind(status, status, []string{"control"}); err != nil {
+	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
 
@@ -82,10 +83,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer filter.Close()
 
 	if err := filter.Run(ctx); err != nil {
 		log.Error(err)
-	} else if err := middleware.Control(ctx, sink); err != nil {
+	} else if err := middleware.EOF(ctx, sink); err != nil {
 		log.Error(err)
 	}
 }

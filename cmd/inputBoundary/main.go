@@ -2,38 +2,25 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	"github.com/franciscopereira987/tp1-distribuidos/cmd/fastestFilter/common"
+	"github.com/franciscopereira987/tp1-distribuidos/cmd/inputBoundary/common"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
+	coords, err := m.ExchangeDeclare(v.GetString("exchange.coords"))
 	if err != nil {
 		return "", "", err
 	}
-
-	q, err := m.QueueDeclare(v.GetString("queue"))
+	flights, err := m.ExchangeDeclare(v.GetString("exchange.flights"))
 	if err != nil {
 		return "", "", err
-	}
-	// Subscribe to shards specific and EOF events.
-	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(q, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
-		return "", "", err
-	}
-	m.SetExpectedControlCount(q, v.GetInt("demuxers"))
-
-	sink := v.GetString("exchange.sink")
-	if sink == "" {
-		return "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.sink")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
@@ -46,21 +33,29 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
+	// wait for workers + 1*(outputBoundary)
+	m.SetExpectedControlCount(status, v.GetInt("workers")+1)
 
-	log.Info("fastest filter worker up")
-	return q, sink, m.Control(ctx, status)
+	ch, err := m.ConsumeWithContext(ctx, status)
+	if err != nil {
+		return "", "", err
+	}
+
+	log.Info("input boundary up")
+
+	<-ch
+	log.Info("all workers are ready")
+
+	return coords, flights, nil
 }
 
 func main() {
-	v, err := utils.InitConfig("fast", "cmd/fastestFilter")
+	v, err := utils.InitConfig("in", "cmd/inputBoundary")
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err := utils.InitLogger(v.GetString("log.level")); err != nil {
 		log.Fatal(err)
-	}
-	if _, err := strconv.Atoi(v.GetString("id")); err != nil {
-		log.Fatal(fmt.Errorf("Could not parse FAST_ID env var as int: %w", err))
 	}
 
 	middleware, err := mid.Dial(v.GetString("server.url"))
@@ -74,16 +69,29 @@ func main() {
 
 	ctx := utils.WithSignal(parentCtx)
 
-	source, sink, err := setupMiddleware(ctx, middleware, v)
+	coords, flights, err := setupMiddleware(ctx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, source, sink)
+	clients, err := connection.Listen(ctx, ":"+v.GetString("port"))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := filter.Run(ctx); err != nil {
-		log.Error(err)
-	} else if err := middleware.EOF(ctx, sink); err != nil {
-		log.Error(err)
+	gateway := common.NewGateway(middleware, coords, flights)
+	demuxers := v.GetInt("demuxers")
+
+	for conn := range clients {
+		if err := gateway.Run(ctx, conn, demuxers); err != nil {
+			log.Error(err)
+		}
+		conn.Close()
+	}
+
+	select {
+	case <-ctx.Done():
+		log.Info(context.Cause(ctx))
+	default:
 	}
 }

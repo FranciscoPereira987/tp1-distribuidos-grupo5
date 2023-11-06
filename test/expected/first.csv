@@ -1,1 +1,2 @@
-4624bcbbbd6aebb2af6d0b3480dcef38,OAK,LGA,618.599976,SLC||COS||ORD||LGA
+legId,startingAirport,destinationAirport,totalFare,segmentsDepartureAirportCode
+4624bcbbbd6aebb2af6d0b3480dcef38,OAK,LGA,618.60,OAK||SLC||COS||ORD

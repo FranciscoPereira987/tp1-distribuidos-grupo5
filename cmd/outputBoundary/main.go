@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"net"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -39,7 +41,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("output boundary up")
-	return source, m.Control(ctx, status)
+	return source, m.Ready(ctx, status)
 }
 
 func main() {
@@ -72,13 +74,57 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gateway := common.NewGateway(middleware, source)
+	queues, err := middleware.Consume(ctx, source)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gateway := common.NewGateway(middleware)
+	resultsChs := make(map[string]chan (<-chan []byte))
+	var mtx sync.Mutex
+
+	go func() {
+		for queue := range queues {
+			id := queue.Id
+			mtx.Lock()
+			ch, ok := resultsChs[id]
+			if !ok {
+				ch = make(chan (<-chan []byte), 1)
+				resultsChs[id] = ch
+			}
+			mtx.Unlock()
+			ch <- queue.Ch
+		}
+	}()
 
 	for conn := range clients {
-		if err := gateway.Run(ctx, conn); err != nil {
-			log.Error(err)
-		}
-		conn.Close()
+		go func(conn net.Conn) {
+			defer conn.Close()
+			id, err := connection.ReceiveId(conn)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			mtx.Lock()
+			resultsCh, ok := resultsChs[id]
+			if !ok {
+				resultsCh = make(chan (<-chan []byte))
+				resultsChs[id] = resultsCh
+			}
+			mtx.Unlock()
+			var ch <-chan []byte
+			select {
+			case <-ctx.Done():
+				return
+			case ch = <-resultsCh:
+				mtx.Lock()
+				delete(resultsChs, id)
+				mtx.Unlock()
+			}
+			if err := gateway.Run(ctx, conn, ch); err != nil {
+				log.Error(err)
+			}
+		}(conn)
 	}
 
 	select {

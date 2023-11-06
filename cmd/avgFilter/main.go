@@ -48,7 +48,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("average filter worker up")
-	return q, sink, m.Control(ctx, status)
+	return q, sink, m.Ready(ctx, status)
 }
 
 func main() {
@@ -79,15 +79,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filter, err := common.NewFilter(middleware, source, sink, v.GetString("fares.dir"))
+	queues, err := middleware.Consume(ctx, source)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer filter.Close()
 
-	if err := filter.Run(ctx); err != nil {
-		log.Error(err)
-	} else if err := middleware.EOF(ctx, sink); err != nil {
-		log.Error(err)
+	for queue := range queues {
+		go func(id string, ch <-chan []byte) {
+			filter, err := common.NewFilter(middleware, id, sink, v.GetString("fares.dir"))
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer filter.Close()
+
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Error(err)
+			} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				log.Error(err)
+			}
+		}(queue.Id, queue.Ch)
 	}
 }

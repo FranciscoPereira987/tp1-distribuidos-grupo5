@@ -57,7 +57,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("demux filter worker up")
-	return source, []string{distance, fastest, average, results}, m.Control(ctx, status)
+	return source, []string{distance, fastest, average, results}, m.Ready(ctx, status)
 }
 
 func main() {
@@ -90,26 +90,36 @@ func main() {
 		v.GetInt("workers.q3"),
 		v.GetInt("workers.q4"),
 	}
-	filter := common.NewFilter(middleware, source, sinks, nWorkers)
 
-	if err := filter.Run(ctx); err != nil {
+	queues, err := middleware.Consume(ctx, source)
+	if err != nil {
 		log.Error(err)
 	}
 
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
+	for queue := range queues {
+		go func(id string, ch <-chan []byte) {
+			filter := common.NewFilter(middleware, id, sinks, nWorkers)
 
-	// send EOF to sinks
-	errs := make([]error, 0, len(sinks))
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Error(err)
+			}
 
-	errs = append(errs, middleware.SharedQueueEOF(ctx, sinks[0], byte(nWorkers[0])))
-	for _, exchange := range sinks[1:] {
-		errs = append(errs, middleware.EOF(ctx, exchange))
-	}
-	if err := errors.Join(errs...); err != nil {
-		log.Error(err)
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			// send EOF to sinks
+			errs := make([]error, 0, len(sinks))
+
+			errs = append(errs, middleware.SharedQueueEOF(ctx, sinks[0], id, byte(nWorkers[0])))
+			for _, exchange := range sinks[1:] {
+				errs = append(errs, middleware.EOF(ctx, exchange, id))
+			}
+			if err := errors.Join(errs...); err != nil {
+				log.Error(err)
+			}
+		}(queue.Id, queue.Ch)
 	}
 }

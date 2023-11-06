@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -55,7 +56,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("distance filter worker up")
-	return qCoords, qFlights, sink, m.Control(ctx, status)
+	return qCoords, qFlights, sink, m.Ready(ctx, status)
 }
 
 func main() {
@@ -83,11 +84,57 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, coordsSource, flightsSource, sink)
+	coordsQueues, err := middleware.Consume(ctx, coordsSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	flightsQueues, err := middleware.Consume(ctx, flightsSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	flightsChs := make(map[string]chan (<-chan []byte))
+	var mtx sync.Mutex
 
-	if err := filter.Run(ctx); err != nil {
-		log.Error(err)
-	} else if err := middleware.EOF(ctx, sink); err != nil {
-		log.Error(err)
+	go func() {
+		for flightsQueue := range flightsQueues {
+			id := flightsQueue.Id
+			mtx.Lock()
+			ch, ok := flightsChs[id]
+			if !ok {
+				ch = make(chan (<-chan []byte), 1)
+				flightsChs[id] = ch
+			}
+			mtx.Unlock()
+			ch <- flightsQueue.Ch
+		}
+	}()
+
+	for coordsQueue := range coordsQueues {
+		go func(id string, ch <-chan []byte) {
+			filter := common.NewFilter(middleware, id, sink)
+			if err := filter.AddCoords(ctx, ch); err != nil {
+				log.Error(err)
+			}
+			mtx.Lock()
+			flightsCh, ok := flightsChs[id]
+			if !ok {
+				flightsCh = make(chan (<-chan []byte))
+				flightsChs[id] = flightsCh
+			}
+			mtx.Unlock()
+			select {
+			case <-ctx.Done():
+				return
+			case ch = <-flightsCh:
+				mtx.Lock()
+				delete(flightsChs, id)
+				mtx.Unlock()
+			}
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Error(err)
+			} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				log.Error(err)
+			}
+		}(coordsQueue.Id, coordsQueue.Ch)
 	}
 }

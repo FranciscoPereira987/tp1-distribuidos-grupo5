@@ -55,6 +55,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	id, err := connection.ConnectInput(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := connection.ConnectOutput(results, id); err != nil {
+		log.Fatal(err)
+	}
+
 	go func() {
 		if err := writer.WriteData(data); err != nil {
 			select {

@@ -15,13 +15,15 @@ import (
 
 type Gateway struct {
 	m       *mid.Middleware
+	id      string
 	coords  string
 	flights string
 }
 
-func NewGateway(m *mid.Middleware, coords, flights string) *Gateway {
+func NewGateway(m *mid.Middleware, id, coords, flights string) *Gateway {
 	return &Gateway{
 		m:       m,
+		id:      id,
 		coords:  coords,
 		flights: flights,
 	}
@@ -38,7 +40,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err != nil {
 		return err
 	}
-	if err := g.m.TopicEOF(ctx, g.coords, "coords"); err != nil {
+	if err := g.m.TopicEOF(ctx, g.coords, "coords", g.id); err != nil {
 		return err
 	}
 
@@ -49,7 +51,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err := g.ForwardFlights(ctx, &flightsReader); err != nil {
 		return err
 	}
-	return g.m.SharedQueueEOF(ctx, g.flights, byte(demuxers))
+	return g.m.SharedQueueEOF(ctx, g.flights, g.id, byte(demuxers))
 }
 
 func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) {
@@ -59,7 +61,7 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 	}
 
 	for n := 0; ; n++ {
-		var b bytes.Buffer
+		b := bytes.NewBufferString(g.id)
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
@@ -68,10 +70,10 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 			return n, err
 		}
 
-		if err := typing.AirportCoordsMarshal(&b, record, indices); err != nil {
+		if err := typing.AirportCoordsMarshal(b, record, indices); err != nil {
 			return n, err
 		}
-		if err := g.m.PublishWithContext(ctx, g.coords, "coords", b.Bytes()); err != nil {
+		if err := g.m.Publish(ctx, g.coords, "coords", b.Bytes()); err != nil {
 			return n, err
 		}
 	}
@@ -84,7 +86,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 	}
 
 	for {
-		var b bytes.Buffer
+		b := bytes.NewBufferString(g.id)
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
@@ -93,15 +95,15 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 			return err
 		}
 
-		switch err := typing.FlightMarshal(&b, record, indices); err {
+		switch err := typing.FlightMarshal(b, record, indices); err {
 		case nil:
 		case typing.ErrMissingDistance:
-			log.Warnf("action: ignore_error | id: %x | error: %s", record[0], err)
+			log.Warnf("action: ignore_error | id: %s | error: %s", record[0], err)
 		default:
-			log.Errorf("action: skip_flight | id: %x | error: %s", record[0], err)
+			log.Errorf("action: skip_flight | id: %s | error: %s", record[0], err)
 			continue
 		}
-		if err := g.m.PublishWithContext(ctx, g.flights, g.flights, b.Bytes()); err != nil {
+		if err := g.m.Publish(ctx, g.flights, g.flights, b.Bytes()); err != nil {
 			return err
 		}
 	}

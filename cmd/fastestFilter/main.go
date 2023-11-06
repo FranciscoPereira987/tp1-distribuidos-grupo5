@@ -48,7 +48,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("fastest filter worker up")
-	return q, sink, m.Control(ctx, status)
+	return q, sink, m.Ready(ctx, status)
 }
 
 func main() {
@@ -79,11 +79,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filter := common.NewFilter(middleware, source, sink)
+	queues, err := middleware.Consume(ctx, source)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	if err := filter.Run(ctx); err != nil {
-		log.Error(err)
-	} else if err := middleware.EOF(ctx, sink); err != nil {
-		log.Error(err)
+	for queue := range queues {
+		go func(id string, ch <-chan []byte) {
+			filter := common.NewFilter(middleware, id, sink)
+
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Error(err)
+			} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				log.Error(err)
+			}
+		}(queue.Id, queue.Ch)
 	}
 }

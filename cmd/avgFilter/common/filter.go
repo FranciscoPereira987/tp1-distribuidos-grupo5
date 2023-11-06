@@ -12,24 +12,25 @@ import (
 	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	log "github.com/sirupsen/logrus"
 )
 
 type Filter struct {
 	m      *mid.Middleware
-	source string
+	id     string
 	sink   string
 	dir    string
 }
 
-func NewFilter(m *mid.Middleware, source, sink, dir string) (*Filter, error) {
+func NewFilter(m *mid.Middleware, id, sink, dir string) (*Filter, error) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, err
 	}
 	return &Filter{
 		m:      m,
-		source: source,
+		id:     id,
 		sink:   sink,
 		dir:    dir,
 	}, nil
@@ -39,7 +40,7 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(f.dir)
 }
 
-func (f *Filter) Run(ctx context.Context) (err error) {
+func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
 	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
 	defer func() {
 		var errs []error
@@ -50,14 +51,9 @@ func (f *Filter) Run(ctx context.Context) (err error) {
 			err = errors.Join(errs...)
 		}
 	}()
-	ch, err := f.m.ConsumeWithContext(ctx, f.source)
-	if err != nil {
-		return err
-	}
 
-	log.Infof("start consuming messages from %q queue", f.source)
 	for msg := range ch {
-		data, err := typing.AverageFilterUnmarshal(msg)
+		data, err := typing.AverageFilterUnmarshal(msg[id.Len:])
 		if err != nil {
 			return err
 		}
@@ -75,7 +71,6 @@ func (f *Filter) Run(ctx context.Context) (err error) {
 			log.Debugf("new fare for route %s-%s: %d", v.Origin, v.Destination, v.Fare)
 		}
 	}
-	log.Infof("finished consuming messages from %q queue", f.source)
 
 	select {
 	case <-ctx.Done():
@@ -135,16 +130,16 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 		return nil
 	}
 
-	var b bytes.Buffer
+	b := bytes.NewBufferString(f.id)
 	v := typing.ResultQ4{
 		Origin:      origin,
 		Destination: destination,
 		AverageFare: float32(fareSum / float64(count)),
 		MaxFare:     fareMax,
 	}
-	typing.ResultQ4Marshal(&b, &v)
+	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)
-	return f.m.PublishWithContext(ctx, f.sink, f.sink, b.Bytes())
+	return f.m.Publish(ctx, f.sink, f.sink, b.Bytes())
 }
 
 type fareWriter struct {

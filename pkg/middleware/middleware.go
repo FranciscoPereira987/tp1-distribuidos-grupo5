@@ -8,9 +8,17 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 )
 
 const ControlRoutingKey = "control"
+
+var ErrMiddleware = errors.New("rabbitMQ channel closed")
+
+type Client struct {
+	Id string
+	Ch <-chan []byte
+}
 
 type Middleware struct {
 	conn *amqp.Connection
@@ -92,7 +100,7 @@ func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) err
 	return nil
 }
 
-func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-chan []byte, error) {
+func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, error) {
 	msgs, err := m.ch.ConsumeWithContext(
 		ctx,
 		name,  // queue
@@ -107,32 +115,56 @@ func (m *Middleware) ConsumeWithContext(ctx context.Context, name string) (<-cha
 		return nil, err
 	}
 
-	ch := make(chan []byte)
+	ret := make(chan Client)
 	go func(cc int) {
-		defer close(ch)
+		pairs := make(map[string]struct {
+			cc int
+			ch chan<- []byte
+		})
+		defer func() {
+			close(ret)
+			for _, p := range pairs {
+				close(p.ch)
+			}
+		}()
+
 		for d := range msgs {
+			id, msg := string(d.Body[:id.Len]), d.Body[id.Len:]
+			pair, ok := pairs[id]
+			if !ok {
+				log.Infof("action: new_client | result: success | queue: %q | client: %x", name, id)
+				ch := make(chan []byte)
+				pair.cc = cc
+				pair.ch = ch
+				pairs[id] = pair
+				ret <- Client{id, ch}
+			}
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
-				log.Infof("recieved control message for queue %q", name)
-				cc--
 				// The shared queue needs to have the same name
 				// as the exchange it's bound to.
-				if len(d.Body) > 0 && d.Body[0] > 1 {
-					m.SharedQueueEOF(ctx, name, d.Body[0]-1)
+				if len(msg) > 0 && msg[0] > 1 {
+					m.SharedQueueEOF(ctx, name, id, msg[0]-1)
 				}
-				if cc <= 0 {
-					return
+				pair.cc--
+				pairs[id] = pair
+				if pair.cc <= 0 {
+					log.Infof("action: EOF | result: success | queue: %q | client: %x", name, id)
+					close(pair.ch)
+					delete(pairs, id)
+				} else {
+					log.Infof("action: EOF | result: in_progress | queue: %q | client: %x", name, id)
 				}
 			} else {
-				ch <- d.Body
+				pair.ch <- d.Body
 			}
 		}
-		log.Error("rabbitMQ channel closed")
+		log.Error(ErrMiddleware)
 	}(m.controlCount[name])
 
-	return ch, nil
+	return ret, nil
 }
 
-func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key string, body []byte) error {
+func (m *Middleware) Publish(ctx context.Context, exchange, key string, body []byte) error {
 	return m.ch.PublishWithContext(
 		ctx,
 		exchange, // exchange
@@ -146,24 +178,48 @@ func (m *Middleware) PublishWithContext(ctx context.Context, exchange, key strin
 	)
 }
 
-func (m *Middleware) Control(ctx context.Context, exchange string) error {
-	return m.PublishWithContext(ctx, exchange, ControlRoutingKey, nil)
+func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) error {
+	msgs, err := m.ch.ConsumeWithContext(
+		ctx,
+		name,  // queue
+		"",    // consumer
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
+	if err != nil {
+		return err
+	}
+
+	for range msgs {
+		workers--
+		if workers <= 0 {
+			return nil
+		}
+	}
+	return ErrMiddleware
 }
 
-func (m *Middleware) EOF(ctx context.Context, exchange string) error {
+func (m *Middleware) Ready(ctx context.Context, exchange string) error {
+	return m.Publish(ctx, exchange, ControlRoutingKey, nil)
+}
+
+func (m *Middleware) EOF(ctx context.Context, exchange, id string) error {
 	log.Infof("sending EOF into exchange %q", exchange)
-	return m.Control(ctx, exchange)
+	return m.Publish(ctx, exchange, ControlRoutingKey, []byte(id))
 }
 
-func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic string) error {
+func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, id string) error {
 	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
-	return m.PublishWithContext(ctx, exchange, rKey, nil)
+	return m.Publish(ctx, exchange, rKey, []byte(id))
 }
 
-func (m *Middleware) SharedQueueEOF(ctx context.Context, name string, eof byte) error {
+func (m *Middleware) SharedQueueEOF(ctx context.Context, name, id string, eof byte) error {
 	log.Infof("sending EOF(%d) into queue %q", eof, name)
-	return m.PublishWithContext(ctx, name, ControlRoutingKey, []byte{eof})
+	return m.Publish(ctx, name, ControlRoutingKey, append([]byte(id), eof))
 }
 
 func (m *Middleware) Close() {

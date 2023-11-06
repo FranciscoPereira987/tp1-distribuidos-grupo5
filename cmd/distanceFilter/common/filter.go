@@ -8,84 +8,64 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 const distanceFactor = 4
 
 type Filter struct {
-	m       *mid.Middleware
-	coords  string
-	flights string
-	sink    string
+	m    *mid.Middleware
+	id   string
+	sink string
+	comp *distance.DistanceComputer
 }
 
-func NewFilter(m *mid.Middleware, coords, flights, sink string) *Filter {
+func NewFilter(m *mid.Middleware, id, sink string) *Filter {
 	return &Filter{
-		m:       m,
-		coords:  coords,
-		flights: flights,
-		sink:    sink,
+		m:    m,
+		id:   id,
+		sink: sink,
+		comp: distance.NewComputer(),
 	}
 }
 
-func (f *Filter) Run(ctx context.Context) error {
-	distanceComputer := distance.NewComputer()
-	ch, err := f.m.ConsumeWithContext(ctx, f.coords)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("start consuming coordinates from %q queue", f.coords)
-	for msg := range ch {
-		data, err := typing.AirportCoordsUnmarshal(msg)
+func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
+	for msg := range coords {
+		data, err := typing.AirportCoordsUnmarshal(msg[id.Len:])
 		if err != nil {
 			return err
 		}
 
-		distanceComputer.AddAirportCoords(data.Code, data.Lat, data.Lon)
+		f.comp.AddAirportCoords(data.Code, data.Lat, data.Lon)
 		log.Debugf("got coordinates for airport %s", data.Code)
 	}
-	log.Infof("finished consuming coordinates from %q queue", f.coords)
 
-	select {
-	case <-ctx.Done():
-		return context.Cause(ctx)
-	default:
-	}
+	return ctx.Err()
+}
 
-	ch, err = f.m.ConsumeWithContext(ctx, f.flights)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("start consuming flights from %q queue", f.flights)
-	for msg := range ch {
-		data, err := typing.DistanceFilterUnmarshal(msg)
+func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
+	for msg := range flights {
+		data, err := typing.DistanceFilterUnmarshal(msg[id.Len:])
 		if err != nil {
 			return err
 		}
 
 		log.Debugf("new flight for route %s-%s", data.Origin, data.Destination)
-		distanceMi, err := distanceComputer.Distance(data.Origin, data.Destination)
+		distanceMi, err := f.comp.Distance(data.Origin, data.Destination)
 		if err != nil {
 			return err
 		}
 		if float64(data.Distance) > distanceFactor*distanceMi {
-			var b bytes.Buffer
+			// `f.id` is in `msg`
+			b := bytes.NewBufferString(f.id)
 			log.Debugf("long flight: %x", data.ID)
-			typing.ResultQ2Marshal(&b, msg)
-			if err := f.m.PublishWithContext(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+			typing.ResultQ2Marshal(b, msg[id.Len:])
+			if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
 				return err
 			}
 		}
 	}
-	log.Infof("finished consuming flights from %q queue", f.flights)
 
-	select {
-	case <-ctx.Done():
-		return context.Cause(ctx)
-	default:
-		return nil
-	}
+	return ctx.Err()
 }

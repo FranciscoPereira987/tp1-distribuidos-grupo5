@@ -8,28 +8,22 @@ import (
 	// log "github.com/sirupsen/logrus"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 type Gateway struct {
 	m      *mid.Middleware
-	source string
 }
 
-func NewGateway(m *mid.Middleware, source string) *Gateway {
+func NewGateway(m *mid.Middleware) *Gateway {
 	return &Gateway{
 		m:      m,
-		source: source,
 	}
 }
 
-func (g *Gateway) Run(ctx context.Context, out io.Writer) (err error) {
-	ch, err := g.m.ConsumeWithContext(ctx, g.source)
-	if err != nil {
-		return err
-	}
-
+func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err error) {
 	w := csv.NewWriter(out)
 	defer func() {
 		w.Flush()
@@ -43,7 +37,7 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer) (err error) {
 	}
 
 	for msg := range ch {
-		result, err := typing.ResultUnmarshal(msg)
+		result, err := typing.ResultUnmarshal(msg[id.Len:])
 		if err != nil {
 			return err
 		}

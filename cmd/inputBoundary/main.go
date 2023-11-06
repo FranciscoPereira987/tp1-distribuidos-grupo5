@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -33,17 +34,12 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
-	// wait for workers + 1*(outputBoundary)
-	m.SetExpectedControlCount(status, v.GetInt("workers")+1)
-
-	ch, err := m.ConsumeWithContext(ctx, status)
-	if err != nil {
-		return "", "", err
-	}
 
 	log.Info("input boundary up")
-
-	<-ch
+	// wait for workers + 1*(outputBoundary)
+	if err := m.WaitReady(ctx, status, v.GetInt("workers")+1); err != nil {
+		return "", "", err
+	}
 	log.Info("all workers are ready")
 
 	return coords, flights, nil
@@ -79,19 +75,26 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gateway := common.NewGateway(middleware, coords, flights)
 	demuxers := v.GetInt("demuxers")
 
 	for conn := range clients {
-		if err := gateway.Run(ctx, conn, demuxers); err != nil {
-			log.Error(err)
-		}
-		conn.Close()
+		go func(conn net.Conn) {
+			defer conn.Close()
+			id, err := connection.Accept(conn)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			gateway := common.NewGateway(middleware, id, coords, flights)
+			if err := gateway.Run(ctx, conn, demuxers); err != nil {
+				log.Error(err)
+			}
+		}(conn)
 	}
 
 	select {
 	case <-ctx.Done():
-		log.Info(context.Cause(ctx))
+		log.Info(ctx.Err())
 	default:
 	}
 }

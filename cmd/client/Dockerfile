@@ -11,6 +11,7 @@ WORKDIR /build/
 COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
+RUN CGO_ENABLED=0 GOOS=linux go build ./pkg/...
 COPY cmd/client/ cmd/client/
 RUN CGO_ENABLED=0 GOOS=linux go build -o bin/client ./cmd/client
 

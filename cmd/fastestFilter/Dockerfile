@@ -11,6 +11,7 @@ WORKDIR /build/
 COPY go.mod go.sum /build/
 RUN go mod download
 COPY pkg/ pkg/
+RUN CGO_ENABLED=0 GOOS=linux go build ./pkg/...
 COPY cmd/fastestFilter/ cmd/fastestFilter/
 RUN CGO_ENABLED=0 GOOS=linux go build -o bin/fastestFilter ./cmd/fastestFilter
 

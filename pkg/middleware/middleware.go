@@ -129,30 +129,30 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 		}()
 
 		for d := range msgs {
-			id, msg := string(d.Body[:id.Len]), d.Body[id.Len:]
-			pair, ok := pairs[id]
+			clientId, msg := string(d.Body[:id.Len]), d.Body[id.Len:]
+			pair, ok := pairs[clientId]
 			if !ok {
-				log.Infof("action: new_client | result: success | queue: %q | client: %x", name, id)
+				log.Infof("action: new_client | result: success | queue: %q | client: %x", name, clientId)
 				ch := make(chan []byte)
 				pair.cc = cc
 				pair.ch = ch
-				pairs[id] = pair
-				ret <- Client{id, ch}
+				pairs[clientId] = pair
+				ret <- Client{clientId, ch}
 			}
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
 				// The shared queue needs to have the same name
 				// as the exchange it's bound to.
 				if len(msg) > 0 && msg[0] > 1 {
-					m.SharedQueueEOF(ctx, name, id, msg[0]-1)
+					m.SharedQueueEOF(ctx, name, clientId, msg[0]-1)
 				}
 				pair.cc--
-				pairs[id] = pair
+				pairs[clientId] = pair
 				if pair.cc <= 0 {
-					log.Infof("action: EOF | result: success | queue: %q | client: %x", name, id)
+					log.Infof("action: EOF | result: success | queue: %q | client: %x", name, clientId)
 					close(pair.ch)
-					delete(pairs, id)
+					delete(pairs, clientId)
 				} else {
-					log.Infof("action: EOF | result: in_progress | queue: %q | client: %x", name, id)
+					log.Infof("action: EOF | result: in_progress | queue: %q | client: %x", name, clientId)
 				}
 			} else {
 				pair.ch <- msg
@@ -206,20 +206,20 @@ func (m *Middleware) Ready(ctx context.Context, exchange string) error {
 	return m.Publish(ctx, exchange, ControlRoutingKey, nil)
 }
 
-func (m *Middleware) EOF(ctx context.Context, exchange, id string) error {
+func (m *Middleware) EOF(ctx context.Context, exchange, clientId string) error {
 	log.Infof("sending EOF into exchange %q", exchange)
-	return m.Publish(ctx, exchange, ControlRoutingKey, []byte(id))
+	return m.Publish(ctx, exchange, ControlRoutingKey, []byte(clientId))
 }
 
-func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, id string) error {
+func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, clientId string) error {
 	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
-	return m.Publish(ctx, exchange, rKey, []byte(id))
+	return m.Publish(ctx, exchange, rKey, []byte(clientId))
 }
 
-func (m *Middleware) SharedQueueEOF(ctx context.Context, name, id string, eof byte) error {
+func (m *Middleware) SharedQueueEOF(ctx context.Context, name, clientId string, eof byte) error {
 	log.Infof("sending EOF(%d) into queue %q", eof, name)
-	return m.Publish(ctx, name, ControlRoutingKey, append([]byte(id), eof))
+	return m.Publish(ctx, name, ControlRoutingKey, append([]byte(clientId), eof))
 }
 
 func (m *Middleware) Close() {

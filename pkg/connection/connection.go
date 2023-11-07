@@ -94,8 +94,8 @@ func ConnectInput(conn net.Conn) (string, error) {
 	return ReceiveId(conn)
 }
 
-func ConnectOutput(conn net.Conn, id string) error {
-	_, err := conn.Write([]byte(id))
+func ConnectOutput(conn net.Conn, clientId string) error {
+	_, err := conn.Write([]byte(clientId))
 	return err
 }
 

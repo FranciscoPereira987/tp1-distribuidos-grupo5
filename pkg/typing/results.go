@@ -15,14 +15,13 @@ const (
 )
 
 // returns the result as a record (a slice of fields)
-func ResultUnmarshal(buf []byte) ([]string, error) {
-	if len(buf) < 1 {
+func ResultUnmarshal(r *bytes.Reader) ([]string, error) {
+	flag, err := r.ReadByte()
+	if err != nil {
 		return nil, fmt.Errorf("Error reading flight data: %w", io.ErrUnexpectedEOF)
 	}
 
-	r := bytes.NewReader(buf[1:])
-
-	switch buf[0] {
+	switch flag {
 	case Query1Flag:
 		return ResultQ1Unmarshal(r)
 	case Query2Flag:
@@ -32,6 +31,6 @@ func ResultUnmarshal(buf []byte) ([]string, error) {
 	case Query4Flag:
 		return ResultQ4Unmarshal(r)
 	default:
-		return nil, fmt.Errorf("Unknown format specifier: %d", buf[0])
+		return nil, fmt.Errorf("Unknown format specifier: %d", flag)
 	}
 }

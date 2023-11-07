@@ -35,8 +35,7 @@ func AverageFareMarshal(b *bytes.Buffer, fareSum float64, fareCount int) {
 	binary.Write(b, binary.LittleEndian, uint64(fareCount))
 }
 
-func AverageFilterUnmarshal(msg []byte) (data any, err error) {
-	r := bytes.NewReader(msg)
+func AverageFilterUnmarshal(r *bytes.Reader) (data any, err error) {
 	flag, err := r.ReadByte()
 	if err != nil {
 		return nil, err

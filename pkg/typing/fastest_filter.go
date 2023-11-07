@@ -22,8 +22,7 @@ func FastestFilterMarshal(b *bytes.Buffer, data *Flight) {
 	WriteString(b, data.Stops)
 }
 
-func FastestFilterUnmarshal(buf []byte) (data FastestFilter, err error) {
-	r := bytes.NewReader(buf)
+func FastestFilterUnmarshal(r *bytes.Reader) (data FastestFilter, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 	if err == nil {
 		data.Origin, err = ReadString(r)

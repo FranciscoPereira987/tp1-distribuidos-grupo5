@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
@@ -36,7 +37,8 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err
 	}
 
 	for msg := range ch {
-		result, err := typing.ResultUnmarshal(msg)
+		r := bytes.NewReader(msg)
+		result, err := typing.ResultUnmarshal(r)
 		if err != nil {
 			return err
 		}

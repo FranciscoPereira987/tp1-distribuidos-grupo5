@@ -20,9 +20,7 @@ func DistanceFilterMarshal(b *bytes.Buffer, data *Flight) {
 	binary.Write(b, binary.LittleEndian, data.Distance)
 }
 
-func DistanceFilterUnmarshal(buf []byte) (data DistanceFilter, err error) {
-	r := bytes.NewReader(buf)
-
+func DistanceFilterUnmarshal(r *bytes.Reader) (data DistanceFilter, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 
 	if err == nil {

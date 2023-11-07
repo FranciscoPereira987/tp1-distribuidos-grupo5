@@ -40,7 +40,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	fareSum, fareCount := 0.0, 0
 
 	for msg := range ch {
-		data, err := typing.FlightUnmarshal(msg)
+		r := bytes.NewReader(msg)
+		data, err := typing.FlightUnmarshal(r)
 		if err != nil {
 			return err
 		}

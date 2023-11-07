@@ -65,8 +65,7 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	return err
 }
 
-func FlightUnmarshal(p []byte) (data Flight, err error) {
-	r := bytes.NewReader(p)
+func FlightUnmarshal(r *bytes.Reader) (data Flight, err error) {
 	_, err = io.ReadFull(r, data.ID[:])
 
 	if err == nil {

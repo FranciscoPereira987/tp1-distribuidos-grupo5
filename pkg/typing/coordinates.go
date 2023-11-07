@@ -31,8 +31,7 @@ func AirportCoordsMarshal(b *bytes.Buffer, record []string, indices []int) error
 	return nil
 }
 
-func AirportCoordsUnmarshal(buf []byte) (data AirportCoords, err error) {
-	r := bytes.NewReader(buf)
+func AirportCoordsUnmarshal(r *bytes.Reader) (data AirportCoords, err error) {
 	data.Code, err = ReadString(r)
 
 	if err == nil {

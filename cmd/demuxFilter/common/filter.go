@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 

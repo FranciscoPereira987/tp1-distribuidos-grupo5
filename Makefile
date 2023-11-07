@@ -13,7 +13,7 @@ $(BIN):
 .PHONY: $(BIN)
 
 clean:
-	rm $(BIN)
+	rm -f $(BIN)
 .PHONY: clean
 
 build-image:

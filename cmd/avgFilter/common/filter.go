@@ -53,7 +53,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
 	}()
 
 	for msg := range ch {
-		data, err := typing.AverageFilterUnmarshal(msg[id.Len:])
+		data, err := typing.AverageFilterUnmarshal(msg)
 		if err != nil {
 			return err
 		}

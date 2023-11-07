@@ -155,7 +155,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 					log.Infof("action: EOF | result: in_progress | queue: %q | client: %x", name, id)
 				}
 			} else {
-				pair.ch <- d.Body
+				pair.ch <- msg
 			}
 		}
 		log.Error(ErrMiddleware)

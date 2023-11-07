@@ -32,7 +32,7 @@ func NewFilter(m *mid.Middleware, id, sink string) *Filter {
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
 	for msg := range coords {
-		data, err := typing.AirportCoordsUnmarshal(msg[id.Len:])
+		data, err := typing.AirportCoordsUnmarshal(msg)
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
 
 func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
 	for msg := range flights {
-		data, err := typing.DistanceFilterUnmarshal(msg[id.Len:])
+		data, err := typing.DistanceFilterUnmarshal(msg)
 		if err != nil {
 			return err
 		}
@@ -57,10 +57,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
 			return err
 		}
 		if float64(data.Distance) > distanceFactor*distanceMi {
-			// `f.id` is in `msg`
 			b := bytes.NewBufferString(f.id)
 			log.Debugf("long flight: %x", data.ID)
-			typing.ResultQ2Marshal(b, msg[id.Len:])
+			typing.ResultQ2Marshal(b, msg)
 			if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
 				return err
 			}

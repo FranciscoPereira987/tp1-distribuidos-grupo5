@@ -37,7 +37,7 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err
 	}
 
 	for msg := range ch {
-		result, err := typing.ResultUnmarshal(msg[id.Len:])
+		result, err := typing.ResultUnmarshal(msg)
 		if err != nil {
 			return err
 		}

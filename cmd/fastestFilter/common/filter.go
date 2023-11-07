@@ -45,7 +45,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	fastest := make(FastestFlightsMap)
 
 	for msg := range ch {
-		data, err := typing.FastestFilterUnmarshal(msg[id.Len:])
+		data, err := typing.FastestFilterUnmarshal(msg)
 		if err != nil {
 			return err
 		}

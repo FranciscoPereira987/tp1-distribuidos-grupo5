@@ -31,14 +31,15 @@ func NewFilter(m *mid.Middleware, id, sink string) *Filter {
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
 	for msg := range coords {
-		r := bytes.NewReader(msg)
-		data, err := typing.AirportCoordsUnmarshal(r)
-		if err != nil {
-			return err
-		}
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			data, err := typing.AirportCoordsUnmarshal(r)
+			if err != nil {
+				return err
+			}
 
-		f.comp.AddAirportCoords(data.Code, data.Lat, data.Lon)
-		log.Debugf("got coordinates for airport %s", data.Code)
+			f.comp.AddAirportCoords(data.Code, data.Lat, data.Lon)
+			log.Debugf("got coordinates for airport %s", data.Code)
+		}
 	}
 
 	return context.Cause(ctx)
@@ -46,21 +47,24 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
 
 func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
 	for msg := range flights {
-		r := bytes.NewReader(msg)
-		data, err := typing.DistanceFilterUnmarshal(r)
-		if err != nil {
-			return err
-		}
+		b := bytes.NewBufferString(f.id)
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			data, err := typing.DistanceFilterUnmarshal(r)
+			if err != nil {
+				return err
+			}
 
-		log.Debugf("new flight for route %s-%s", data.Origin, data.Destination)
-		distanceMi, err := f.comp.Distance(data.Origin, data.Destination)
-		if err != nil {
-			return err
+			log.Debugf("new flight for route %s-%s", data.Origin, data.Destination)
+			distanceMi, err := f.comp.Distance(data.Origin, data.Destination)
+			if err != nil {
+				return err
+			}
+			if float64(data.Distance) > distanceFactor*distanceMi {
+				log.Debugf("long flight: %x", data.ID)
+				typing.ResultQ2Marshal(b, &data)
+			}
 		}
-		if float64(data.Distance) > distanceFactor*distanceMi {
-			b := bytes.NewBufferString(f.id)
-			log.Debugf("long flight: %x", data.ID)
-			typing.ResultQ2Marshal(b, msg)
+		if b.Len() > len(f.id) {
 			if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
 				return err
 			}

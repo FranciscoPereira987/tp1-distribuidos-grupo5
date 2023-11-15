@@ -1,61 +1,6 @@
+
 name: tp1
 services:
-
-  server:
-    container_name: server
-    image: server:latest
-    entrypoint: /server
-    networks:
-      - testing_net
-    environment:
-      - IFZ_WORKERS_FIRST=1
-      - IFZ_WORKERS_SECOND=1
-      - IFZ_WORKERS_THIRD=1
-      - IFZ_WORKERS_FOURTH=1
-    depends_on:
-      rabbitmq:
-          condition: service_healthy
-    volumes:
-      - ./cmd/interface/config:/config
-
-  distanceFilter:
-    container_name: distance_filter
-    image: distance_filter:latest
-    entrypoint: /filter
-    networks:
-      - testing_net
-    environment:
-      - DISTANCE_ID=1
-    volumes:
-      - ./cmd/filtroDistancia/config:/config
-    depends_on:
-      - server
-
-  fastestFilter:
-    container_name: fastest_filter
-    image: fastest_filter:latest
-    entrypoint: /fastestFilter
-    networks:
-      - testing_net
-    environment:
-      - FAST_ID=1
-    volumes:
-      - ./cmd/fastestFilter:/cmd/fastestFilter
-    depends_on:
-      - server
-
-  avgFilter:
-    container_name: avg_filter
-    image: avg_filter:latest
-    entrypoint: /avgFilter
-    networks:
-      - testing_net
-    environment:
-      - AVG_ID=1
-    volumes:
-      - ./cmd/avgFilter/config.yaml:/config.yaml
-    depends_on:
-      - server
 
   rabbitmq:
     container_name: rabbitmq
@@ -71,6 +16,94 @@ services:
       retries: 10
       start_period: 50s
 
+  inputBoundary:
+    container_name: input
+    image: input_boundary:latest
+    entrypoint: /inputBoundary
+    networks:
+      - testing_net
+    environment:
+      - IN_WORKERS=4
+      - IN_DEMUXERS=1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./cmd/inputBoundary/config.yaml:/config.yaml
+
+  outputBoundary:
+    container_name: output
+    image: output_boundary:latest
+    entrypoint: /outputBoundary
+    networks:
+      - testing_net
+    environment:
+      - OUT_WORKERS=4
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./cmd/outputBoundary/config.yaml:/config.yaml
+
+  demuxFilter1:
+    container_name: demux_filter1
+    image: demux_filter:latest
+    entrypoint: /demuxFilter
+    networks:
+      - testing_net
+    environment:
+      - DEMUX_WORKERS_Q2=1
+      - DEMUX_WORKERS_Q3=1
+      - DEMUX_WORKERS_Q4=1
+    volumes:
+      - ./cmd/demuxFilter/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  distanceFilter1:
+    container_name: distance_filter1
+    image: distance_filter:latest
+    entrypoint: /distanceFilter
+    networks:
+      - testing_net
+    environment:
+      - DISTANCE_DEMUXERS=1
+    volumes:
+      - ./cmd/distanceFilter/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  fastestFilter1:
+    container_name: fastest_filter1
+    image: fastest_filter:latest
+    entrypoint: /fastestFilter
+    networks:
+      - testing_net
+    environment:
+      - FAST_ID=1
+      - FAST_DEMUXERS=1
+    volumes:
+      - ./cmd/fastestFilter/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  avgFilter1:
+    container_name: avg_filter1
+    image: avg_filter:latest
+    entrypoint: /avgFilter
+    networks:
+      - testing_net
+    environment:
+      - AVG_ID=1
+      - AVG_DEMUXERS=1
+    volumes:
+      - ./cmd/avgFilter/config.yaml:/config.yaml
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 networks:
   testing_net:

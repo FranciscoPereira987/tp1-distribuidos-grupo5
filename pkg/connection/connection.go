@@ -7,8 +7,8 @@ import (
 	"io"
 	"net"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrNotProto = errors.New("unexpected message")

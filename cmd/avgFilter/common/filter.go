@@ -17,10 +17,10 @@ import (
 )
 
 type Filter struct {
-	m      *mid.Middleware
-	id     string
-	sink   string
-	dir    string
+	m    *mid.Middleware
+	id   string
+	sink string
+	dir  string
 }
 
 func NewFilter(m *mid.Middleware, id, sink, dir string) (*Filter, error) {
@@ -28,10 +28,10 @@ func NewFilter(m *mid.Middleware, id, sink, dir string) (*Filter, error) {
 		return nil, err
 	}
 	return &Filter{
-		m:      m,
-		id:     id,
-		sink:   sink,
-		dir:    dir,
+		m:    m,
+		id:   id,
+		sink: sink,
+		dir:  dir,
 	}, nil
 }
 
@@ -52,23 +52,24 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
 	}()
 
 	for msg := range ch {
-		r := bytes.NewReader(msg)
-		data, err := typing.AverageFilterUnmarshal(r)
-		if err != nil {
-			return err
-		}
-
-		switch v := data.(type) {
-		case typing.AverageFare:
-			fareSum += v.Sum
-			count += int(v.Count)
-			log.Infof("updated average fare: %f", fareSum/float64(count))
-		case typing.AverageFilterFlight:
-			key := v.Origin + "." + v.Destination
-			if err := f.appendFare(fares, key, v.Fare); err != nil {
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			data, err := typing.AverageFilterUnmarshal(r)
+			if err != nil {
 				return err
 			}
-			log.Debugf("new fare for route %s-%s: %d", v.Origin, v.Destination, v.Fare)
+
+			switch v := data.(type) {
+			case typing.AverageFare:
+				fareSum += v.Sum
+				count += int(v.Count)
+				log.Infof("updated average fare: %f", fareSum/float64(count))
+			case typing.AverageFilterFlight:
+				key := v.Origin + "." + v.Destination
+				if err := f.appendFare(fares, key, v.Fare); err != nil {
+					return err
+				}
+				log.Debugf("new fare for route %s-%s: %f", v.Origin, v.Destination, v.Fare)
+			}
 		}
 	}
 

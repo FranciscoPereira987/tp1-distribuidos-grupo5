@@ -14,12 +14,12 @@ import (
 )
 
 type Gateway struct {
-	m      *mid.Middleware
+	m *mid.Middleware
 }
 
 func NewGateway(m *mid.Middleware) *Gateway {
 	return &Gateway{
-		m:      m,
+		m: m,
 	}
 }
 
@@ -37,13 +37,14 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err
 	}
 
 	for msg := range ch {
-		r := bytes.NewReader(msg)
-		result, err := typing.ResultUnmarshal(r)
-		if err != nil {
-			return err
-		}
-		if err := w.Write(result); err != nil {
-			return err
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			result, err := typing.ResultUnmarshal(r)
+			if err != nil {
+				return err
+			}
+			if err := w.Write(result); err != nil {
+				return err
+			}
 		}
 	}
 

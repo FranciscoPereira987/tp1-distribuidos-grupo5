@@ -11,6 +11,8 @@ import (
 	"strconv"
 )
 
+const FlightSize = IdSize + OriginSize + DestinationSize + DurationSize + FareSize + DistanceSize + StopsSize
+
 var FlightFields = []string{
 	"legId",
 	"startingAirport",
@@ -34,6 +36,16 @@ type Flight struct {
 	Distance    uint32
 	Stops       string
 }
+
+const (
+	IdSize          = 16
+	OriginSize      = 4
+	DestinationSize = 4
+	DurationSize    = 4
+	FareSize        = 4
+	DistanceSize    = 4
+	StopsSize       = 24
+)
 
 func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	id, err := hex.DecodeString(record[indices[0]])

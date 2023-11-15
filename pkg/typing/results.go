@@ -12,6 +12,8 @@ const (
 	Query2Flag
 	Query3Flag
 	Query4Flag
+
+	FlagSize = 1
 )
 
 // returns the result as a record (a slice of fields)

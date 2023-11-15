@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	Query2 = iota
-	Query3
-	Query4
+	Distance = iota
+	Fastest
+	Average
 	Result
 )
 
@@ -40,24 +40,38 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	fareSum, fareCount := 0.0, 0
 
 	for msg := range ch {
-		r := bytes.NewReader(msg)
-		data, err := typing.FlightUnmarshal(r)
-		if err != nil {
-			return err
-		}
-		fareSum += float64(data.Fare)
-		fareCount++
-		if err := f.sendDistanceFilter(ctx, &data); err != nil {
-			return err
-		}
-		if err := f.sendAverageFilter(ctx, &data); err != nil {
-			return err
-		}
-		if strings.Count(data.Stops, "||") >= 3 {
-			if err := f.sendFastestFilter(ctx, &data); err != nil {
+		var (
+			bDistance = bytes.NewBufferString(f.id)
+			bResult   = bytes.NewBufferString(f.id)
+			mAverage  = make(map[string]*bytes.Buffer)
+			mFastest  = make(map[string]*bytes.Buffer)
+		)
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			data, err := typing.FlightUnmarshal(r)
+			if err != nil {
 				return err
 			}
-			if err := f.sendResult(ctx, &data); err != nil {
+			fareSum += float64(data.Fare)
+			fareCount++
+
+			f.marshalDistanceFilter(bDistance, &data)
+			f.marshalAverageFilter(mAverage, &data)
+			if strings.Count(data.Stops, "||") >= 3 {
+				f.marshalFastestFilter(mFastest, &data)
+				f.marshalResult(bResult, &data)
+			}
+		}
+		if err := f.sendBuffer(ctx, f.sinks[Distance], bDistance); err != nil {
+			return err
+		}
+		if err := f.sendMap(ctx, f.sinks[Average], mAverage); err != nil {
+			return err
+		}
+		if len(mFastest) > 0 {
+			if err := f.sendMap(ctx, f.sinks[Fastest], mFastest); err != nil {
+				return err
+			}
+			if err := f.sendBuffer(ctx, f.sinks[Result], bResult); err != nil {
 				return err
 			}
 		}
@@ -72,41 +86,54 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	return f.sendAverageFare(ctx, fareSum, fareCount)
 }
 
-func (f *Filter) sendDistanceFilter(ctx context.Context, data *typing.Flight) error {
+func (f *Filter) marshalDistanceFilter(b *bytes.Buffer, data *typing.Flight) {
 	// ignore flights with missing required field
-	if data.Distance == 0 {
-		return nil
+	if data.Distance > 0 {
+		typing.DistanceFilterMarshal(b, data)
+	}
+}
+
+func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, data *typing.Flight) {
+	key := f.keyGens[Average].KeyFrom(data.Origin, data.Destination)
+	b, ok := m[key]
+	if !ok {
+		b = bytes.NewBufferString(f.id)
+		m[key] = b
 	}
 
-	b := bytes.NewBufferString(f.id)
-	sink := f.sinks[Query2]
-	typing.DistanceFilterMarshal(b, data)
-	return f.m.Publish(ctx, sink, sink, b.Bytes())
-}
-
-func (f *Filter) sendAverageFilter(ctx context.Context, data *typing.Flight) error {
-	b := bytes.NewBufferString(f.id)
-	key := f.keyGens[Query4].KeyFrom(data.Origin, data.Destination)
 	typing.AverageFilterMarshal(b, data)
-	return f.m.Publish(ctx, f.sinks[Query4], key, b.Bytes())
 }
 
-func (f *Filter) sendFastestFilter(ctx context.Context, data *typing.Flight) error {
-	b := bytes.NewBufferString(f.id)
-	key := f.keyGens[Query3].KeyFrom(data.Origin, data.Destination)
+func (f *Filter) marshalFastestFilter(m map[string]*bytes.Buffer, data *typing.Flight) {
+	key := f.keyGens[Fastest].KeyFrom(data.Origin, data.Destination)
+	b, ok := m[key]
+	if !ok {
+		b = bytes.NewBufferString(f.id)
+		m[key] = b
+	}
+
 	typing.FastestFilterMarshal(b, data)
-	return f.m.Publish(ctx, f.sinks[Query3], key, b.Bytes())
 }
 
-func (f *Filter) sendResult(ctx context.Context, data *typing.Flight) error {
-	b := bytes.NewBufferString(f.id)
-	sink := f.sinks[Result]
+func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.Flight) {
 	typing.ResultQ1Marshal(b, data)
+}
+
+func (f *Filter) sendBuffer(ctx context.Context, sink string, b *bytes.Buffer) error {
 	return f.m.Publish(ctx, sink, sink, b.Bytes())
+}
+
+func (f *Filter) sendMap(ctx context.Context, sink string, m map[string]*bytes.Buffer) error {
+	for key, b := range m {
+		if err := f.m.Publish(ctx, sink, key, b.Bytes()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
 	b := bytes.NewBufferString(f.id)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
-	return f.m.Publish(ctx, f.sinks[Query4], "average", b.Bytes())
+	return f.m.Publish(ctx, f.sinks[Average], "average", b.Bytes())
 }

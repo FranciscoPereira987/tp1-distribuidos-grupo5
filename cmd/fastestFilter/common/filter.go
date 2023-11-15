@@ -10,16 +10,16 @@ import (
 )
 
 type Filter struct {
-	m      *mid.Middleware
-	id     string
-	sink   string
+	m    *mid.Middleware
+	id   string
+	sink string
 }
 
 func NewFilter(m *mid.Middleware, id, sink string) *Filter {
 	return &Filter{
-		m:      m,
-		id:     id,
-		sink:   sink,
+		m:    m,
+		id:   id,
+		sink: sink,
 	}
 }
 
@@ -44,12 +44,13 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	fastest := make(FastestFlightsMap)
 
 	for msg := range ch {
-		r := bytes.NewReader(msg)
-		data, err := typing.FastestFilterUnmarshal(r)
-		if err != nil {
-			return err
+		for r := bytes.NewReader(msg); r.Len() > 0; {
+			data, err := typing.FastestFilterUnmarshal(r)
+			if err != nil {
+				return err
+			}
+			updateFastest(fastest, data)
 		}
-		updateFastest(fastest, data)
 	}
 
 	select {
@@ -59,14 +60,23 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 	}
 
 	log.Infof("start publishing results into %q queue", f.sink)
+	i := mid.MaxMessageSize / typing.ResultQ3Size
+	b := bytes.NewBufferString(f.id)
 	for _, arr := range fastest {
 		for _, v := range arr {
-			b := bytes.NewBufferString(f.id)
 			typing.ResultQ3Marshal(b, &v)
-			err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes())
-			if err != nil {
-				return err
+			if i--; i <= 0 {
+				if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+					return err
+				}
+				i = mid.MaxMessageSize / typing.ResultQ3Size
+				b = bytes.NewBufferString(f.id)
 			}
+		}
+	}
+	if i != mid.MaxMessageSize/typing.ResultQ3Size {
+		if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+			return err
 		}
 	}
 	log.Infof("finished publishing results into %q queue", f.sink)

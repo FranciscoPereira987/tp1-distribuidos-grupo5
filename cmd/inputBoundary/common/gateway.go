@@ -60,12 +60,17 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 		return 0, err
 	}
 
+	i := mid.MaxMessageSize / typing.AirportCoordsSize
+	b := bytes.NewBufferString(g.id)
 	for n := 0; ; n++ {
-		b := bytes.NewBufferString(g.id)
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
-				return n, nil
+				if i != mid.MaxMessageSize/typing.AirportCoordsSize {
+					err = g.m.Publish(ctx, g.coords, "coords", b.Bytes())
+				} else {
+					err = nil
+				}
 			}
 			return n, err
 		}
@@ -73,8 +78,12 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 		if err := typing.AirportCoordsMarshal(b, record, indices); err != nil {
 			return n, err
 		}
-		if err := g.m.Publish(ctx, g.coords, "coords", b.Bytes()); err != nil {
-			return n, err
+		if i--; i <= 0 {
+			if err := g.m.Publish(ctx, g.coords, "coords", b.Bytes()); err != nil {
+				return n, err
+			}
+			i = mid.MaxMessageSize / typing.AirportCoordsSize
+			b = bytes.NewBufferString(g.id)
 		}
 	}
 }
@@ -85,12 +94,17 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 		return err
 	}
 
+	i := mid.MaxMessageSize / typing.FlightSize
+	b := bytes.NewBufferString(g.id)
 	for {
-		b := bytes.NewBufferString(g.id)
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				if i != mid.MaxMessageSize/typing.FlightSize {
+					err = g.m.Publish(ctx, g.flights, g.flights, b.Bytes())
+				} else {
+					err = nil
+				}
 			}
 			return err
 		}
@@ -103,8 +117,12 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 			log.Errorf("action: skip_flight | id: %s | error: %s", record[0], err)
 			continue
 		}
-		if err := g.m.Publish(ctx, g.flights, g.flights, b.Bytes()); err != nil {
-			return err
+		if i--; i <= 0 {
+			if err := g.m.Publish(ctx, g.flights, g.flights, b.Bytes()); err != nil {
+				return err
+			}
+			i = mid.MaxMessageSize / typing.AirportCoordsSize
+			b = bytes.NewBufferString(g.id)
 		}
 	}
 }

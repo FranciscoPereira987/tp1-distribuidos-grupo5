@@ -18,10 +18,12 @@ var ResultQ2Header = []string{
 	"totalTravelDistance",
 }
 
-// reuse marshaled msg
-func ResultQ2Marshal(b *bytes.Buffer, msg []byte) {
+func ResultQ2Marshal(b *bytes.Buffer, data *DistanceFilter) {
 	b.WriteByte(Query2Flag)
-	b.Write(msg)
+	b.Write(data.ID[:])
+	WriteString(b, data.Origin)
+	WriteString(b, data.Destination)
+	binary.Write(b, binary.LittleEndian, data.Distance)
 }
 
 func ResultQ2Unmarshal(r *bytes.Reader) ([]string, error) {

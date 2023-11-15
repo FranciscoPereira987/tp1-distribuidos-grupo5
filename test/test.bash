@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 mkdir -p test/diff
 
 diff <(sort test/expected/first.csv) <(sort client/results/first.csv) >test/diff/first.diff

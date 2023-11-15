@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 )
 
+const MaxMessageSize = 8192
 const ControlRoutingKey = "control"
 
 var ErrMiddleware = errors.New("rabbitMQ channel closed")

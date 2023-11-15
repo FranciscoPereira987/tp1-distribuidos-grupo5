@@ -9,6 +9,7 @@ import (
 )
 
 const resultQ3Field = "3"
+const ResultQ3Size = FlagSize + IdSize + OriginSize + DestinationSize + DurationSize + StopsSize
 
 var ResultQ3Header = []string{
 	resultQ3Field,

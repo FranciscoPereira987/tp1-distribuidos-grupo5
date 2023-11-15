@@ -41,7 +41,7 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan []byte) error {
 		log.Debugf("got coordinates for airport %s", data.Code)
 	}
 
-	return ctx.Err()
+	return context.Cause(ctx)
 }
 
 func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
@@ -67,5 +67,5 @@ func (f *Filter) Run(ctx context.Context, flights <-chan []byte) error {
 		}
 	}
 
-	return ctx.Err()
+	return context.Cause(ctx)
 }

@@ -94,7 +94,7 @@ func main() {
 
 	select {
 	case <-ctx.Done():
-		log.Info(ctx.Err())
+		log.Info(context.Cause(ctx))
 	default:
 	}
 }

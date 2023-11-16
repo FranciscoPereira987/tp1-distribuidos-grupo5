@@ -20,10 +20,14 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", "", "", err
 	}
 
-	qCoords, err := m.QueueDeclare(v.GetString("queue.coords"))
-	if err != nil {
+	qCoords := v.GetString("queue.coords")
+	if qCoords == "" {
+		qCoords = source + "." + v.GetString("id")
+	}
+	if _, err = m.QueueDeclare(qCoords); err != nil {
 		return "", "", "", err
 	}
+
 	// Subscribe to coordinates and EOF events.
 	if err := m.QueueBind(qCoords, source, []string{"coords", mid.ControlRoutingKey + ".coords"}); err != nil {
 		return "", "", "", err

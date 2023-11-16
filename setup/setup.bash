@@ -64,6 +64,7 @@ do
     networks:
       - testing_net
     environment:
+      - DEMUX_ID=$n
       - DEMUX_WORKERS_Q2=$WORKERS_QUERY2
       - DEMUX_WORKERS_Q3=$WORKERS_QUERY3
       - DEMUX_WORKERS_Q4=$WORKERS_QUERY4
@@ -84,6 +85,7 @@ do
     networks:
       - testing_net
     environment:
+      - DISTANCE_ID=$n
       - DISTANCE_DEMUXERS=$WORKERS_QUERY1
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml

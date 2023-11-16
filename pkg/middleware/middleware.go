@@ -64,19 +64,13 @@ func (m *Middleware) ExchangeDeclare(name string) (string, error) {
 }
 
 func (m *Middleware) QueueDeclare(name string) (string, error) {
-	var durable, exclusive bool
-	if name == "" {
-		exclusive = true
-	} else {
-		durable = true
-	}
 	q, err := m.ch.QueueDeclare(
-		name,      // name
-		durable,   // durable
-		false,     // delete when unused
-		exclusive, // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		name,  // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	if err != nil {
 		return "", err

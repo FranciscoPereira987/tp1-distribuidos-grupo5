@@ -20,8 +20,11 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", "", err
 	}
 
-	q, err := m.QueueDeclare(v.GetString("queue"))
-	if err != nil {
+	q := v.GetString("queue")
+	if q == "" {
+		q = source + "." + v.GetString("id")
+	}
+	if _, err = m.QueueDeclare(q); err != nil {
 		return "", "", err
 	}
 	// Subscribe to shards specific and EOF events.

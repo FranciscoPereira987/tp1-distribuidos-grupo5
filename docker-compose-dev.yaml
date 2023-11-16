@@ -52,6 +52,7 @@ services:
     networks:
       - testing_net
     environment:
+      - DEMUX_ID=1
       - DEMUX_WORKERS_Q2=1
       - DEMUX_WORKERS_Q3=1
       - DEMUX_WORKERS_Q4=1
@@ -68,6 +69,7 @@ services:
     networks:
       - testing_net
     environment:
+      - DISTANCE_ID=1
       - DISTANCE_DEMUXERS=1
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml

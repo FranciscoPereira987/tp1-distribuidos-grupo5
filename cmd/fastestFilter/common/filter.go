@@ -32,7 +32,7 @@ func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) {
 		fastest[key] = tmp[:1]
 	} else if data.Duration < fast[0].Duration {
 		fastest[key] = append(fast[:0], data, fast[0])
-	} else if len(fast) == 1 || data.Duration < fast[1].Duration {
+	} else if (len(fast) == 1 || data.Duration < fast[1].Duration) && (data.ID != fast[0].ID) {
 		fastest[key] = append(fast[:1], data)
 	} else {
 		return

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -48,10 +49,10 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err != nil {
 		return err
 	}
-	if err := g.ForwardFlights(ctx, &flightsReader); err != nil {
+	if err := g.ForwardFlights(ctx, &flightsReader, demuxers); err != nil {
 		return err
 	}
-	return g.m.SharedQueueEOF(ctx, g.flights, g.id, byte(demuxers))
+	return g.m.EOF(ctx, g.flights, g.id)
 }
 
 func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) {
@@ -88,12 +89,18 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 	}
 }
 
-func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
+func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int) error {
 	r, indices, err := protocol.NewCsvReader(in, ',', typing.FlightFields)
 	if err != nil {
 		return err
 	}
 
+	keys := make([]string, demuxers)
+	for ; demuxers > 0; demuxers-- {
+		keys[demuxers-1] = mid.ShardKey(strconv.Itoa(demuxers))
+	}
+
+	demuxerIndex := 0
 	i := mid.MaxMessageSize / typing.FlightSize
 	b := bytes.NewBufferString(g.id)
 	for {
@@ -101,7 +108,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 		if err != nil {
 			if err == io.EOF {
 				if i != mid.MaxMessageSize/typing.FlightSize {
-					err = g.m.Publish(ctx, g.flights, g.flights, b.Bytes())
+					err = g.m.Publish(ctx, g.flights, keys[demuxerIndex], b.Bytes())
 				} else {
 					err = nil
 				}
@@ -118,9 +125,11 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader) error {
 			continue
 		}
 		if i--; i <= 0 {
-			if err := g.m.Publish(ctx, g.flights, g.flights, b.Bytes()); err != nil {
+			if err := g.m.Publish(ctx, g.flights, keys[demuxerIndex], b.Bytes()); err != nil {
 				return err
 			}
+			demuxerIndex++
+			demuxerIndex %= len(keys)
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
 			b = bytes.NewBufferString(g.id)
 		}

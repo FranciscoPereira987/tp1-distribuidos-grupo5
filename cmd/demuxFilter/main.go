@@ -20,12 +20,17 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", nil, err
 	}
 
-	if _, err = m.QueueDeclare(source); err != nil {
+	q := v.GetString("queue")
+	if q == "" {
+		q = source + "." + v.GetString("id")
+	}
+	if _, err = m.QueueDeclare(q); err != nil {
 		return "", nil, err
 	}
 
 	// Subscribe to filter specific and EOF events.
-	if err := m.QueueBind(source, source, []string{source, mid.ControlRoutingKey}); err != nil {
+	shardKey := mid.ShardKey(v.GetString("id"))
+	if err := m.QueueBind(q, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
 		return "", nil, err
 	}
 	distance, err := m.ExchangeDeclare(v.GetString("exchange.distance"))
@@ -57,7 +62,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("demux filter worker up")
-	return source, []string{distance, fastest, average, results}, m.Ready(ctx, status)
+	return q, []string{distance, fastest, average, results}, m.Ready(ctx, status)
 }
 
 func main() {

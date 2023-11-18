@@ -80,7 +80,7 @@ func main() {
 	}
 
 	gateway := common.NewGateway(middleware)
-	resultsChs := make(map[string]chan (<-chan []byte))
+	resultsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
 
 	go func() {
@@ -89,7 +89,7 @@ func main() {
 			mtx.Lock()
 			ch, ok := resultsChs[id]
 			if !ok {
-				ch = make(chan (<-chan []byte), 1)
+				ch = make(chan (<-chan mid.Delivery), 1)
 				resultsChs[id] = ch
 			}
 			mtx.Unlock()
@@ -108,11 +108,11 @@ func main() {
 			mtx.Lock()
 			resultsCh, ok := resultsChs[id]
 			if !ok {
-				resultsCh = make(chan (<-chan []byte))
+				resultsCh = make(chan (<-chan mid.Delivery))
 				resultsChs[id] = resultsCh
 			}
 			mtx.Unlock()
-			var ch <-chan []byte
+			var ch <-chan mid.Delivery
 			select {
 			case <-ctx.Done():
 				return

@@ -25,7 +25,7 @@ func NewFilter(m *mid.Middleware, id, sink string) *Filter {
 
 type FastestFlightsMap map[string][]typing.FastestFilter
 
-func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) {
+func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) string {
 	key := data.Origin + "." + data.Destination
 	if fast, ok := fastest[key]; !ok {
 		tmp := [2]typing.FastestFilter{data}
@@ -35,21 +35,30 @@ func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) {
 	} else if (len(fast) == 1 || data.Duration < fast[1].Duration) && (data.ID != fast[0].ID) {
 		fastest[key] = append(fast[:1], data)
 	} else {
-		return
+		return ""
 	}
 	log.Debugf("updated fastest flights for route %s-%s", data.Origin, data.Destination)
+	return key
 }
 
-func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
+func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fastest := make(FastestFlightsMap)
 
-	for msg := range ch {
+	for d := range ch {
+		msg, tag := d.Msg, d.Tag
+		updated := make(map[string]struct{})
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.FastestFilterUnmarshal(r)
 			if err != nil {
 				return err
 			}
-			updateFastest(fastest, data)
+			if key := updateFastest(fastest, data); key != "" {
+				updated[key] = struct{}{}
+			}
+		}
+		// TODO: store state
+		if err := f.m.Ack(tag); err != nil {
+			return err
 		}
 	}
 

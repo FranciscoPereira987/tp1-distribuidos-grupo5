@@ -39,7 +39,7 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(f.dir)
 }
 
-func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
+func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
 	defer func() {
 		var errs []error
@@ -51,7 +51,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
 		}
 	}()
 
-	for msg := range ch {
+	for d := range ch {
+		msg, tag := d.Msg, d.Tag
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.AverageFilterUnmarshal(r)
 			if err != nil {
@@ -70,6 +71,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) (err error) {
 				}
 				log.Debugf("new fare for route %s-%s: %f", v.Origin, v.Destination, v.Fare)
 			}
+		}
+		// TODO: store state
+		if err := f.m.Ack(tag); err != nil {
+			return err
 		}
 	}
 

@@ -23,7 +23,7 @@ func NewGateway(m *mid.Middleware) *Gateway {
 	}
 }
 
-func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err error) {
+func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery) (err error) {
 	w := csv.NewWriter(out)
 	defer func() {
 		w.Flush()
@@ -36,7 +36,8 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err
 		return err
 	}
 
-	for msg := range ch {
+	for d := range ch {
+		msg, tag := d.Msg, d.Tag
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			result, err := typing.ResultUnmarshal(r)
 			if err != nil {
@@ -45,6 +46,10 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan []byte) (err
 			if err := w.Write(result); err != nil {
 				return err
 			}
+		}
+		// TODO: store state and flush writer
+		if err := g.m.Ack(tag); err != nil {
+			return err
 		}
 	}
 

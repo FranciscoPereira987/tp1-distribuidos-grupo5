@@ -18,7 +18,12 @@ var ErrMiddleware = errors.New("rabbitMQ channel closed")
 
 type Client struct {
 	Id string
-	Ch <-chan []byte
+	Ch <-chan Delivery
+}
+
+type Delivery struct {
+	Msg []byte
+	Tag uint64
 }
 
 type Middleware struct {
@@ -95,12 +100,16 @@ func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) err
 	return nil
 }
 
+func (m *Middleware) Ack(tag uint64) error {
+	return m.ch.Ack(tag, false)
+}
+
 func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, error) {
 	msgs, err := m.ch.ConsumeWithContext(
 		ctx,
 		name,  // queue
 		"",    // consumer
-		true,  // auto-ack
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -114,7 +123,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 	go func(cc int) {
 		pairs := make(map[string]struct {
 			cc int
-			ch chan<- []byte
+			ch chan<- Delivery
 		})
 		defer func() {
 			close(ret)
@@ -128,20 +137,28 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 			pair, ok := pairs[clientId]
 			if !ok {
 				log.Infof("action: new_client | result: success | queue: %q | client: %x", name, clientId)
-				ch := make(chan []byte)
+				ch := make(chan Delivery)
 				pair.cc = cc
 				pair.ch = ch
 				pairs[clientId] = pair
 				ret <- Client{clientId, ch}
 			}
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
-				// The shared queue needs to have the same name
-				// as the exchange it's bound to.
-				if len(msg) > 0 && msg[0] > 1 {
-					m.SharedQueueEOF(ctx, name, clientId, msg[0]-1)
-				}
 				pair.cc--
 				pairs[clientId] = pair
+				if len(msg) > 0 && msg[0] > 1 {
+					// A shared queue must have the same
+					// name as the exchange it's bound to.
+					if err := m.SharedQueueEOF(ctx, name, clientId, msg[0]-1); err != nil {
+						log.Errorf("action: propagate_eof | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
+						return
+					}
+				}
+				// TODO: store EOF state
+				if err := m.Ack(d.DeliveryTag); err != nil {
+					log.Errorf("action: ack_eof | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
+					return
+				}
 				if pair.cc <= 0 {
 					log.Infof("action: EOF | result: success | queue: %q | client: %x", name, clientId)
 					close(pair.ch)
@@ -150,7 +167,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 					log.Infof("action: EOF | result: in_progress | queue: %q | client: %x", name, clientId)
 				}
 			} else {
-				pair.ch <- msg
+				pair.ch <- Delivery{msg, d.DeliveryTag}
 			}
 		}
 		log.Error(ErrMiddleware)
@@ -178,7 +195,7 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 		ctx,
 		name,  // queue
 		"",    // consumer
-		true,  // auto-ack
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -188,10 +205,10 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 		return err
 	}
 
-	for range msgs {
+	for d := range msgs {
 		workers--
 		if workers <= 0 {
-			return nil
+			return m.ch.Ack(d.DeliveryTag, true)
 		}
 	}
 	return ErrMiddleware

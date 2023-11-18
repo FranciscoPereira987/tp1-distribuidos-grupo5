@@ -36,10 +36,11 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Fi
 	}
 }
 
-func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
+func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := 0.0, 0
 
-	for msg := range ch {
+	for d := range ch {
+		msg, tag := d.Msg, d.Tag
 		var (
 			bDistance = bytes.NewBufferString(f.id)
 			bResult   = bytes.NewBufferString(f.id)
@@ -74,6 +75,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan []byte) error {
 			if err := f.sendBuffer(ctx, f.sinks[Result], bResult); err != nil {
 				return err
 			}
+		}
+		// TODO: store state
+		if err := f.m.Ack(tag); err != nil {
+			return err
 		}
 	}
 

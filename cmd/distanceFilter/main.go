@@ -96,7 +96,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	flightsChs := make(map[string]chan (<-chan []byte))
+	flightsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
 
 	go func() {
@@ -105,7 +105,7 @@ func main() {
 			mtx.Lock()
 			ch, ok := flightsChs[id]
 			if !ok {
-				ch = make(chan (<-chan []byte), 1)
+				ch = make(chan (<-chan mid.Delivery), 1)
 				flightsChs[id] = ch
 			}
 			mtx.Unlock()
@@ -114,7 +114,7 @@ func main() {
 	}()
 
 	for coordsQueue := range coordsQueues {
-		go func(id string, ch <-chan []byte) {
+		go func(id string, ch <-chan mid.Delivery) {
 			filter := common.NewFilter(middleware, id, sink)
 			if err := filter.AddCoords(ctx, ch); err != nil {
 				log.Error(err)
@@ -122,7 +122,7 @@ func main() {
 			mtx.Lock()
 			flightsCh, ok := flightsChs[id]
 			if !ok {
-				flightsCh = make(chan (<-chan []byte))
+				flightsCh = make(chan (<-chan mid.Delivery))
 				flightsChs[id] = flightsCh
 			}
 			mtx.Unlock()

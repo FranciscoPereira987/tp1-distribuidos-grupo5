@@ -88,7 +88,7 @@ func main() {
 	}
 
 	for queue := range queues {
-		go func(id string, ch <-chan []byte) {
+		go func(id string, ch <-chan mid.Delivery) {
 			filter := common.NewFilter(middleware, id, sink)
 
 			if err := filter.Run(ctx, ch); err != nil {

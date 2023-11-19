@@ -83,9 +83,9 @@ func main() {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctx := utils.WithSignal(parentCtx)
+	signalCtx := utils.WithSignal(parentCtx)
 
-	source, sinks, err := setupMiddleware(ctx, middleware, v)
+	source, sinks, err := setupMiddleware(signalCtx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,13 +96,16 @@ func main() {
 		v.GetInt("workers.q4"),
 	}
 
-	queues, err := middleware.Consume(ctx, source)
+	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
 		log.Error(err)
 	}
 
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+
 			filter := common.NewFilter(middleware, id, sinks, nWorkers)
 
 			if err := filter.Run(ctx, ch); err != nil {

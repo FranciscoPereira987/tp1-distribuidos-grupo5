@@ -63,14 +63,14 @@ func main() {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctx := utils.WithSignal(parentCtx)
+	signalCtx := utils.WithSignal(parentCtx)
 
-	coords, flights, err := setupMiddleware(ctx, middleware, v)
+	coords, flights, err := setupMiddleware(signalCtx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	clients, err := connection.Listen(ctx, ":"+v.GetString("port"))
+	clients, err := connection.Listen(signalCtx, ":"+v.GetString("port"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,6 +79,9 @@ func main() {
 
 	for conn := range clients {
 		go func(conn net.Conn) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+
 			defer conn.Close()
 			id, err := connection.Accept(conn)
 			if err != nil {
@@ -93,8 +96,8 @@ func main() {
 	}
 
 	select {
-	case <-ctx.Done():
-		log.Info(context.Cause(ctx))
+	case <-signalCtx.Done():
+		log.Info(context.Cause(signalCtx))
 	default:
 	}
 }

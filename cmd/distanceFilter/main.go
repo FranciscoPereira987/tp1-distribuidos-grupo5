@@ -81,18 +81,18 @@ func main() {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctx := utils.WithSignal(parentCtx)
+	signalCtx := utils.WithSignal(parentCtx)
 
-	coordsSource, flightsSource, sink, err := setupMiddleware(ctx, middleware, v)
+	coordsSource, flightsSource, sink, err := setupMiddleware(signalCtx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	coordsQueues, err := middleware.Consume(ctx, coordsSource)
+	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
 	if err != nil {
 		log.Fatal(err)
 	}
-	flightsQueues, err := middleware.Consume(ctx, flightsSource)
+	flightsQueues, err := middleware.Consume(signalCtx, flightsSource)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,6 +115,9 @@ func main() {
 
 	for coordsQueue := range coordsQueues {
 		go func(id string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+
 			filter := common.NewFilter(middleware, id, sink)
 			if err := filter.AddCoords(ctx, ch); err != nil {
 				log.Error(err)

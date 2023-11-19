@@ -75,20 +75,23 @@ func main() {
 	parentCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ctx := utils.WithSignal(parentCtx)
+	signalCtx := utils.WithSignal(parentCtx)
 
-	source, sink, err := setupMiddleware(ctx, middleware, v)
+	source, sink, err := setupMiddleware(signalCtx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	queues, err := middleware.Consume(ctx, source)
+	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+
 			filter, err := common.NewFilter(middleware, id, sink, v.GetString("fares.dir"))
 			if err != nil {
 				log.Fatal(err)

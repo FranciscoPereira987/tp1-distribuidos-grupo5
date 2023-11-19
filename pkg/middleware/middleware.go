@@ -14,7 +14,10 @@ import (
 const MaxMessageSize = 8192
 const ControlRoutingKey = "control"
 
-var ErrMiddleware = errors.New("rabbitMQ channel closed")
+var (
+	ErrMiddleware = errors.New("rabbitMQ channel closed")
+	ErrNack       = errors.New("server nack'ed delivery")
+)
 
 type Client struct {
 	Id string
@@ -33,6 +36,17 @@ type Middleware struct {
 	controlCount map[string]int
 }
 
+type Confirmer interface {
+	Confirm(context.Context) error
+	AddWithContext(context.Context, *amqp.DeferredConfirmation) error
+}
+
+type DeferredConfirmer struct {
+	newConfirms  chan<- *amqp.DeferredConfirmation
+	waitConfirms chan<- struct{}
+	errs         <-chan error
+}
+
 func Dial(url string) (*Middleware, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
@@ -44,12 +58,74 @@ func Dial(url string) (*Middleware, error) {
 		conn.Close()
 		return nil, err
 	}
+	if err := ch.Confirm(false); err != nil {
+		conn.Close()
+		return nil, err
+	}
 
 	return &Middleware{
 		conn:         conn,
 		ch:           ch,
 		controlCount: make(map[string]int),
 	}, nil
+}
+
+func (m *Middleware) NewDeferredConfirmer(ctx context.Context) DeferredConfirmer {
+	newConfirms := make(chan *amqp.DeferredConfirmation)
+	waitConfirms := make(chan struct{})
+	errs := make(chan error)
+
+	go func() {
+		var confirmations []*amqp.DeferredConfirmation
+		for {
+			select {
+			case dc := <-newConfirms:
+				confirmations = append(confirmations, dc)
+			case <-waitConfirms:
+				for i, dc := range confirmations {
+					if ack, err := dc.WaitContext(ctx); err != nil {
+						errs <- err
+						return
+					} else if !ack {
+						errs <- fmt.Errorf("%w: tag=%d", ErrNack, dc.DeliveryTag)
+						return
+					}
+					confirmations[i] = nil
+				}
+				errs <- nil
+				confirmations = confirmations[:0]
+			case <-ctx.Done():
+				log.Info("context cancelled, stopping confirmer")
+				return
+			}
+		}
+	}()
+
+	return DeferredConfirmer{newConfirms, waitConfirms, errs}
+}
+
+func (c DeferredConfirmer) Confirm(ctx context.Context) error {
+	select {
+	case c.waitConfirms <- struct{}{}:
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	}
+
+	select {
+	case err := <-c.errs:
+		return err
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	}
+}
+
+func (c DeferredConfirmer) AddWithContext(ctx context.Context, dc *amqp.DeferredConfirmation) error {
+	select {
+	case c.newConfirms <- dc:
+		return nil
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	}
 }
 
 func (m *Middleware) SetExpectedControlCount(queue string, count int) {
@@ -176,18 +252,24 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 	return ret, nil
 }
 
-func (m *Middleware) Publish(ctx context.Context, exchange, key string, body []byte) error {
-	return m.ch.PublishWithContext(
+func (m *Middleware) Publish(ctx context.Context, c Confirmer, exchange, key string, body []byte) error {
+	dc, err := m.ch.PublishWithDeferredConfirmWithContext(
 		ctx,
 		exchange, // exchange
 		key,      // routing key
 		false,    // mandatory
 		false,    // immediate
 		amqp.Publishing{
-			ContentType: "application/octet-stream",
-			Body:        body,
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "application/octet-stream",
+			Body:         body,
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	return c.AddWithContext(ctx, dc)
 }
 
 func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) error {
@@ -214,24 +296,52 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 	return ErrMiddleware
 }
 
+type BasicConfirmer struct {
+	dc *amqp.DeferredConfirmation
+}
+
+func (bc BasicConfirmer) Confirm(ctx context.Context) error {
+	ack, err := bc.dc.WaitContext(ctx)
+	if err == nil && !ack {
+		err = fmt.Errorf("%w: tag=%d", ErrNack, bc.dc.DeliveryTag)
+	}
+	return err
+}
+
+func (bc *BasicConfirmer) AddWithContext(ctx context.Context, dc *amqp.DeferredConfirmation) error {
+	bc.dc = dc
+	return nil
+}
+
+func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, key string, body []byte) error {
+	if err := m.Publish(ctx, bc, exchange, key, body); err != nil {
+		return err
+	}
+	return bc.Confirm(ctx)
+}
+
 func (m *Middleware) Ready(ctx context.Context, exchange string) error {
-	return m.Publish(ctx, exchange, ControlRoutingKey, nil)
+	var bc BasicConfirmer
+	return bc.Publish(ctx, m, exchange, ControlRoutingKey, nil)
 }
 
 func (m *Middleware) EOF(ctx context.Context, exchange, clientId string) error {
+	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q", exchange)
-	return m.Publish(ctx, exchange, ControlRoutingKey, []byte(clientId))
+	return bc.Publish(ctx, m, exchange, ControlRoutingKey, []byte(clientId))
 }
 
 func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, clientId string) error {
+	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
-	return m.Publish(ctx, exchange, rKey, []byte(clientId))
+	return bc.Publish(ctx, m, exchange, rKey, []byte(clientId))
 }
 
 func (m *Middleware) SharedQueueEOF(ctx context.Context, name, clientId string, eof byte) error {
+	var bc BasicConfirmer
 	log.Infof("sending EOF(%d) into queue %q", eof, name)
-	return m.Publish(ctx, name, ControlRoutingKey, append([]byte(clientId), eof))
+	return bc.Publish(ctx, m, name, ControlRoutingKey, append([]byte(clientId), eof))
 }
 
 func (m *Middleware) Close() {

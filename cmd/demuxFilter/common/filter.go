@@ -38,6 +38,7 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Fi
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := 0.0, 0
+	dc := f.m.NewDeferredConfirmer(ctx)
 
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
@@ -62,19 +63,22 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 				f.marshalResult(bResult, &data)
 			}
 		}
-		if err := f.sendBuffer(ctx, f.sinks[Distance], bDistance); err != nil {
+		if err := f.sendBuffer(ctx, dc, f.sinks[Distance], bDistance); err != nil {
 			return err
 		}
-		if err := f.sendMap(ctx, f.sinks[Average], mAverage); err != nil {
+		if err := f.sendMap(ctx, dc, f.sinks[Average], mAverage); err != nil {
 			return err
 		}
 		if len(mFastest) > 0 {
-			if err := f.sendMap(ctx, f.sinks[Fastest], mFastest); err != nil {
+			if err := f.sendMap(ctx, dc, f.sinks[Fastest], mFastest); err != nil {
 				return err
 			}
-			if err := f.sendBuffer(ctx, f.sinks[Result], bResult); err != nil {
+			if err := f.sendBuffer(ctx, dc, f.sinks[Result], bResult); err != nil {
 				return err
 			}
+		}
+		if err := dc.Confirm(ctx); err != nil {
+			return err
 		}
 		// TODO: store state
 		if err := f.m.Ack(tag); err != nil {
@@ -124,13 +128,13 @@ func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.Flight) {
 	typing.ResultQ1Marshal(b, data)
 }
 
-func (f *Filter) sendBuffer(ctx context.Context, sink string, b *bytes.Buffer) error {
-	return f.m.Publish(ctx, sink, sink, b.Bytes())
+func (f *Filter) sendBuffer(ctx context.Context, c mid.Confirmer, sink string, b *bytes.Buffer) error {
+	return f.m.Publish(ctx, c, sink, sink, b.Bytes())
 }
 
-func (f *Filter) sendMap(ctx context.Context, sink string, m map[string]*bytes.Buffer) error {
+func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, sink string, m map[string]*bytes.Buffer) error {
 	for key, b := range m {
-		if err := f.m.Publish(ctx, sink, key, b.Bytes()); err != nil {
+		if err := f.m.Publish(ctx, c, sink, key, b.Bytes()); err != nil {
 			return err
 		}
 	}
@@ -138,7 +142,8 @@ func (f *Filter) sendMap(ctx context.Context, sink string, m map[string]*bytes.B
 }
 
 func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
+	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.id)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
-	return f.m.Publish(ctx, f.sinks[Average], "average", b.Bytes())
+	return bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
 }

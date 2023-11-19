@@ -61,6 +61,7 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 		return 0, err
 	}
 
+	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.AirportCoordsSize
 	b := bytes.NewBufferString(g.id)
 	for n := 0; ; n++ {
@@ -68,7 +69,7 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 		if err != nil {
 			if err == io.EOF {
 				if i != mid.MaxMessageSize/typing.AirportCoordsSize {
-					err = g.m.Publish(ctx, g.coords, "coords", b.Bytes())
+					err = bc.Publish(ctx, g.m, g.coords, "coords", b.Bytes())
 				} else {
 					err = nil
 				}
@@ -80,7 +81,7 @@ func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) 
 			return n, err
 		}
 		if i--; i <= 0 {
-			if err := g.m.Publish(ctx, g.coords, "coords", b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, g.m, g.coords, "coords", b.Bytes()); err != nil {
 				return n, err
 			}
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
@@ -100,6 +101,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		keys[demuxers-1] = mid.ShardKey(strconv.Itoa(demuxers))
 	}
 
+	var bc mid.BasicConfirmer
 	demuxerIndex := 0
 	i := mid.MaxMessageSize / typing.FlightSize
 	b := bytes.NewBufferString(g.id)
@@ -108,7 +110,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		if err != nil {
 			if err == io.EOF {
 				if i != mid.MaxMessageSize/typing.FlightSize {
-					err = g.m.Publish(ctx, g.flights, keys[demuxerIndex], b.Bytes())
+					err = bc.Publish(ctx, g.m, g.flights, keys[demuxerIndex], b.Bytes())
 				} else {
 					err = nil
 				}
@@ -125,7 +127,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			continue
 		}
 		if i--; i <= 0 {
-			if err := g.m.Publish(ctx, g.flights, keys[demuxerIndex], b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, g.m, g.flights, keys[demuxerIndex], b.Bytes()); err != nil {
 				return err
 			}
 			demuxerIndex++

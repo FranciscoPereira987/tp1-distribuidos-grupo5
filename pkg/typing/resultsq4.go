@@ -14,6 +14,7 @@ type ResultQ4 struct {
 }
 
 const resultQ4Field = "4"
+const ResultQ4Size = FlagSize + OriginSize + DestinationSize + FareSize + FareSize
 
 var ResultQ4Header = []string{
 	resultQ4Field,

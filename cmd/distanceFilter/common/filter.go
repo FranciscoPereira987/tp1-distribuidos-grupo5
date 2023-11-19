@@ -51,6 +51,8 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 }
 
 func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
+	var bc mid.BasicConfirmer
+
 	for d := range flights {
 		msg, tag := d.Msg, d.Tag
 		b := bytes.NewBufferString(f.id)
@@ -71,7 +73,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			}
 		}
 		if b.Len() > len(f.id) {
-			if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 				return err
 			}
 		}

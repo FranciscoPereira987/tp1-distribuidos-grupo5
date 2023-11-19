@@ -96,8 +96,24 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 
 func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, avg float32) error {
 	log.Infof("start publishing results into %q queue", f.sink)
+	var bc mid.BasicConfirmer
+	i := mid.MaxMessageSize / typing.ResultQ4Size
+	b := bytes.NewBufferString(f.id)
 	for file := range fares {
-		if err := f.aggregate(ctx, file, avg); err != nil {
+		if newResult, err := f.aggregate(ctx, b, file, avg); err != nil {
+			return err
+		} else if newResult {
+			if i--; i <= 0 {
+				if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+					return err
+				}
+				i = mid.MaxMessageSize / typing.ResultQ4Size
+				b = bytes.NewBufferString(f.id)
+			}
+		}
+	}
+	if i != mid.MaxMessageSize/typing.ResultQ4Size {
+		if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 			return err
 		}
 	}
@@ -106,10 +122,10 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	return nil
 }
 
-func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error {
+func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, avg float32) (bool, error) {
 	faresFile, err := os.Open(filepath.Join(f.dir, file))
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer faresFile.Close()
 
@@ -122,7 +138,7 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 			if err == io.EOF {
 				break
 			}
-			return err
+			return false, err
 		}
 		if avg < v {
 			fareSum += float64(v)
@@ -133,10 +149,9 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 	origin, destination, _ := strings.Cut(file, ".")
 	if count == 0 {
 		log.Debugf("no flights with above average fare for route %s-%s", origin, destination)
-		return nil
+		return false, nil
 	}
 
-	b := bytes.NewBufferString(f.id)
 	v := typing.ResultQ4{
 		Origin:      origin,
 		Destination: destination,
@@ -145,7 +160,7 @@ func (f *Filter) aggregate(ctx context.Context, file string, avg float32) error 
 	}
 	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)
-	return f.m.Publish(ctx, f.sink, f.sink, b.Bytes())
+	return true, nil
 }
 
 type fareWriter struct {

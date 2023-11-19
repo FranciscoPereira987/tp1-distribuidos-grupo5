@@ -69,13 +69,14 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	}
 
 	log.Infof("start publishing results into %q queue", f.sink)
+	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.id)
 	for _, arr := range fastest {
 		for _, v := range arr {
 			typing.ResultQ3Marshal(b, &v)
 			if i--; i <= 0 {
-				if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+				if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 					return err
 				}
 				i = mid.MaxMessageSize / typing.ResultQ3Size
@@ -84,7 +85,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
-		if err := f.m.Publish(ctx, f.sink, f.sink, b.Bytes()); err != nil {
+		if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 			return err
 		}
 	}

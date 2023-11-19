@@ -24,8 +24,11 @@ var FlightFields = []string{
 }
 
 var DurationRegexp = regexp.MustCompile(`P(\d+D)?T?(\d+H)?(\d+M)?`)
-var ErrInvalidDuration = errors.New("invalid duration format")
-var ErrMissingDistance = errors.New("missing field 'totalTravelDistance'")
+
+var (
+	ErrInvalidDuration = errors.New("invalid duration format")
+	ErrMissingDistance = errors.New("missing field 'totalTravelDistance'")
+)
 
 type Flight struct {
 	ID          [16]byte

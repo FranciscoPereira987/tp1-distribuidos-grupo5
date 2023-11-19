@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+WORKERS_HEARTBEATER=${WORKERS_HEARTBEATER:-3}
 WORKERS_QUERY1=${WORKERS_QUERY1:-1}
 WORKERS_QUERY2=${WORKERS_QUERY2:-1}
 WORKERS_QUERY3=${WORKERS_QUERY3:-1}
@@ -53,6 +53,24 @@ echo "
         condition: service_healthy
     volumes:
       - ./cmd/outputBoundary/config.yaml:/config.yaml"
+
+for ((n = 1; n <= WORKERS_HEARTBEATER; n++))
+do
+  echo "
+  peer$n:
+    container_name: peer$n
+    image: invitation:latest
+    entrypoint: /invitation
+    networks:
+      - testing_net
+    environment:
+      - INV_NAME=$n
+    volumes:
+      - ./cmd/heartbeater/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  "
+done
 
 for ((n = 1; n <= WORKERS_QUERY1; n++))
 do

@@ -24,6 +24,7 @@ build-image:
 	docker build -t fastest_filter -f cmd/fastestFilter/Dockerfile .
 	docker build -t avg_filter -f cmd/avgFilter/Dockerfile .
 	docker build -t client -f cmd/client/Dockerfile .
+	docker build -t invitation -f cmd/heartbeater/Dockerfile .
 .PHONY: build-image
 
 fmt:

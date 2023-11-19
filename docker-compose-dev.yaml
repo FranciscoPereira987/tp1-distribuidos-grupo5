@@ -45,6 +45,48 @@ services:
     volumes:
       - ./cmd/outputBoundary/config.yaml:/config.yaml
 
+  peer1:
+    container_name: peer1
+    image: invitation:latest
+    entrypoint: /invitation
+    networks:
+      - testing_net
+    environment:
+      - INV_NAME=1
+    volumes:
+      - ./cmd/heartbeater/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  
+
+  peer2:
+    container_name: peer2
+    image: invitation:latest
+    entrypoint: /invitation
+    networks:
+      - testing_net
+    environment:
+      - INV_NAME=2
+    volumes:
+      - ./cmd/heartbeater/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  
+
+  peer3:
+    container_name: peer3
+    image: invitation:latest
+    entrypoint: /invitation
+    networks:
+      - testing_net
+    environment:
+      - INV_NAME=3
+    volumes:
+      - ./cmd/heartbeater/config.yaml:/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  
+
   demuxFilter1:
     container_name: demux_filter1
     image: demux_filter:latest

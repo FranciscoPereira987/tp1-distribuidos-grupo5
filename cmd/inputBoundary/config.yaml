@@ -13,3 +13,5 @@ server:
 
 log:
   level: "info"
+
+beater_port: 9000

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/inputBoundary/common"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -76,7 +77,8 @@ func main() {
 	}
 
 	demuxers := v.GetInt("demuxers")
-
+	beater := beater.StartBeaterClient(v)
+	beater.Run()
 	for conn := range clients {
 		go func(conn net.Conn) {
 			ctx, cancel := context.WithCancel(signalCtx)

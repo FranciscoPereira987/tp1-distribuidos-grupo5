@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/avgFilter/common"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -88,7 +89,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	beater := beater.StartBeaterClient(v)
+	beater.Run()
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)

@@ -13,4 +13,11 @@ peers:
     net_name: "peer2"
   - peer_name: 3
     net_name: "peer3"
-    
+
+#All containers to be monitored
+containers:
+
+- peer_name: demux_filter1
+- peer_name: distance_filter1
+- peer_name: fastest_filter1
+- peer_name: avg_filter1

@@ -25,6 +25,7 @@ services:
     environment:
       - IN_WORKERS=4
       - IN_DEMUXERS=1
+      - IN_NAME=input
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -39,6 +40,7 @@ services:
       - testing_net
     environment:
       - OUT_WORKERS=4
+      - OUT_NAME=output
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -56,6 +58,9 @@ services:
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   
 
@@ -70,6 +75,9 @@ services:
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   
 
@@ -84,6 +92,9 @@ services:
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   
 
@@ -98,6 +109,7 @@ services:
       - DEMUX_WORKERS_Q2=1
       - DEMUX_WORKERS_Q3=1
       - DEMUX_WORKERS_Q4=1
+      - DEMUX_NAME=demux_filter1
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
     depends_on:
@@ -113,6 +125,7 @@ services:
     environment:
       - DISTANCE_ID=1
       - DISTANCE_DEMUXERS=1
+      - DISTANCE_NAME=distance_filter1
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
     depends_on:
@@ -128,6 +141,7 @@ services:
     environment:
       - FAST_ID=1
       - FAST_DEMUXERS=1
+      - FAST_NAME=fastest_filter1
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
     depends_on:
@@ -143,6 +157,7 @@ services:
     environment:
       - AVG_ID=1
       - AVG_DEMUXERS=1
+      - AVG_NAME=avg_filter1
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
     depends_on:

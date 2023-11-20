@@ -5,6 +5,8 @@ GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter
 BIN := $(addprefix bin/,$(CMD))
 
+BEAT_CONFIG = cmd/heartbeater/config.yaml
+
 all: $(BIN)
 .PHONY: all
 
@@ -37,6 +39,7 @@ test:
 
 setup: docker-compose-dev.yaml
 	setup/setup.bash > $^
+	setup/beat-config.bash > $(BEAT_CONFIG)
 .PHONY: setup
 
 run-client:

@@ -16,6 +16,7 @@ const (
 	PeerName    = "peer_name"
 	PeerNetName = "net_name"
 	HeartBeat   = "heartbeat_port"
+	Containers = "containers"
 )
 
 var (
@@ -49,6 +50,19 @@ func parseConfig(v *viper.Viper) (config *invitation.Config, err error) {
 			} else {
 				config.Name = peerNetName
 			}
+		}
+	}
+
+	if err == nil {
+		mapped := v.Get(Containers).([]interface{})
+		for _, value := range mapped {
+			value := value.(map[string]any)
+			containerName, ok := value[PeerName].(string)
+			if !ok {
+				err = InvalidPeerNameErr
+				return
+			}
+			config.Names = append(config.Names, containerName)
 		}
 	}
 	config.Heartbeat = v.GetString(HeartBeat)

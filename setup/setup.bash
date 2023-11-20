@@ -33,6 +33,7 @@ echo "
     environment:
       - IN_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
       - IN_DEMUXERS=$WORKERS_QUERY1
+      - IN_NAME="input"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -48,6 +49,7 @@ echo "
       - testing_net
     environment:
       - OUT_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
+      - OUT_NAME="output"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -68,6 +70,9 @@ do
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   "
 done
@@ -86,6 +91,7 @@ do
       - DEMUX_WORKERS_Q2=$WORKERS_QUERY2
       - DEMUX_WORKERS_Q3=$WORKERS_QUERY3
       - DEMUX_WORKERS_Q4=$WORKERS_QUERY4
+      - DEMUX_NAME="demux_filter$n"
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
     depends_on:
@@ -105,6 +111,7 @@ do
     environment:
       - DISTANCE_ID=$n
       - DISTANCE_DEMUXERS=$WORKERS_QUERY1
+      - DISTANCE_NAME="distance_filter$n"
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
     depends_on:
@@ -124,6 +131,7 @@ do
     environment:
       - FAST_ID=$n
       - FAST_DEMUXERS=$WORKERS_QUERY1
+      - FAST_NAME="fastest_filter$n"
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
     depends_on:
@@ -143,6 +151,7 @@ do
     environment:
       - AVG_ID=$n
       - AVG_DEMUXERS=$WORKERS_QUERY1
+      - AVG_NAME="avg_filter$n"
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
     depends_on:

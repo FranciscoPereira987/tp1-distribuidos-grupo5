@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/distanceFilter/common"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
@@ -118,7 +119,8 @@ func main() {
 			ch <- flightsQueue.Ch
 		}
 	}()
-
+	beater := beater.StartBeaterClient(v)
+	beater.Run()
 	for coordsQueue := range coordsQueues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)

@@ -22,7 +22,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 
 	qCoords := v.GetString("queue.coords")
 	if qCoords == "" {
-		qCoords = source + "." + v.GetString("id")
+		qCoords = "coords." + v.GetString("id")
 	}
 	if _, err = m.QueueDeclare(qCoords); err != nil {
 		return "", "", "", err
@@ -33,12 +33,16 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 		return "", "", "", err
 	}
 
-	qFlights, err := m.QueueDeclare(source)
-	if err != nil {
+	qFlights := v.GetString("queue.flights")
+	if qFlights == "" {
+		qFlights = "distance." + v.GetString("id")
+	}
+	if _, err := m.QueueDeclare(qFlights); err != nil {
 		return "", "", "", err
 	}
 	// Subscribe to filter specific and EOF events.
-	if err := m.QueueBind(qFlights, source, []string{source, mid.ControlRoutingKey}); err != nil {
+	shardKey := mid.ShardKey(v.GetString("id"))
+	if err := m.QueueBind(qFlights, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
 		return "", "", "", err
 	}
 	m.SetExpectedControlCount(qFlights, v.GetInt("demuxers"))

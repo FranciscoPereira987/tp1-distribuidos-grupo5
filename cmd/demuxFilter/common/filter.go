@@ -40,6 +40,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := 0.0, 0
 	dc := f.m.NewDeferredConfirmer(ctx)
 
+	rr := f.keyGens[Distance].NewRoundRobinKeysGenerator()
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
 		var (
@@ -63,7 +64,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 				f.marshalResult(bResult, &data)
 			}
 		}
-		if err := f.sendBuffer(ctx, dc, f.sinks[Distance], bDistance); err != nil {
+		if err := f.sendBuffer(ctx, dc, f.sinks[Distance], rr.NextKey(), bDistance); err != nil {
 			return err
 		}
 		if err := f.sendMap(ctx, dc, f.sinks[Average], mAverage); err != nil {
@@ -73,7 +74,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			if err := f.sendMap(ctx, dc, f.sinks[Fastest], mFastest); err != nil {
 				return err
 			}
-			if err := f.sendBuffer(ctx, dc, f.sinks[Result], bResult); err != nil {
+			if err := f.sendBuffer(ctx, dc, f.sinks[Result], f.sinks[Result], bResult); err != nil {
 				return err
 			}
 		}
@@ -128,8 +129,8 @@ func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.Flight) {
 	typing.ResultQ1Marshal(b, data)
 }
 
-func (f *Filter) sendBuffer(ctx context.Context, c mid.Confirmer, sink string, b *bytes.Buffer) error {
-	return f.m.Publish(ctx, c, sink, sink, b.Bytes())
+func (f *Filter) sendBuffer(ctx context.Context, c mid.Confirmer, sink, key string, b *bytes.Buffer) error {
+	return f.m.Publish(ctx, c, sink, key, b.Bytes())
 }
 
 func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, sink string, m map[string]*bytes.Buffer) error {

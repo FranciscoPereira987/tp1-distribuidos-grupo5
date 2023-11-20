@@ -222,14 +222,6 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
 				pair.cc--
 				pairs[clientId] = pair
-				if len(msg) > 0 && msg[0] > 1 {
-					// A shared queue must have the same
-					// name as the exchange it's bound to.
-					if err := m.SharedQueueEOF(ctx, name, clientId, msg[0]-1); err != nil {
-						log.Errorf("action: propagate_eof | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
-						return
-					}
-				}
 				// TODO: store EOF state
 				if err := m.Ack(d.DeliveryTag); err != nil {
 					log.Errorf("action: ack_eof | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
@@ -336,12 +328,6 @@ func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, clientId str
 	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
 	return bc.Publish(ctx, m, exchange, rKey, []byte(clientId))
-}
-
-func (m *Middleware) SharedQueueEOF(ctx context.Context, name, clientId string, eof byte) error {
-	var bc BasicConfirmer
-	log.Infof("sending EOF(%d) into queue %q", eof, name)
-	return bc.Publish(ctx, m, name, ControlRoutingKey, append([]byte(clientId), eof))
 }
 
 func (m *Middleware) Close() {

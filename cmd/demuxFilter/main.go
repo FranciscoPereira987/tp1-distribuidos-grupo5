@@ -120,9 +120,7 @@ func main() {
 
 			// send EOF to sinks
 			errs := make([]error, 0, len(sinks))
-
-			errs = append(errs, middleware.SharedQueueEOF(ctx, sinks[0], id, byte(nWorkers[0])))
-			for _, exchange := range sinks[1:] {
+			for _, exchange := range sinks {
 				errs = append(errs, middleware.EOF(ctx, exchange, id))
 			}
 			if err := errors.Join(errs...); err != nil {

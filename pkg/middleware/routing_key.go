@@ -26,3 +26,26 @@ func (kg KeyGenerator) KeyFrom(origin, destination string) string {
 
 	return strconv.Itoa(int(v))
 }
+
+func (kg KeyGenerator) NewRoundRobinKeysGenerator() RoundRobinKeysGenerator {
+	keys := make([]string, 0, int(kg))
+	for i := 1; i <= cap(keys); i++ {
+		keys = append(keys, ShardKey(strconv.Itoa(i)))
+	}
+
+	return RoundRobinKeysGenerator{
+		keys:  keys,
+		index: 0,
+	}
+}
+
+type RoundRobinKeysGenerator struct {
+	keys  []string
+	index int
+}
+
+func (rr *RoundRobinKeysGenerator) NextKey() string {
+	key := rr.keys[rr.index]
+	rr.index = (rr.index + 1) % len(rr.keys)
+	return key
+}

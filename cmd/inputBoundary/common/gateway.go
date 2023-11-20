@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -96,13 +95,8 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		return err
 	}
 
-	keys := make([]string, demuxers)
-	for ; demuxers > 0; demuxers-- {
-		keys[demuxers-1] = mid.ShardKey(strconv.Itoa(demuxers))
-	}
-
+	rr := mid.KeyGenerator(demuxers).NewRoundRobinKeysGenerator()
 	var bc mid.BasicConfirmer
-	demuxerIndex := 0
 	i := mid.MaxMessageSize / typing.FlightSize
 	b := bytes.NewBufferString(g.id)
 	for {
@@ -110,7 +104,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		if err != nil {
 			if err == io.EOF {
 				if i != mid.MaxMessageSize/typing.FlightSize {
-					err = bc.Publish(ctx, g.m, g.flights, keys[demuxerIndex], b.Bytes())
+					err = bc.Publish(ctx, g.m, g.flights, rr.NextKey(), b.Bytes())
 				} else {
 					err = nil
 				}
@@ -127,11 +121,9 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			continue
 		}
 		if i--; i <= 0 {
-			if err := bc.Publish(ctx, g.m, g.flights, keys[demuxerIndex], b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, g.m, g.flights, rr.NextKey(), b.Bytes()); err != nil {
 				return err
 			}
-			demuxerIndex++
-			demuxerIndex %= len(keys)
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
 			b = bytes.NewBufferString(g.id)
 		}

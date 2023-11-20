@@ -2,7 +2,6 @@ package duplicates
 
 import (
 	"context"
-	"encoding/binary"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
@@ -56,21 +55,25 @@ What it does:
  7. Frees the lock
 */
 type deliveryRoutine struct {
-	mid        *middleware.Middleware
-	Ch         <-chan middleware.Delivery
-	lock       *ChanLock
-	workerChan chan middleware.Delivery
-	ackChan    chan uint64
-	fileName   string
-	lastTag    uint64
+	mid         *middleware.Middleware
+	clientId    string
+	Ch          <-chan middleware.Delivery
+	lock        *ChanLock
+	workerChan  chan middleware.Delivery
+	closeChan   chan<- string
+	ackChan     chan uint64
+	fileName    string
+	lastMessage []byte
 }
 
-func newDeliveryRoutine(mid *middleware.Middleware, ch <-chan middleware.Delivery, lock *ChanLock, stateFile string) *deliveryRoutine {
+func newDeliveryRoutine(clientId string, closeChan chan<- string, mid *middleware.Middleware, ch <-chan middleware.Delivery, lock *ChanLock, stateFile string) *deliveryRoutine {
 	return &deliveryRoutine{
 		mid:        mid,
+		clientId:   clientId,
 		Ch:         ch,
 		lock:       lock,
 		workerChan: make(chan middleware.Delivery),
+		closeChan:  closeChan,
 		ackChan:    make(chan uint64),
 		fileName:   stateFile,
 	}
@@ -82,13 +85,26 @@ func (dr *deliveryRoutine) ackFunc() func(uint64) {
 	}
 }
 
+func (dr deliveryRoutine) isDuplicate(body []byte) (dup bool) {
+	dup = len(body) == len(dr.lastMessage)
+	for i := 0; dup && i < len(body); i++ {
+		dup = body[i] == dr.lastMessage[i]
+	}
+	return
+}
+
 func (dr *deliveryRoutine) runDeliveryRoutine() <-chan middleware.Delivery {
 
 	go func() {
+		defer func() {
+			dr.closeChan <- dr.clientId
+		}()
 		defer close(dr.workerChan)
 		defer close(dr.ackChan)
 		for delivery := range dr.Ch {
-			if delivery.Tag == dr.lastTag {
+			if dr.isDuplicate(delivery.Msg) {
+				//Ack para que no envie otra vez otro repetido
+				dr.mid.Ack(delivery.Tag)
 				continue
 			}
 			if err := dr.lock.Lock(); err != nil {
@@ -96,9 +112,11 @@ func (dr *deliveryRoutine) runDeliveryRoutine() <-chan middleware.Delivery {
 			}
 			dr.workerChan <- delivery
 			tag := <-dr.ackChan
+			//Pensar si no es conveniente poner esto en el contexto y pedir por un guardado del estado
+			//general aca
+			state.Store(dr.fileName, delivery.Msg)
 			dr.mid.Ack(tag)
-			dr.lastTag = delivery.Tag
-			state.Store(dr.fileName, binary.LittleEndian.AppendUint64(nil, delivery.Tag))
+			dr.lastMessage = delivery.Msg
 			dr.lock.Release()
 		}
 	}()
@@ -111,10 +129,12 @@ TODO: Filter last k messages
 Filters duplicates messages
 */
 type DuplicateFilter struct {
-	config *DuplicateFilterConfig
-	ch     <-chan middleware.Client
-	mid    *middleware.Middleware
-	lock   *ChanLock
+	config        *DuplicateFilterConfig
+	ch            <-chan middleware.Client
+	mid           *middleware.Middleware
+	lock          *ChanLock
+	closeChan     chan string
+	activeClients map[string]*deliveryRoutine
 }
 
 func FilterAt(config *DuplicateFilterConfig) (df *DuplicateFilter, err error) {
@@ -125,17 +145,42 @@ func FilterAt(config *DuplicateFilterConfig) (df *DuplicateFilter, err error) {
 		df.ch = channel
 		df.mid = config.Mid
 		df.lock = NewLock(config.Ctx)
+		df.closeChan = make(chan string)
+		df.activeClients = make(map[string]*deliveryRoutine)
 	}
 	return
 }
 
+func (df *DuplicateFilter) waitForRoutines() {
+	for {
+		select {
+		case routine := <-df.closeChan:
+			delete(df.activeClients, routine)
+		default:
+			break
+		}
+	}
+}
+
+/*
+Closes the middleware connection and waits for every routine to
+finish
+*/
+func (df *DuplicateFilter) Shutdown() {
+	df.mid.Close()
+	for len(df.activeClients) > 0 {
+		df.waitForRoutines()
+	}
+}
+
 func (df *DuplicateFilter) GetClient() (string, <-chan middleware.Delivery, func(uint64), bool) {
 	queue, ok := <-df.ch
+	df.waitForRoutines()
 	//TODO: Pensa bien que es lo que queres que vaya aca
 	//	1. El archivo puede ser unico por cliente (Pero eso implicaria guardarse el ultimo de cada cliente)
 	//	2. El archivo puede ser el mismo para todos
 	//	3. Necesito conocer que clientes estan activos
-	dr := newDeliveryRoutine(df.mid, queue.Ch, df.lock, df.config.StateFile)
+	dr := newDeliveryRoutine(queue.Id, df.closeChan, df.mid, queue.Ch, df.lock, df.config.StateFile)
 
 	return queue.Id, dr.runDeliveryRoutine(), dr.ackFunc(), ok
 }

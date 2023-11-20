@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"strconv"
@@ -39,7 +40,7 @@ func AirportCoordsMarshal(b *bytes.Buffer, record []string, indices []int) error
 	return nil
 }
 
-func AirportCoordsUnmarshal(r *bytes.Reader) (data AirportCoords, err error) {
+func AirportCoordsUnmarshal(r *bufio.Reader) (data AirportCoords, err error) {
 	data.Code, err = ReadString(r)
 
 	if err == nil {

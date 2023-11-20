@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-var ErrNotFound = errors.New("unknown airport code")
+var ErrNotFound = errors.New("unregistered airport code")
 
 const cacheSize = 32
 const earthRadiusMi = 3958
@@ -22,6 +22,7 @@ type distance struct {
 }
 
 type DistanceComputer struct {
+	workdir     string
 	coordinates map[string]radCoords
 	cache       [cacheSize]distance
 }

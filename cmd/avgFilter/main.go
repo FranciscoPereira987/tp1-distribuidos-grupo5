@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -92,7 +94,8 @@ func main() {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
 
-			filter, err := common.NewFilter(middleware, id, sink, v.GetString("fares.dir"))
+			workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
+			filter, err := common.NewFilter(middleware, id, sink, workdir)
 			if err != nil {
 				log.Fatal(err)
 			}

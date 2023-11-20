@@ -3,24 +3,34 @@ package common
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	log "github.com/sirupsen/logrus"
 )
 
 type Filter struct {
-	m    *mid.Middleware
-	id   string
-	sink string
+	m       *mid.Middleware
+	id      string
+	sink    string
+	workdir string
 }
 
-func NewFilter(m *mid.Middleware, id, sink string) *Filter {
+func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+	err := os.MkdirAll(filepath.Join(workdir, "fastest"), 0755)
 	return &Filter{
-		m:    m,
-		id:   id,
-		sink: sink,
-	}
+		m,
+		id,
+		sink,
+		workdir,
+	}, err
+}
+
+func (f *Filter) Close() error {
+	return os.RemoveAll(f.workdir)
 }
 
 type FastestFlightsMap map[string][]typing.FastestFilter
@@ -41,22 +51,64 @@ func updateFastest(fastest FastestFlightsMap, data typing.FastestFilter) string 
 	return key
 }
 
-func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
+func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 	fastest := make(FastestFlightsMap)
+
+	files, err := os.ReadDir(filepath.Join(f.workdir, "fastest"))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		buf, err := os.ReadFile(file.Name())
+		if err != nil {
+			return nil, err
+		}
+
+		var fast []typing.FastestFilter
+		for r := bytes.NewReader(buf); r.Len() > 0; {
+			data, err := typing.FastestFilterUnmarshal(r)
+			if err != nil {
+				return nil, err
+			}
+			fast = append(fast, data)
+		}
+		fastest[file.Name()] = fast
+	}
+
+	return fastest, nil
+}
+
+func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
+	var updated []string
+	fastest, err := f.loadFastest()
+	if err != nil {
+		return err
+	}
 
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
-		updated := make(map[string]struct{})
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.FastestFilterUnmarshal(r)
 			if err != nil {
 				return err
 			}
 			if key := updateFastest(fastest, data); key != "" {
-				updated[key] = struct{}{}
+				updated = append(updated, key)
 			}
 		}
-		// TODO: store state
+
+		for _, key := range updated {
+			var b bytes.Buffer
+			for _, v := range fastest[key] {
+				v.Marshal(&b)
+			}
+			if err := state.WriteFile(filepath.Join(f.workdir, "fastest", key), b.Bytes()); err != nil {
+				return err
+			}
+		}
+		updated = updated[:0]
+
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}

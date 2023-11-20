@@ -14,6 +14,14 @@ type FastestFilter struct {
 	Stops       string
 }
 
+func (data *FastestFilter) Marshal(b *bytes.Buffer) {
+	b.Write(data.ID[:])
+	WriteString(b, data.Origin)
+	WriteString(b, data.Destination)
+	binary.Write(b, binary.LittleEndian, data.Duration)
+	WriteString(b, data.Stops)
+}
+
 func FastestFilterMarshal(b *bytes.Buffer, data *Flight) {
 	b.Write(data.ID[:])
 	WriteString(b, data.Origin)

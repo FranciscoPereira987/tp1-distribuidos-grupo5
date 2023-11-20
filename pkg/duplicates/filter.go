@@ -114,7 +114,7 @@ func (dr *deliveryRoutine) runDeliveryRoutine() <-chan middleware.Delivery {
 			tag := <-dr.ackChan
 			//Pensar si no es conveniente poner esto en el contexto y pedir por un guardado del estado
 			//general aca
-			state.Store(dr.fileName, delivery.Msg)
+			state.WriteFile(dr.fileName, delivery.Msg)
 			dr.mid.Ack(tag)
 			dr.lastMessage = delivery.Msg
 			dr.lock.Release()

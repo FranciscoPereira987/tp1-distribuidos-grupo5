@@ -1,45 +1,54 @@
 package common
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"io"
+	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 const distanceFactor = 4
 
 type Filter struct {
-	m    *mid.Middleware
-	id   string
-	sink string
-	comp *distance.DistanceComputer
+	m       *mid.Middleware
+	id      string
+	sink    string
+	workdir string
 }
 
-func NewFilter(m *mid.Middleware, id, sink string) *Filter {
+func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+	err := os.MkdirAll(filepath.Join(workdir, "coordinates"), 0755)
+
 	return &Filter{
-		m:    m,
-		id:   id,
-		sink: sink,
-		comp: distance.NewComputer(),
-	}
+		m,
+		id,
+		sink,
+		workdir,
+	}, err
+}
+
+func (f *Filter) Close() error {
+	return os.RemoveAll(f.workdir)
 }
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
 	for d := range coords {
 		msg, tag := d.Msg, d.Tag
-		for r := bytes.NewReader(msg); r.Len() > 0; {
-			data, err := typing.AirportCoordsUnmarshal(r)
-			if err != nil {
-				return err
-			}
-
-			f.comp.AddAirportCoords(data.Code, data.Lat, data.Lon)
-			log.Debugf("got coordinates for airport %s", data.Code)
+		code, err := typing.ReadString(bytes.NewReader(msg))
+		if err != nil {
+			return err
+		}
+		if err := state.WriteFile(filepath.Join(f.workdir, "coordinates", code), msg); err != nil {
+			return err
 		}
 		// TODO: store state
 		if err := f.m.Ack(tag); err != nil {
@@ -53,6 +62,11 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	var bc mid.BasicConfirmer
 
+	comp, err := f.loadDistanceComputer()
+	if err != nil {
+		return err
+	}
+
 	for d := range flights {
 		msg, tag := d.Msg, d.Tag
 		b := bytes.NewBufferString(f.id)
@@ -63,7 +77,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			}
 
 			log.Debugf("new flight for route %s-%s", data.Origin, data.Destination)
-			distanceMi, err := f.comp.Distance(data.Origin, data.Destination)
+			distanceMi, err := comp.Distance(data.Origin, data.Destination)
 			if err != nil {
 				return err
 			}
@@ -84,4 +98,41 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	}
 
 	return context.Cause(ctx)
+}
+
+func (f *Filter) loadDistanceComputer() (*distance.DistanceComputer, error) {
+	coordsDir := filepath.Join(f.workdir, "coordinates")
+	files, err := os.ReadDir(coordsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	comp := distance.NewComputer()
+	for _, file := range files {
+		if err := loadCoordinates(comp, filepath.Join(coordsDir, file.Name())); err != nil {
+			return nil, err
+		}
+	}
+
+	return comp, nil
+}
+
+func loadCoordinates(comp *distance.DistanceComputer, file string) error {
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	for {
+		data, err := typing.AirportCoordsUnmarshal(r)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		comp.AddAirportCoords(data.Code, data.Lat, data.Lon)
+	}
 }

@@ -7,6 +7,11 @@ import (
 	"io"
 )
 
+type stringReader interface {
+	io.ByteReader
+	io.Reader
+}
+
 var ErrLength = errors.New("string too long")
 
 func WriteString(b *bytes.Buffer, s string) error {
@@ -20,7 +25,7 @@ func WriteString(b *bytes.Buffer, s string) error {
 	return nil
 }
 
-func ReadString(r *bytes.Reader) (string, error) {
+func ReadString(r stringReader) (string, error) {
 	n, err := r.ReadByte()
 	if err != nil {
 		return "", err

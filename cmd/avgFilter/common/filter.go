@@ -17,26 +17,24 @@ import (
 )
 
 type Filter struct {
-	m    *mid.Middleware
-	id   string
-	sink string
-	dir  string
+	m       *mid.Middleware
+	id      string
+	sink    string
+	workdir string
 }
 
-func NewFilter(m *mid.Middleware, id, sink, dir string) (*Filter, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, err
-	}
+func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+	err := os.MkdirAll(filepath.Join(workdir, "fares"), 0755)
 	return &Filter{
-		m:    m,
-		id:   id,
-		sink: sink,
-		dir:  dir,
-	}, nil
+		m,
+		id,
+		sink,
+		workdir,
+	}, err
 }
 
 func (f *Filter) Close() error {
-	return os.RemoveAll(f.dir)
+	return os.RemoveAll(f.workdir)
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
@@ -123,7 +121,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 }
 
 func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, avg float32) (bool, error) {
-	faresFile, err := os.Open(filepath.Join(f.dir, file))
+	faresFile, err := os.Open(filepath.Join(f.workdir, "fares", file))
 	if err != nil {
 		return false, err
 	}
@@ -191,7 +189,7 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 	if v, ok := fares[file]; ok {
 		return v.Write(fare)
 	}
-	fw, err := newFareWriter(filepath.Join(f.dir, file))
+	fw, err := newFareWriter(filepath.Join(f.workdir, "fares", file))
 	if err != nil {
 		return err
 	}

@@ -24,7 +24,7 @@ type ChanLock struct {
 
 func NewLock(ctx context.Context) *ChanLock {
 	return &ChanLock{
-		lock: make(chan struct{}),
+		lock: make(chan struct{}, 1),
 		ctx:  ctx,
 	}
 }

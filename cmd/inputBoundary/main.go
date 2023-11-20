@@ -77,8 +77,8 @@ func main() {
 	}
 
 	demuxers := v.GetInt("demuxers")
-	beater := beater.StartBeaterClient(v)
-	beater.Run()
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
 	for conn := range clients {
 		go func(conn net.Conn) {
 			ctx, cancel := context.WithCancel(signalCtx)
@@ -102,4 +102,5 @@ func main() {
 		log.Info(context.Cause(signalCtx))
 	default:
 	}
+	beater.StopBeaterClient(beaterClient)
 }

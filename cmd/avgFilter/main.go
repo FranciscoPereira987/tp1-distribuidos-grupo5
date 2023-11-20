@@ -89,8 +89,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	beater := beater.StartBeaterClient(v)
-	beater.Run()
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
@@ -110,4 +110,5 @@ func main() {
 			}
 		}(queue.Id, queue.Ch)
 	}
+	beater.StopBeaterClient(beaterClient)
 }

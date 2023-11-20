@@ -119,8 +119,8 @@ func main() {
 			ch <- flightsQueue.Ch
 		}
 	}()
-	beater := beater.StartBeaterClient(v)
-	beater.Run()
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
 	for coordsQueue := range coordsQueues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
@@ -160,4 +160,5 @@ func main() {
 			}
 		}(coordsQueue.Id, coordsQueue.Ch)
 	}
+	beater.StopBeaterClient(beaterClient)
 }

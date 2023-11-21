@@ -15,13 +15,15 @@ heartbeat_port: 9000
 
 #All peers, including self
 peers:
-  - peer_name: 1
-    net_name: "peer1"
-  - peer_name: 2
-    net_name: "peer2"
-  - peer_name: 3
-    net_name: "peer3"
-
+'
+for ((n = 1; n <= WORKERS_HEARTBEATER; n++))
+do
+echo "
+  - peer_name: $n
+    net_name: "peer$n"
+"
+done
+echo '
 #All containers to be monitored
 containers:
 '

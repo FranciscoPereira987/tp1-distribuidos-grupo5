@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -23,6 +24,7 @@ type Filter struct {
 	id      string
 	sink    string
 	workdir string
+	filter  *duplicates.DuplicateFilter
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -33,6 +35,7 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		id,
 		sink,
 		workdir,
+		duplicates.NewDuplicateFilter(nil),
 	}, err
 }
 
@@ -43,6 +46,10 @@ func (f *Filter) Close() error {
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
 	for d := range coords {
 		msg, tag := d.Msg, d.Tag
+		if f.filter.IsDuplicate(msg) {
+			f.m.Ack(tag)
+			continue
+		}
 		code, err := typing.ReadString(bytes.NewReader(msg))
 		if err != nil {
 			return err
@@ -50,6 +57,7 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 		if err := state.WriteFile(filepath.Join(f.workdir, "coordinates", code), msg); err != nil {
 			return err
 		}
+		f.filter.ChangeLast(msg)
 		// TODO: store state
 		if err := f.m.Ack(tag); err != nil {
 			return err

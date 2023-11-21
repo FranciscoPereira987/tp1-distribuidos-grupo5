@@ -5,6 +5,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
@@ -21,6 +22,7 @@ type Filter struct {
 	id      string
 	sinks   []string
 	keyGens []mid.KeyGenerator
+	filter  *duplicates.DuplicateFilter
 }
 
 func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Filter {
@@ -33,6 +35,7 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Fi
 		id:      id,
 		sinks:   sinks,
 		keyGens: kgs,
+		filter:  duplicates.NewDuplicateFilter(nil),
 	}
 }
 
@@ -43,6 +46,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	rr := f.keyGens[Distance].NewRoundRobinKeysGenerator()
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
+		if f.filter.IsDuplicate(msg) {
+			f.m.Ack(tag)
+			continue
+		}
 		var (
 			bDistance = bytes.NewBufferString(f.id)
 			bResult   = bytes.NewBufferString(f.id)
@@ -81,6 +88,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		if err := dc.Confirm(ctx); err != nil {
 			return err
 		}
+		f.filter.ChangeLast(msg)
 		// TODO: store state
 		if err := f.m.Ack(tag); err != nil {
 			return err

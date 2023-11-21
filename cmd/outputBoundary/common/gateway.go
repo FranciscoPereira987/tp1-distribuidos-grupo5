@@ -8,18 +8,21 @@ import (
 
 	// log "github.com/sirupsen/logrus"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 type Gateway struct {
-	m *mid.Middleware
+	m      *mid.Middleware
+	filter *duplicates.DuplicateFilter
 }
 
 func NewGateway(m *mid.Middleware) *Gateway {
 	return &Gateway{
-		m: m,
+		m:      m,
+		filter: duplicates.NewDuplicateFilter(nil),
 	}
 }
 
@@ -38,6 +41,10 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
+		if g.filter.IsDuplicate(msg) {
+			g.m.Ack(tag)
+			continue
+		}
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			result, err := typing.ResultUnmarshal(r)
 			if err != nil {
@@ -47,6 +54,7 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 				return err
 			}
 		}
+		g.filter.ChangeLast(msg)
 		// TODO: store state and flush writer
 		if err := g.m.Ack(tag); err != nil {
 			return err

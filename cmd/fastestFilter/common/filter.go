@@ -5,7 +5,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"strings"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
@@ -61,7 +60,7 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 	}
 
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), "tmp.") {
+		if state.IsTmp(file.Name()) {
 			os.Remove(filepath.Join(f.workdir, "fastest", file.Name()))
 			continue
 		}

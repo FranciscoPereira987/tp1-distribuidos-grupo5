@@ -3,6 +3,7 @@ package state
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func LinkTmp(f *os.File, name string) (err error) {
@@ -31,4 +32,8 @@ func WriteFile(filename string, p []byte) error {
 	}
 
 	return LinkTmp(f, filename)
+}
+
+func IsTmp(filename string) bool {
+	return strings.HasPrefix(filename, "tmp.")
 }

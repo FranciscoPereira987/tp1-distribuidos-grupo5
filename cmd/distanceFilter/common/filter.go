@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -118,7 +117,7 @@ func (f *Filter) loadDistanceComputer() (*distance.DistanceComputer, error) {
 
 	comp := distance.NewComputer()
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), "tmp.") {
+		if state.IsTmp(file.Name()) {
 			os.Remove(filepath.Join(coordsDir, file.Name()))
 			continue
 		}

@@ -24,7 +24,7 @@ type Filter struct {
 	id      string
 	sink    string
 	workdir string
-	filter  *duplicates.DuplicateFilter
+	filter  duplicates.DuplicateFilter
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -126,7 +126,7 @@ func (f *Filter) loadDistanceComputer() (*distance.DistanceComputer, error) {
 }
 
 func loadCoordinates(comp *distance.DistanceComputer, file string) error {
-	f, err := os.Open(filepath.Join(f.workdir, "coordinates", file))
+	f, err := os.Open(file)
 	if err != nil {
 		return err
 	}

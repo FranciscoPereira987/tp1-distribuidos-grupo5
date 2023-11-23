@@ -1,6 +1,7 @@
 package duplicates
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
@@ -17,23 +18,16 @@ type DuplicateFilter struct {
 	lastMessage []byte
 }
 
-func NewDuplicateFilter(lastMessage []byte) *DuplicateFilter {
-	if lastMessage == nil {
-		lastMessage = make([]byte, 0)
-	}
-	return &DuplicateFilter{
+func NewDuplicateFilter(lastMessage []byte) DuplicateFilter {
+	return DuplicateFilter{
 		lastMessage: lastMessage,
 	}
 }
 
-func (df *DuplicateFilter) ChangeLast(new []byte) {
-	df.lastMessage = new
+func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) {
+	df.lastMessage = newLastMessage
 }
 
-func (df *DuplicateFilter) IsDuplicate(body []byte) (dup bool) {
-	dup = len(body) == len(df.lastMessage)
-	for i := 0; dup && i < len(body); i++ {
-		dup = body[i] == df.lastMessage[i]
-	}
-	return
+func (df DuplicateFilter) IsDuplicate(body []byte) bool {
+	return bytes.Equal(df.lastMessage, body)
 }

@@ -22,7 +22,7 @@ type Filter struct {
 	id      string
 	sinks   []string
 	keyGens []mid.KeyGenerator
-	filter  *duplicates.DuplicateFilter
+	filter  duplicates.DuplicateFilter
 }
 
 func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Filter {

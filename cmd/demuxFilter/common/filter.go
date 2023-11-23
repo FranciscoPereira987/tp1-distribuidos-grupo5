@@ -3,10 +3,15 @@ package common
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
@@ -18,28 +23,48 @@ const (
 )
 
 type Filter struct {
-	m       *mid.Middleware
-	id      string
-	sinks   []string
-	keyGens []mid.KeyGenerator
-	filter  duplicates.DuplicateFilter
+	m        *mid.Middleware
+	id       string
+	sinks    []string
+	keyGens  []mid.KeyGenerator
+	filter   *duplicates.DuplicateFilter
+	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int) *Filter {
+func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, workDir string) *Filter {
+
 	kgs := make([]mid.KeyGenerator, 0, len(nWorkers))
 	for _, mod := range nWorkers {
 		kgs = append(kgs, mid.NewKeyGenerator(mod))
 	}
 	return &Filter{
-		m:       m,
-		id:      id,
-		sinks:   sinks,
-		keyGens: kgs,
-		filter:  duplicates.NewDuplicateFilter(nil),
+		m:        m,
+		id:       id,
+		sinks:    sinks,
+		keyGens:  kgs,
+		filter:   duplicates.NewDuplicateFilter(nil),
+		stateMan: state.NewStateManager(filepath.Join(workDir, "demux", fmt.Sprintf("filter-%s.state", workDir))),
 	}
 }
 
+func (f *Filter) StoreState() error {
+	f.stateMan.AddToState("id", []byte(f.id))
+	f.stateMan.AddToState("sinks", []byte(strings.Join(f.sinks, ";")))
+	gen := make([]byte, 0)
+	for _, val := range f.keyGens {
+		gen = binary.LittleEndian.AppendUint64(gen, uint64(val))
+	}
+	f.stateMan.AddToState("generators", gen)
+	f.filter.AddToState(f.stateMan)
+
+	return f.stateMan.DumpState()
+}
+
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
+	err := os.MkdirAll(filepath.Dir(f.stateMan.Filename), 0755)
+	if err != nil {
+		return err
+	}
 	fareSum, fareCount := 0.0, 0
 	dc := f.m.NewDeferredConfirmer(ctx)
 
@@ -89,7 +114,9 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			return err
 		}
 		f.filter.ChangeLast(msg)
-		// TODO: store state
+		if err := f.StoreState(); err != nil {
+			return err
+		}
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}

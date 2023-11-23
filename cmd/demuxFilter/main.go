@@ -103,12 +103,13 @@ func main() {
 	}
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
+	workDir := "" //TODO: Change this
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
 
-			filter := common.NewFilter(middleware, id, sinks, nWorkers)
+			filter := common.NewFilter(middleware, id, sinks, nWorkers, workDir)
 
 			if err := filter.Run(ctx, ch); err != nil {
 				log.Error(err)

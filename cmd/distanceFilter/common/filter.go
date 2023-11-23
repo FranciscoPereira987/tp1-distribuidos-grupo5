@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,11 +21,12 @@ import (
 const distanceFactor = 4
 
 type Filter struct {
-	m       *mid.Middleware
-	id      string
-	sink    string
-	workdir string
-	filter  duplicates.DuplicateFilter
+	m        *mid.Middleware
+	id       string
+	sink     string
+	workdir  string
+	filter   *duplicates.DuplicateFilter
+	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -36,7 +38,26 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		sink,
 		workdir,
 		duplicates.NewDuplicateFilter(nil),
+		state.NewStateManager(filepath.Join(workdir, "distance", fmt.Sprintf("fitler-%s.state", id))),
 	}, err
+}
+
+/*
+	type Filter struct {
+	m        *mid.Middleware
+	id       string
+	sink     string
+	workdir  string
+	filter   *duplicates.DuplicateFilter
+	stateMan *state.StateManager
+}
+*/
+
+func (f *Filter) StoreState() error {
+	f.stateMan.AddToState("id", []byte(f.id))
+	f.stateMan.AddToState("sink", []byte(f.sink))
+	f.filter.AddToState(f.stateMan)
+	return f.stateMan.DumpState()
 }
 
 func (f *Filter) Close() error {
@@ -58,7 +79,9 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 			return err
 		}
 		f.filter.ChangeLast(msg)
-		// TODO: store state
+		if err := f.StoreState(); err != nil {
+			return err
+		}
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}
@@ -99,7 +122,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 				return err
 			}
 		}
-		// TODO: store state
+		if err := f.StoreState(); err != nil {
+			return err
+		}
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}

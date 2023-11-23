@@ -13,14 +13,14 @@ import (
 )
 
 type StateManager struct {
-	filename string
+	Filename string
 	state    map[string][]byte
 }
 
 func NewStateManager(filename string) *StateManager {
 	//TODO: Recover state from file
 	return &StateManager{
-		filename: filename,
+		Filename: filename,
 		state:    make(map[string][]byte),
 	}
 }
@@ -37,13 +37,13 @@ func (sw *StateManager) DumpState() (err error) {
 			return
 		}
 	}
-	err = WriteFile(sw.filename, buffer.Bytes())
+	err = WriteFile(sw.Filename, buffer.Bytes())
 	return
 }
 
 func (sw *StateManager) RecoverState() (err error) {
 	var file *os.File
-	file, err = os.Open(sw.filename)
+	file, err = os.Open(sw.Filename)
 
 	if err == nil {
 		reader := bufio.NewReader(file)

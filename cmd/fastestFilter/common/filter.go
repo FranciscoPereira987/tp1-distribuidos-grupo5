@@ -13,10 +13,11 @@ import (
 )
 
 type Filter struct {
-	m       *mid.Middleware
-	id      string
-	sink    string
-	workdir string
+	m        *mid.Middleware
+	id       string
+	sink     string
+	workdir  string
+	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -26,7 +27,14 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		id,
 		sink,
 		workdir,
+		state.NewStateManager(filepath.Join(workdir, "fastest", "filter-%s.state", id)),
 	}, err
+}
+
+func (f *Filter) StoreState() error {
+	f.stateMan.AddToState("id", []byte(f.id))
+	f.stateMan.AddToState("sink", []byte(f.sink))
+	return f.stateMan.DumpState()
 }
 
 func (f *Filter) Close() error {
@@ -85,6 +93,9 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	var updated []string
+	if err := f.StoreState(); err != nil {
+		return err
+	}
 	fastest, err := f.loadFastest()
 	if err != nil {
 		return err

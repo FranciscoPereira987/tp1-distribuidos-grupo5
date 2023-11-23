@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,16 +14,18 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	log "github.com/sirupsen/logrus"
 )
 
 type Filter struct {
-	m       *mid.Middleware
-	id      string
-	sink    string
-	workdir string
-	filter  duplicates.DuplicateFilter
+	m        *mid.Middleware
+	id       string
+	sink     string
+	workdir  string
+	filter   *duplicates.DuplicateFilter
+	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -33,7 +36,16 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		sink,
 		workdir,
 		duplicates.NewDuplicateFilter(nil),
+		state.NewStateManager(filepath.Join(workdir, "fares", fmt.Sprintf("filter-%s.state", id))),
 	}, err
+}
+
+func (f *Filter) StoreState() error {
+	f.stateMan.AddToState("id", []byte(f.id))
+	f.stateMan.AddToState("sink", []byte(f.sink))
+	f.filter.AddToState(f.stateMan)
+
+	return f.stateMan.DumpState()
 }
 
 func (f *Filter) Close() error {
@@ -78,7 +90,9 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 			}
 		}
 		f.filter.ChangeLast(msg)
-		// TODO: store state
+		if err := f.StoreState(); err != nil {
+			return err
+		}
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}

@@ -20,7 +20,7 @@ func LinkTmp(f *os.File, name string) (err error) {
 }
 
 func WriteFile(filename string, p []byte) error {
-	f, err := os.CreateTemp("", filepath.Base(filename))
+	f, err := os.CreateTemp(filepath.Dir(filename), "tmp.")
 	if err != nil {
 		return err
 	}

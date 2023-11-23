@@ -60,7 +60,7 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 	}
 
 	for _, file := range files {
-		buf, err := os.ReadFile(file.Name())
+		buf, err := os.ReadFile(filepath.Join(f.workdir, "fastest", file.Name()))
 		if err != nil {
 			return nil, err
 		}

@@ -126,7 +126,7 @@ func (f *Filter) loadDistanceComputer() (*distance.DistanceComputer, error) {
 }
 
 func loadCoordinates(comp *distance.DistanceComputer, file string) error {
-	f, err := os.Open(file)
+	f, err := os.Open(filepath.Join(f.workdir, "coordinates", file))
 	if err != nil {
 		return err
 	}

@@ -1,43 +1,49 @@
 package state
 
 import (
-	"bufio"
 	"bytes"
-	"errors"
-	"io"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
+/*
+	It should only be stored in state, objects that implement either:
+
+	1. json.Marshaller
+	2. encoding.TextMarshaller
+*/
 type StateManager struct {
 	Filename string
-	state    map[string][]byte
+	state    map[string]any
 }
 
 func NewStateManager(filename string) *StateManager {
-	//TODO: Recover state from file
 	return &StateManager{
 		Filename: filename,
-		state:    make(map[string][]byte),
+		state:    make(map[string]any),
 	}
 }
 
-func (sw *StateManager) AddToState(key string, value []byte) {
+func (sw *StateManager) AddToState(key string, value any) {
 	sw.state[key] = value
 }
 
+func (sw *StateManager) GetFromState(key string) (value any, ok bool) {
+	value, ok = sw.state[key]
+	return
+}	
+
 func (sw *StateManager) DumpState() (err error) {
-	buffer := bytes.NewBuffer(nil)
-	for key, value := range sw.state {
-		err = encodeField(key, value, buffer)
-		if err != nil {
-			return
-		}
+	var marshalled []byte
+	marshalled, err = json.Marshal(sw.state)
+
+	if err == nil {
+		buffer := bytes.NewBuffer(marshalled)
+		err = WriteFile(sw.Filename, buffer.Bytes())
 	}
-	err = WriteFile(sw.Filename, buffer.Bytes())
+	
 	return
 }
 
@@ -46,44 +52,14 @@ func (sw *StateManager) RecoverState() (err error) {
 	file, err = os.Open(sw.Filename)
 
 	if err == nil {
-		reader := bufio.NewReader(file)
-		var parseErr error
-		var key string
-		var value []byte
-		for parseErr == nil {
-			key, value, parseErr = decodeField(reader)
-			if parseErr == nil {
-				sw.state[key] = value
-			}
-		}
-		if !errors.Is(parseErr, io.EOF) {
-			err = parseErr
-		}
+		dec := json.NewDecoder(file)
+		err = dec.Decode(&sw.state)
 	}
-
+	
 	return
 }
 
-func encodeField(key string, field []byte, buffer *bytes.Buffer) (err error) {
-	err = typing.WriteString(buffer, key)
-	if err == nil {
-		err = typing.WriteString(buffer, string(field))
-	}
 
-	return
-}
-
-func decodeField(reader *bufio.Reader) (key string, value []byte, err error) {
-	key, err = typing.ReadString(reader)
-
-	if err == nil {
-		stringValue, errValue := typing.ReadString(reader)
-		value = []byte(stringValue)
-		err = errValue
-	}
-
-	return
-}
 
 func LinkTmp(f *os.File, name string) (err error) {
 	defer func() {

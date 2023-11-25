@@ -26,7 +26,13 @@ func NewDuplicateFilter(lastMessage []byte) *DuplicateFilter {
 }
 
 func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
-	stateMan.AddToState("last-received", df.lastMessage)
+	stateMan.AddToState("last-received", string(df.lastMessage))
+}
+
+func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
+	if value, ok := stateMan.GetFromState("last-received"); ok {
+		df.lastMessage = []byte(value.(string))
+	}
 }
 
 func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) {

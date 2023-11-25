@@ -41,8 +41,8 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 }
 
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", []byte(f.id))
-	f.stateMan.AddToState("sink", []byte(f.sink))
+	f.stateMan.AddToState("id", f.id)
+	f.stateMan.AddToState("sink", f.sink)
 	f.filter.AddToState(f.stateMan)
 
 	return f.stateMan.DumpState()

@@ -16,7 +16,7 @@ import (
 
 type Gateway struct {
 	m      *mid.Middleware
-	filter duplicates.DuplicateFilter
+	filter *duplicates.DuplicateFilter
 }
 
 func NewGateway(m *mid.Middleware) *Gateway {

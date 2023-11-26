@@ -74,7 +74,9 @@ func filterStateFiles(dir string) (files []string) {
 	unfiltered, err := os.ReadDir(dir)
 	if err == nil {
 		for _, entry := range unfiltered {
-			if IsState(entry.Name()) {
+			if entry.IsDir() {
+				files = append(files, filterStateFiles(filepath.Join(dir, entry.Name()))...)
+			} else if IsState(entry.Name()) {
 				files = append(files, filepath.Join(dir, entry.Name()))
 			}
 		}

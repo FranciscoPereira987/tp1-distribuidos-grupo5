@@ -57,6 +57,12 @@ func RecoverFromState(m *mid.Middleware, workdir string, state *state.StateManag
 
 // TODO: Implement
 func (f *Filter) Restart(ctx context.Context) error {
+	processed := f.stateMan.Get("processed").(bool)
+	if !processed {
+		log.Info("Starting at hearing again")
+	} else {
+		log.Info("Starting at sending again")
+	}
 	return nil
 }
 
@@ -129,6 +135,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 		if err := errors.Join(errs...); err != nil {
 			return err
 		}
+		f.stateMan.AddToState("processed", true)
 	}
 
 	return f.sendResults(ctx, fares, float32(fareSum/float64(count)))

@@ -44,6 +44,12 @@ func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateMa
 
 // TODO: Implement
 func (f *Filter) Restart(ctx context.Context) error {
+	processed := f.stateMan.Get("processed").(bool)
+	if !processed {
+		log.Info("Starting to run again")
+	} else {
+		log.Info("Starting to send results again")
+	}
 	return nil
 }
 
@@ -152,6 +158,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
+		f.stateMan.AddToState("processed", true)
 	}
 
 	log.Infof("start publishing results into %q queue", f.sink)

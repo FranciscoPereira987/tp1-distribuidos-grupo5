@@ -136,7 +136,7 @@ func main() {
 				log.Error(err)
 				return
 			}
-			//defer filter.Close()
+			defer filter.Close()
 
 			if err := filter.AddCoords(ctx, ch); err != nil {
 				log.Error(err)

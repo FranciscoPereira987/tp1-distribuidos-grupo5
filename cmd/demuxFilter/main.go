@@ -11,6 +11,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/demuxFilter/common"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -96,20 +97,24 @@ func main() {
 		v.GetInt("workers.q3"),
 		v.GetInt("workers.q4"),
 	}
-
+	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	files := state.RecoverStateFiles(workdir)
+	for _, file := range files {
+		filter := common.RecoverFromState(middleware, file)
+		filter.Restart(signalCtx)
+	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
 		log.Error(err)
 	}
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
-	workDir := "" //TODO: Change this
 	for queue := range queues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
 
-			filter := common.NewFilter(middleware, id, sinks, nWorkers, workDir)
+			filter := common.NewFilter(middleware, id, sinks, nWorkers, workdir)
 
 			if err := filter.Run(ctx, ch); err != nil {
 				log.Error(err)

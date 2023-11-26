@@ -13,6 +13,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/distanceFilter/common"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -94,7 +95,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	files := state.RecoverStateFiles(workdir)
+	for _, file := range files {
+		filter := common.RecoverFromState(middleware, workdir, file)
+		filter.Restart(signalCtx)
+	}
 	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
 	if err != nil {
 		log.Fatal(err)
@@ -105,7 +111,8 @@ func main() {
 	}
 	flightsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
-
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
 	go func() {
 		for flightsQueue := range flightsQueues {
 			id := flightsQueue.Id
@@ -119,20 +126,17 @@ func main() {
 			ch <- flightsQueue.Ch
 		}
 	}()
-	beaterClient := beater.StartBeaterClient(v)
-	beaterClient.Run()
 	for coordsQueue := range coordsQueues {
 		go func(id string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
-
-			workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
+			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
 			filter, err := common.NewFilter(middleware, id, sink, workdir)
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			defer filter.Close()
+			//defer filter.Close()
 
 			if err := filter.AddCoords(ctx, ch); err != nil {
 				log.Error(err)

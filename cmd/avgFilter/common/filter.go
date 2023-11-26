@@ -55,6 +55,11 @@ func RecoverFromState(m *mid.Middleware, workdir string, state *state.StateManag
 	}
 }
 
+// TODO: Implement
+func (f *Filter) Restart(ctx context.Context) error {
+	return nil
+}
+
 func (f *Filter) StoreState() error {
 	f.stateMan.AddToState("id", f.id)
 	f.stateMan.AddToState("sink", f.sink)

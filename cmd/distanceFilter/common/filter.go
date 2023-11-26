@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
@@ -55,6 +56,16 @@ func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateMa
 	return
 }
 
+func (f *Filter) Restart(ctx context.Context) error {
+	coordinatedLoaded, _ := f.stateMan.Get("coordinates-load").(bool)
+	if !coordinatedLoaded {
+		logrus.Info("Restarting at AddCoordinates")
+	} else {
+		logrus.Info("Restarting at Run")
+	}
+	return nil
+}
+
 func (f *Filter) StoreState() error {
 	f.stateMan.AddToState("id", f.id)
 	f.stateMan.AddToState("sink", f.sink)
@@ -88,7 +99,10 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 			return err
 		}
 	}
-
+	f.stateMan.AddToState("coordinates-load", true)
+	if err := f.StoreState(); err != nil {
+		return err
+	}
 	return context.Cause(ctx)
 }
 

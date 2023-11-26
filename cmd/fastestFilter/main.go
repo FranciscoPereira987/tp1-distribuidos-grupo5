@@ -13,6 +13,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/cmd/fastestFilter/common"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -84,7 +85,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	files := state.RecoverStateFiles(workdir)
+	for _, file := range files {
+		filter := common.RecoverFromState(middleware, workdir, file)
+		filter.Restart(signalCtx)
+	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
 		log.Fatal(err)

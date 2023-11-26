@@ -35,6 +35,22 @@ func (sw *StateManager) GetFromState(key string) (value any, ok bool) {
 	return
 }
 
+func (sw *StateManager) GetString(key string) (stringVal string) {
+	value, ok := sw.GetFromState(key)
+	if asString, casted := value.(string); ok && casted {
+		stringVal = asString
+	}
+	return
+}
+
+func (sw *StateManager) GetInt(key string) (intVal int) {
+	value, ok := sw.GetFromState(key)
+	if asInt, casted := value.(int); ok && casted {
+		intVal = asInt
+	}
+	return
+}
+
 func (sw *StateManager) DumpState() (err error) {
 	var marshalled []byte
 	marshalled, err = json.Marshal(sw.state)

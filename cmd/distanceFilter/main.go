@@ -71,6 +71,46 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	return qCoords, qFlights, sink, m.Ready(ctx, status)
 }
 
+func runNewFilter(middleware *mid.Middleware, flightsChs map[string]chan (<-chan mid.Delivery), coordsQueue mid.Client, mtx *sync.Mutex, signalCtx context.Context, workdir string, sink string) {
+
+	go func(id string, ch <-chan mid.Delivery) {
+		ctx, cancel := context.WithCancel(signalCtx)
+		defer cancel()
+		workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
+		filter, err := common.NewFilter(middleware, id, sink, workdir)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		defer filter.Close()
+
+		if err := filter.AddCoords(ctx, ch); err != nil {
+			log.Error(err)
+			return
+		}
+		mtx.Lock()
+		flightsCh, ok := flightsChs[id]
+		if !ok {
+			flightsCh = make(chan (<-chan mid.Delivery))
+			flightsChs[id] = flightsCh
+		}
+		mtx.Unlock()
+		select {
+		case <-ctx.Done():
+			return
+		case ch = <-flightsCh:
+			mtx.Lock()
+			delete(flightsChs, id)
+			mtx.Unlock()
+		}
+		if err := filter.Run(ctx, ch); err != nil {
+			log.Error(err)
+		} else if err := middleware.EOF(ctx, sink, id); err != nil {
+			log.Error(err)
+		}
+	}(coordsQueue.Id, coordsQueue.Ch)
+}
+
 func main() {
 	v, err := utils.InitConfig("distance", "cmd/distanceFilter")
 	if err != nil {
@@ -96,10 +136,11 @@ func main() {
 		log.Fatal(err)
 	}
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	toRestart := make(map[string]*common.Filter)
 	files := state.RecoverStateFiles(workdir)
 	for _, file := range files {
-		filter := common.RecoverFromState(middleware, workdir, file)
-		filter.Restart(signalCtx)
+		id, filter := common.RecoverFromState(middleware, workdir, file)
+		toRestart[id] = filter
 	}
 	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
 	if err != nil {
@@ -127,42 +168,19 @@ func main() {
 		}
 	}()
 	for coordsQueue := range coordsQueues {
-		go func(id string, ch <-chan mid.Delivery) {
-			ctx, cancel := context.WithCancel(signalCtx)
-			defer cancel()
-			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
-			filter, err := common.NewFilter(middleware, id, sink, workdir)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			defer filter.Close()
-
-			if err := filter.AddCoords(ctx, ch); err != nil {
-				log.Error(err)
-				return
-			}
-			mtx.Lock()
-			flightsCh, ok := flightsChs[id]
-			if !ok {
-				flightsCh = make(chan (<-chan mid.Delivery))
-				flightsChs[id] = flightsCh
-			}
-			mtx.Unlock()
-			select {
-			case <-ctx.Done():
-				return
-			case ch = <-flightsCh:
-				mtx.Lock()
-				delete(flightsChs, id)
-				mtx.Unlock()
-			}
-			if err := filter.Run(ctx, ch); err != nil {
-				log.Error(err)
-			} else if err := middleware.EOF(ctx, sink, id); err != nil {
-				log.Error(err)
-			}
-		}(coordsQueue.Id, coordsQueue.Ch)
+		if recovered, ok := toRestart[coordsQueue.Id]; ok {
+			go func(coordsQueue mid.Client, recovered *common.Filter) {
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
+				defer recovered.Close()
+				delete(toRestart, coordsQueue.Id)
+				if err := recovered.Restart(ctx); err != nil {
+					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
+				}
+			}(coordsQueue, recovered)
+		} else {
+			runNewFilter(middleware, flightsChs, coordsQueue, &mtx, signalCtx, workdir, sink)
+		}
 	}
 	beater.StopBeaterClient(beaterClient)
 }

@@ -44,10 +44,11 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (f *Filter) {
+func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (id string, f *Filter) {
 	f = new(Filter)
+	id = stateMan.GetString("id")
 	f.m = m
-	f.id = stateMan.GetString("id")
+	f.id = id
 	f.sink = stateMan.GetString("sink")
 	f.workdir = workdir
 	f.filter = duplicates.NewDuplicateFilter(nil)

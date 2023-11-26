@@ -42,20 +42,21 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
-/*
-	type Filter struct {
-	m        *mid.Middleware
-	id       string
-	sink     string
-	workdir  string
-	filter   *duplicates.DuplicateFilter
-	stateMan *state.StateManager
+func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (f *Filter) {
+	f = new(Filter)
+	f.m = m
+	f.id = stateMan.GetString("id")
+	f.sink = stateMan.GetString("sink")
+	f.workdir = workdir
+	f.filter = duplicates.NewDuplicateFilter(nil)
+	f.filter.RecoverFromState(stateMan)
+	f.stateMan = stateMan
+	return
 }
-*/
 
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", []byte(f.id))
-	f.stateMan.AddToState("sink", []byte(f.sink))
+	f.stateMan.AddToState("id", f.id)
+	f.stateMan.AddToState("sink", f.sink)
 	f.filter.AddToState(f.stateMan)
 	return f.stateMan.DumpState()
 }

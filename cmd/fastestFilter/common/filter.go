@@ -31,9 +31,19 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
+func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (f *Filter) {
+	f = new(Filter)
+	f.m = m
+	f.id = stateMan.GetString("id")
+	f.sink = stateMan.GetString("sink")
+	f.workdir = workdir
+	f.stateMan = stateMan
+	return
+}
+
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", []byte(f.id))
-	f.stateMan.AddToState("sink", []byte(f.sink))
+	f.stateMan.AddToState("id", f.id)
+	f.stateMan.AddToState("sink", f.sink)
 	return f.stateMan.DumpState()
 }
 

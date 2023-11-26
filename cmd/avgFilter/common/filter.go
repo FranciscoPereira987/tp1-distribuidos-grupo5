@@ -40,6 +40,21 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
+func RecoverFromState(m *mid.Middleware, workdir string, state *state.StateManager) *Filter {
+	id := state.GetString("id")
+	sink := state.GetString("sink")
+	filter := duplicates.NewDuplicateFilter(nil)
+	filter.RecoverFromState(state)
+	return &Filter{
+		m,
+		id,
+		sink,
+		workdir,
+		filter,
+		state,
+	}
+}
+
 func (f *Filter) StoreState() error {
 	f.stateMan.AddToState("id", f.id)
 	f.stateMan.AddToState("sink", f.sink)

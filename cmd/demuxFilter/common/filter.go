@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -47,14 +46,42 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 	}
 }
 
-func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", []byte(f.id))
-	f.stateMan.AddToState("sinks", []byte(strings.Join(f.sinks, ";")))
-	gen := make([]byte, 0)
-	for _, val := range f.keyGens {
-		gen = binary.LittleEndian.AppendUint64(gen, uint64(val))
+func recoverSinks(stateMan *state.StateManager) (sinks []string) {
+	values, ok := stateMan.GetFromState("sinks")
+	if array, casted := values.([]any); ok && casted {
+		for _, value := range array {
+			sinks = append(sinks, value.(string))
+		}
 	}
-	f.stateMan.AddToState("generators", gen)
+	return
+}
+
+func recoverKeyGens(stateMan *state.StateManager) (keyGens []mid.KeyGenerator) {
+	values, ok := stateMan.GetFromState("generators")
+	if array, casted := values.([]any); ok && casted {
+		for _, generator := range array {
+			keyGens = append(keyGens, generator.(mid.KeyGenerator))
+		}
+	}
+	return
+}
+
+func RecoverFromState(m *mid.Middleware, stateMan *state.StateManager) (f *Filter) {
+	f = new(Filter)
+	f.m = m
+	f.id = stateMan.GetString("id")
+	f.sinks = recoverSinks(stateMan)
+	f.keyGens = recoverKeyGens(stateMan)
+	f.filter = duplicates.NewDuplicateFilter(nil)
+	f.filter.RecoverFromState(stateMan)
+	f.stateMan = stateMan
+	return
+}
+
+func (f *Filter) StoreState() error {
+	f.stateMan.AddToState("id", f.id)
+	f.stateMan.AddToState("sinks", strings.Join(f.sinks, ";"))
+	f.stateMan.AddToState("generators", f.keyGens)
 	f.filter.AddToState(f.stateMan)
 
 	return f.stateMan.DumpState()

@@ -44,7 +44,7 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (id string, f *Filter) {
+func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (id string, f *Filter, onFlights bool) {
 	f = new(Filter)
 	id = stateMan.GetString("id")
 	f.m = m
@@ -54,17 +54,20 @@ func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateMa
 	f.filter = duplicates.NewDuplicateFilter(nil)
 	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
+	onFlights, _ = stateMan.Get("coordinates-load").(bool)
 	return
 }
 
-func (f *Filter) Restart(ctx context.Context) error {
+func (f *Filter) Restart(ctx context.Context, delivery <-chan mid.Delivery) (err error) {
 	coordinatedLoaded, _ := f.stateMan.Get("coordinates-load").(bool)
 	if !coordinatedLoaded {
 		logrus.Info("Restarting at AddCoordinates")
+		err = f.AddCoords(ctx, delivery)
 	} else {
-		logrus.Info("Restarting at Run")
+		err = f.Run(ctx, delivery)
 	}
-	return nil
+
+	return
 }
 
 func (f *Filter) StoreState() error {

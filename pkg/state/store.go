@@ -9,10 +9,10 @@ import (
 )
 
 /*
-	It should only be stored in state, objects that implement either:
+It should only be stored in state, objects that implement either:
 
-	1. json.Marshaller
-	2. encoding.TextMarshaller
+1. json.Marshaller
+2. encoding.TextMarshaller
 */
 type StateManager struct {
 	Filename string
@@ -33,7 +33,7 @@ func (sw *StateManager) AddToState(key string, value any) {
 func (sw *StateManager) GetFromState(key string) (value any, ok bool) {
 	value, ok = sw.state[key]
 	return
-}	
+}
 
 func (sw *StateManager) DumpState() (err error) {
 	var marshalled []byte
@@ -43,7 +43,7 @@ func (sw *StateManager) DumpState() (err error) {
 		buffer := bytes.NewBuffer(marshalled)
 		err = WriteFile(sw.Filename, buffer.Bytes())
 	}
-	
+
 	return
 }
 
@@ -55,11 +55,36 @@ func (sw *StateManager) RecoverState() (err error) {
 		dec := json.NewDecoder(file)
 		err = dec.Decode(&sw.state)
 	}
-	
+
 	return
 }
 
+/*
+Filters files that have .state in their names
+and are not directories
+*/
+func filterStateFiles(dir string) (files []string) {
+	unfiltered, err := os.ReadDir(dir)
+	if err == nil {
+		for _, entry := range unfiltered {
+			if strings.Contains(entry.Name(), ".state") {
+				files = append(files, filepath.Join(dir, entry.Name()))
+			}
+		}
+	}
+	return
+}
 
+func RecoverStateFiles(workdir string) (states []*StateManager) {
+	files := filterStateFiles(workdir)
+	for _, stateFile := range files {
+		state := NewStateManager(stateFile)
+		if err := state.RecoverState(); err == nil {
+			states = append(states, state)
+		}
+	}
+	return
+}
 
 func LinkTmp(f *os.File, name string) (err error) {
 	defer func() {

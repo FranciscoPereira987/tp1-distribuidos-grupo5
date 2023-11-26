@@ -74,12 +74,16 @@ func filterStateFiles(dir string) (files []string) {
 	unfiltered, err := os.ReadDir(dir)
 	if err == nil {
 		for _, entry := range unfiltered {
-			if strings.Contains(entry.Name(), ".state") {
+			if IsState(entry.Name()) {
 				files = append(files, filepath.Join(dir, entry.Name()))
 			}
 		}
 	}
 	return
+}
+
+func IsState(filename string) bool {
+	return strings.HasSuffix(filename, ".state")
 }
 
 func RecoverStateFiles(workdir string) (states []*StateManager) {

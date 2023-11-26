@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -27,7 +28,7 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		id,
 		sink,
 		workdir,
-		state.NewStateManager(filepath.Join(workdir, "fastest", "filter-%s.state", id)),
+		state.NewStateManager(filepath.Join(workdir, "fastest", fmt.Sprintf("filter-%s.state", id))),
 	}, err
 }
 
@@ -80,6 +81,9 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 	for _, file := range files {
 		if state.IsTmp(file.Name()) {
 			os.Remove(filepath.Join(f.workdir, "fastest", file.Name()))
+			continue
+		}
+		if state.IsState(file.Name()) {
 			continue
 		}
 		buf, err := os.ReadFile(filepath.Join(f.workdir, "fastest", file.Name()))

@@ -29,25 +29,18 @@ func (sw *StateManager) AddToState(key string, value any) {
 	sw.state[key] = value
 }
 
-func (sw *StateManager) GetFromState(key string) (value any, ok bool) {
-	value, ok = sw.state[key]
-	return
+func (sw *StateManager) Get(key string) any {
+	return sw.state[key]
 }
 
-func (sw *StateManager) GetString(key string) (stringVal string) {
-	value, ok := sw.GetFromState(key)
-	if asString, casted := value.(string); ok && casted {
-		stringVal = asString
-	}
-	return
+func (sw *StateManager) GetString(key string) string {
+	s, _ := sw.state[key].(string)
+	return s
 }
 
-func (sw *StateManager) GetInt(key string) (intVal int) {
-	value, ok := sw.GetFromState(key)
-	if asInt, casted := value.(int); ok && casted {
-		intVal = asInt
-	}
-	return
+func (sw *StateManager) GetInt(key string) int {
+	i, _ := sw.state[key].(int)
+	return i
 }
 
 func (sw *StateManager) DumpState() error {
@@ -65,6 +58,7 @@ func (sw *StateManager) RecoverState() (err error) {
 	file, err = os.Open(sw.Filename)
 
 	if err == nil {
+		defer file.Close()
 		dec := json.NewDecoder(file)
 		err = dec.Decode(&sw.state)
 	}

@@ -47,8 +47,8 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 }
 
 func recoverSinks(stateMan *state.StateManager) (sinks []string) {
-	values, ok := stateMan.GetFromState("sinks")
-	if array, casted := values.([]any); ok && casted {
+	values := stateMan.Get("sinks")
+	if array, ok := values.([]any); ok {
 		for _, value := range array {
 			sinks = append(sinks, value.(string))
 		}
@@ -57,8 +57,8 @@ func recoverSinks(stateMan *state.StateManager) (sinks []string) {
 }
 
 func recoverKeyGens(stateMan *state.StateManager) (keyGens []mid.KeyGenerator) {
-	values, ok := stateMan.GetFromState("generators")
-	if array, casted := values.([]any); ok && casted {
+	values := stateMan.Get("generators")
+	if array, ok := values.([]any); ok {
 		for _, generator := range array {
 			keyGens = append(keyGens, generator.(mid.KeyGenerator))
 		}

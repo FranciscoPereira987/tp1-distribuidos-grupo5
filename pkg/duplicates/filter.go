@@ -30,7 +30,7 @@ func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
 }
 
 func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
-	if value, ok := stateMan.GetFromState("last-received"); ok {
+	if value := stateMan.Get("last-received"); value != nil {
 		df.lastMessage = []byte(value.(string))
 	}
 }

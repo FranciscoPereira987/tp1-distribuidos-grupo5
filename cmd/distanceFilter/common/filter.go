@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -31,7 +32,7 @@ type Filter struct {
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	err := os.MkdirAll(filepath.Join(workdir, "coordinates"), 0755)
-
+	err = errors.Join(err, os.MkdirAll(filepath.Join(workdir, "distance"), 0755))
 	return &Filter{
 		m,
 		id,

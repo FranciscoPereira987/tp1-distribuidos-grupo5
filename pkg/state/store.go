@@ -51,16 +51,14 @@ func (sw *StateManager) GetInt(key string) (intVal int) {
 	return
 }
 
-func (sw *StateManager) DumpState() (err error) {
-	var marshalled []byte
-	marshalled, err = json.Marshal(sw.state)
+func (sw *StateManager) DumpState() error {
+	buf, err := json.Marshal(sw.state)
 
 	if err == nil {
-		buffer := bytes.NewBuffer(marshalled)
-		err = WriteFile(sw.Filename, buffer.Bytes())
+		err = WriteFile(sw.Filename, buf)
 	}
 
-	return
+	return err
 }
 
 func (sw *StateManager) RecoverState() (err error) {

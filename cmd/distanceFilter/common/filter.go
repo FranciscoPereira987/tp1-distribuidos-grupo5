@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -40,7 +39,7 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		sink,
 		workdir,
 		duplicates.NewDuplicateFilter(nil),
-		state.NewStateManager(filepath.Join(workdir, "distance", fmt.Sprintf("fitler-%s.state", id))),
+		state.NewStateManager(workdir),
 	}, err
 }
 

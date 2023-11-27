@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +41,7 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 		sinks:    sinks,
 		keyGens:  kgs,
 		filter:   duplicates.NewDuplicateFilter(nil),
-		stateMan: state.NewStateManager(filepath.Join(workDir, "demux", fmt.Sprintf("filter-%s.state", workDir))),
+		stateMan: state.NewStateManager(workDir),
 	}
 }
 

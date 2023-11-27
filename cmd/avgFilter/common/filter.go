@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -36,7 +35,7 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		sink,
 		workdir,
 		duplicates.NewDuplicateFilter(nil),
-		state.NewStateManager(filepath.Join(workdir, "fares", fmt.Sprintf("filter-%s.state", id))),
+		state.NewStateManager(workdir),
 	}, err
 }
 

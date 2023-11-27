@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const StateFileName = "state.json"
+
 /*
 It should only be stored in state, objects that implement either:
 
@@ -18,9 +20,9 @@ type StateManager struct {
 	state    map[string]any
 }
 
-func NewStateManager(filename string) *StateManager {
+func NewStateManager(workdir string) *StateManager {
 	return &StateManager{
-		Filename: filename,
+		Filename: filepath.Join(workdir, StateFileName),
 		state:    make(map[string]any),
 	}
 }
@@ -66,37 +68,34 @@ func (sw *StateManager) RecoverState() (err error) {
 	return
 }
 
-/*
-Filters files that have .state in their names
-and are not directories
-*/
-func filterStateFiles(dir string) (files []string) {
-	unfiltered, err := os.ReadDir(dir)
-	if err == nil {
-		for _, entry := range unfiltered {
-			if entry.IsDir() {
-				files = append(files, filterStateFiles(filepath.Join(dir, entry.Name()))...)
-			} else if IsState(entry.Name()) {
-				files = append(files, filepath.Join(dir, entry.Name()))
-			}
-		}
-	}
-	return
-}
-
-func IsState(filename string) bool {
-	return strings.HasSuffix(filename, ".state")
-}
-
+// State files are stored in a subdirectory of the worker's working directory.
+// This subdirectory is named using the associated client's id.
+// Example (with workdir := "/clients"):
+//   $ tree /clients
+//   /clients
+//   ├── 0841bcc1
+//   │   └── state.json
+//   ├── 94519ae2
+//   │   └── state.json
+//   └── a9e48a18
+//       └── state.json
 func RecoverStateFiles(workdir string) (states []*StateManager) {
-	files := filterStateFiles(workdir)
-	for _, stateFile := range files {
-		state := NewStateManager(stateFile)
+	subdirs, _ := os.ReadDir(workdir)
+
+	for _, dir := range subdirs {
+		if !dir.IsDir() {
+			continue
+		}
+		dirName := filepath.Join(workdir, dir.Name())
+		if _, err := os.Stat(filepath.Join(dirName, StateFileName)); os.IsNotExist(err) {
+			continue
+		}
+		state := NewStateManager(dirName)
 		if err := state.RecoverState(); err == nil {
 			states = append(states, state)
 		}
 	}
-	return
+	return states
 }
 
 func LinkTmp(f *os.File, name string) (err error) {

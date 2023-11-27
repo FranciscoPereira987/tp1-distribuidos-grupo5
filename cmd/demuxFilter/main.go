@@ -98,9 +98,10 @@ func main() {
 		v.GetInt("workers.q4"),
 	}
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
-	files := state.RecoverStateFiles(workdir)
-	for _, file := range files {
-		filter := common.RecoverFromState(middleware, file)
+	recovered := state.RecoverStateFiles(workdir)
+	for _, rec := range recovered {
+		id, _, stateMan := rec.Id, rec.Workdir, rec.State
+		filter := common.RecoverFromState(middleware, id, sinks, stateMan)
 		filter.Restart(signalCtx)
 	}
 	queues, err := middleware.Consume(signalCtx, source)

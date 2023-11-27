@@ -13,7 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -22,12 +21,11 @@ import (
 const distanceFactor = 4
 
 type Filter struct {
-	m        *mid.Middleware
-	id       string
-	sink     string
-	workdir  string
-	filter   *duplicates.DuplicateFilter
-	stateMan *state.StateManager
+	m         *mid.Middleware
+	id        string
+	sink      string
+	workdir   string
+	stateMan  *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -38,20 +36,16 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		id,
 		sink,
 		workdir,
-		duplicates.NewDuplicateFilter(nil),
 		state.NewStateManager(workdir),
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (id string, f *Filter, onFlights bool) {
+func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *state.StateManager) (f *Filter, onFlights bool) {
 	f = new(Filter)
-	id = stateMan.GetString("id")
 	f.m = m
 	f.id = id
-	f.sink = stateMan.GetString("sink")
+	f.sink = sink
 	f.workdir = workdir
-	f.filter = duplicates.NewDuplicateFilter(nil)
-	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
 	onFlights, _ = stateMan.Get("coordinates-load").(bool)
 	return
@@ -70,9 +64,6 @@ func (f *Filter) Restart(ctx context.Context, delivery <-chan mid.Delivery) erro
 }
 
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", f.id)
-	f.stateMan.AddToState("sink", f.sink)
-	f.filter.AddToState(f.stateMan)
 	return f.stateMan.DumpState()
 }
 
@@ -83,10 +74,6 @@ func (f *Filter) Close() error {
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
 	for d := range coords {
 		msg, tag := d.Msg, d.Tag
-		if f.filter.IsDuplicate(msg) {
-			f.m.Ack(tag)
-			continue
-		}
 		code, err := typing.ReadString(bytes.NewReader(msg))
 		if err != nil {
 			return err
@@ -94,7 +81,6 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 		if err := state.WriteFile(filepath.Join(f.workdir, "coordinates", code), msg); err != nil {
 			return err
 		}
-		f.filter.ChangeLast(msg)
 		if err := f.StoreState(); err != nil {
 			return err
 		}

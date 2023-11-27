@@ -31,11 +31,11 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workdir string, stateMan *state.StateManager) (f *Filter) {
+func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *state.StateManager) (f *Filter) {
 	f = new(Filter)
 	f.m = m
-	f.id = stateMan.GetString("id")
-	f.sink = stateMan.GetString("sink")
+	f.id = id
+	f.sink = sink
 	f.workdir = workdir
 	f.stateMan = stateMan
 	return

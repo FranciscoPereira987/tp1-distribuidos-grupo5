@@ -45,16 +45,6 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 	}
 }
 
-func recoverSinks(stateMan *state.StateManager) (sinks []string) {
-	values := stateMan.Get("sinks")
-	if array, ok := values.([]any); ok {
-		for _, value := range array {
-			sinks = append(sinks, value.(string))
-		}
-	}
-	return
-}
-
 func recoverKeyGens(stateMan *state.StateManager) (keyGens []mid.KeyGenerator) {
 	values := stateMan.Get("generators")
 	if array, ok := values.([]any); ok {
@@ -65,11 +55,11 @@ func recoverKeyGens(stateMan *state.StateManager) (keyGens []mid.KeyGenerator) {
 	return
 }
 
-func RecoverFromState(m *mid.Middleware, stateMan *state.StateManager) (f *Filter) {
+func RecoverFromState(m *mid.Middleware, id string, sinks []string, stateMan *state.StateManager) (f *Filter) {
 	f = new(Filter)
 	f.m = m
-	f.id = stateMan.GetString("id")
-	f.sinks = recoverSinks(stateMan)
+	f.id = id
+	f.sinks = sinks
 	f.keyGens = recoverKeyGens(stateMan)
 	f.filter = duplicates.NewDuplicateFilter(nil)
 	f.filter.RecoverFromState(stateMan)
@@ -83,8 +73,6 @@ func (f *Filter) Restart(ctx context.Context) error {
 }
 
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", f.id)
-	f.stateMan.AddToState("sinks", strings.Join(f.sinks, ";"))
 	f.stateMan.AddToState("generators", f.keyGens)
 	f.filter.AddToState(f.stateMan)
 

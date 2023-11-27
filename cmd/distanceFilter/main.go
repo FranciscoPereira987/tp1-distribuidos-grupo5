@@ -139,9 +139,10 @@ func main() {
 	toRestart := make(map[string]*common.Filter)
 	flightsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
-	files := state.RecoverStateFiles(workdir)
-	for _, file := range files {
-		id, filter, onFlights := common.RecoverFromState(middleware, workdir, file)
+	recovered := state.RecoverStateFiles(workdir)
+	for _, rec := range recovered {
+		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
+		filter, onFlights := common.RecoverFromState(middleware, id, sink, workdir, stateMan)
 		if onFlights {
 			ch := make(chan (<-chan mid.Delivery))
 			flightsChs[id] = ch

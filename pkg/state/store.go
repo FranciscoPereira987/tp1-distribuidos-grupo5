@@ -1,6 +1,7 @@
 package state
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -68,6 +69,12 @@ func (sw *StateManager) RecoverState() (err error) {
 	return
 }
 
+type recovered struct {
+	Id      string
+	Workdir string
+	State   *StateManager
+}
+
 // State files are stored in a subdirectory of the worker's working directory.
 // This subdirectory is named using the associated client's id.
 // Example (with workdir := "/clients"):
@@ -79,11 +86,16 @@ func (sw *StateManager) RecoverState() (err error) {
 //   │   └── state.json
 //   └── a9e48a18
 //       └── state.json
-func RecoverStateFiles(workdir string) (states []*StateManager) {
+func RecoverStateFiles(workdir string) []recovered {
 	subdirs, _ := os.ReadDir(workdir)
+	rec := make([]recovered, 0, len(subdirs))
 
 	for _, dir := range subdirs {
 		if !dir.IsDir() {
+			continue
+		}
+		id, err := hex.DecodeString(dir.Name())
+		if err != nil {
 			continue
 		}
 		dirName := filepath.Join(workdir, dir.Name())
@@ -92,10 +104,10 @@ func RecoverStateFiles(workdir string) (states []*StateManager) {
 		}
 		state := NewStateManager(dirName)
 		if err := state.RecoverState(); err == nil {
-			states = append(states, state)
+			rec = append(rec, recovered{string(id), dirName, state})
 		}
 	}
-	return states
+	return rec
 }
 
 func LinkTmp(f *os.File, name string) (err error) {

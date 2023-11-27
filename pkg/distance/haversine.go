@@ -22,7 +22,6 @@ type distance struct {
 }
 
 type DistanceComputer struct {
-	workdir     string
 	coordinates map[string]radCoords
 	cache       [cacheSize]distance
 }

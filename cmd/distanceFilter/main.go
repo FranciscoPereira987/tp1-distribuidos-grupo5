@@ -158,7 +158,8 @@ func main() {
 					mtx.Lock()
 					delete(flightsChs, id)
 					mtx.Unlock()
-					if err := filter.Restart(ctx, delivery); err != nil {
+					log.Info("action: restart_worker | status: on_flights")
+					if err := filter.Run(ctx, delivery); err != nil {
 						log.Errorf("action: restarted worker | status: failed | reason: %s", err)
 					}
 				}
@@ -204,7 +205,8 @@ func main() {
 					flightsChs[coordsQueue.Id] = flightsCh
 				}
 				mtx.Unlock()
-				if err := recovered.Restart(ctx, coordsQueue.Ch); err != nil {
+				log.Info("action: restart_worker | status: on_coords")
+				if err := recovered.AddCoords(ctx, coordsQueue.Ch); err != nil {
 					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
 				}
 				var ch <-chan mid.Delivery

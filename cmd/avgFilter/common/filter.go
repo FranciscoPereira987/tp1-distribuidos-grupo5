@@ -52,7 +52,6 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, state *state.
 	}
 }
 
-// TODO: Implement
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 	processed := f.stateMan.Get("processed").(bool)
 	if !processed {
@@ -88,11 +87,10 @@ func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map
 
 	for _, value := range values {
 		key := value.(string)
-		keyFares := stateMan.Get(key).([]any)
+		keyFares := stateMan.Get(key).(int)
 		writer, _ := newFareWriter(key)
-		for _, fare := range keyFares{
-			writer.Fares = append(fares[key].Fares, fare.(float64))
-		}
+		writer.Fares = keyFares
+		writer.Truncate()
 		fares[key] = writer
 		keys = append(keys, key)
 	}
@@ -251,7 +249,7 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, av
 type fareWriter struct {
 	bw   *bufio.Writer
 	file *os.File
-	Fares []float64
+	Fares int
 }
 
 func newFareWriter(path string) (fw fareWriter, err error) {
@@ -261,8 +259,12 @@ func newFareWriter(path string) (fw fareWriter, err error) {
 	return fw, err
 }
 
+func (fw *fareWriter) Truncate() {
+	fw.file.Truncate(int64(fw.Fares) * 4)
+}
+
 func (fw *fareWriter) Write(fare float32) error {
-	fw.Fares = append(fw.Fares, float64(fare))
+	fw.Fares++
 	return binary.Write(fw.bw, binary.LittleEndian, fare)
 }
 

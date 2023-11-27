@@ -193,11 +193,11 @@ func main() {
 	}()
 	for coordsQueue := range coordsQueues {
 		if recovered, ok := toRestart[coordsQueue.Id]; ok {
+			delete(toRestart, coordsQueue.Id)
 			go func(coordsQueue mid.Client, recovered *common.Filter) {
 				ctx, cancel := context.WithCancel(signalCtx)
 				defer cancel()
 				defer recovered.Close()
-				delete(toRestart, coordsQueue.Id)
 				mtx.Lock()
 				flightsCh, ok := flightsChs[coordsQueue.Id]
 				if !ok {

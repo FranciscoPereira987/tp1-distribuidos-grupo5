@@ -9,6 +9,7 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,15 +42,38 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *sta
 	return
 }
 
-// TODO: Implement
-func (f *Filter) Restart(ctx context.Context) error {
-	processed := f.stateMan.Get("processed").(bool)
-	if !processed {
-		log.Info("Starting to run again")
-	} else {
-		log.Info("Starting to send results again")
+func (f *Filter) recoverSended() map[string]bool {
+	mapped := make(map[string]bool)
+	value, ok := f.stateMan.Get("sended").(map[any]any)
+	if ok {
+		for key, val := range value{
+			mapped[key.(string)] = val.(bool)
+		}
 	}
-	return nil
+	return mapped
+}
+
+// TODO: Implement
+func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter){
+	processed := f.stateMan.Get("processed").(bool)
+	if processed {
+		log.Info("action: re-start worker | result: re-sending results")
+		go func(){
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			value := f.recoverSended()
+			fastest, err := f.loadFastest()
+			if err == nil {
+				err = f.SendResults(ctx, fastest, value)
+			}
+			if err != nil {
+				logrus.Infof("action: re-sending results | status: failed | reason: %s", err)
+			} 
+		}()
+	} else {
+		log.Info("action: re-start worker | result: add to map")
+		toRestart[f.id] = f
+	}
 }
 
 func (f *Filter) StoreState() error {
@@ -150,28 +174,50 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 	}
 
+	processed := make(map[string]bool)
 	select {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
 		f.stateMan.AddToState("processed", true)
+		for key, _ := range fastest {
+			processed[key] = false
+		}
+		f.stateMan.AddToState("sended", processed)
+		if err := f.StoreState(); err != nil {
+			return err
+		}
 	}
+
+	return f.SendResults(ctx, fastest, processed)
+}
+
+func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sended map[string]bool) (error){
 
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.id)
-	for _, arr := range fastest {
+	for key, arr := range fastest {
+		if processed, _ := sended[key]; processed {
+			continue
+		}
 		for _, v := range arr {
 			typing.ResultQ3Marshal(b, &v)
 			if i--; i <= 0 {
 				if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 					return err
 				}
+				f.stateMan.AddToState("sended", sended)
+				if err := f.StoreState(); err != nil {
+					return err
+				}
 				i = mid.MaxMessageSize / typing.ResultQ3Size
 				b = bytes.NewBufferString(f.id)
 			}
 		}
+		delete(fastest, key)
+		sended[key] = true
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
 		if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
@@ -179,6 +225,5 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 	}
 	log.Infof("finished publishing results into %q queue", f.sink)
-
 	return nil
 }

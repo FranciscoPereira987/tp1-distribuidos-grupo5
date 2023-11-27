@@ -53,14 +53,20 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, state *state.
 }
 
 // TODO: Implement
-func (f *Filter) Restart(ctx context.Context) error {
+func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 	processed := f.stateMan.Get("processed").(bool)
 	if !processed {
-		log.Info("Starting at hearing again")
+		log.Info("action: re-start fitler | status: adding to map")
+		toRestart[f.id] = f
 	} else {
-		log.Info("Starting at sending again")
+		log.Info("action: re-start filter | status: re-sending results")
+		go func() {
+			fares, fareSum, count, _ := f.GetRunVariables()
+			if err := f.sendResults(ctx, fares, float32(fareSum / float64(count))); err != nil {
+				log.Infof("action: re-start filter sending results | status: failed | reason: %s", err)
+			}
+		}()
 	}
-	return nil
 }
 
 func (f *Filter) StoreState() error {
@@ -75,8 +81,42 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(f.workdir)
 }
 
+func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map[string]fareWriter) {
+	fares = make(map[string]fareWriter)
+
+	values := stateMan.Get("keys").([]any)
+
+	for _, value := range values {
+		key := value.(string)
+		keyFares := stateMan.Get(key).([]any)
+		writer, _ := newFareWriter(key)
+		for _, fare := range keyFares{
+			writer.Fares = append(fares[key].Fares, fare.(float64))
+		}
+		fares[key] = writer
+		keys = append(keys, key)
+	}
+
+	return
+}
+
+func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, []string) {
+	
+	fareSum := f.stateMan.Get("fare-sum").(float64)
+	fareCount := f.stateMan.GetInt("fare-count")
+	keys, fares := recoverKeysAndFares(f.stateMan)
+
+	return fares, fareSum, fareCount, keys
+}
+
+func (f *Filter) updateFares(sum float64, count int) {
+	f.stateMan.AddToState("fare-count", count)
+	f.stateMan.AddToState("fare-sum", sum)
+}
+
+
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
-	fares, fareSum, count := make(map[string]fareWriter), 0.0, 0
+	fares, fareSum, count, keys := f.GetRunVariables()
 	defer func() {
 		var errs []error
 		for _, fw := range fares {
@@ -104,9 +144,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 				fareSum += v.Sum
 				count += int(v.Count)
 				log.Infof("updated average fare: %f", fareSum/float64(count))
+				f.updateFares(fareSum, count)
 			case typing.AverageFilterFlight:
 				key := v.Origin + "." + v.Destination
-				if err := f.appendFare(fares, key, v.Fare); err != nil {
+				if err := f.appendFare(fares, key, v.Fare, &keys); err != nil {
 					return err
 				}
 				log.Debugf("new fare for route %s-%s: %f", v.Origin, v.Destination, v.Fare)
@@ -210,6 +251,7 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, av
 type fareWriter struct {
 	bw   *bufio.Writer
 	file *os.File
+	Fares []float64
 }
 
 func newFareWriter(path string) (fw fareWriter, err error) {
@@ -220,6 +262,7 @@ func newFareWriter(path string) (fw fareWriter, err error) {
 }
 
 func (fw *fareWriter) Write(fare float32) error {
+	fw.Fares = append(fw.Fares, float64(fare))
 	return binary.Write(fw.bw, binary.LittleEndian, fare)
 }
 
@@ -231,17 +274,27 @@ func (fw *fareWriter) Close() error {
 	return fw.file.Close()
 }
 
-func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32) (err error) {
+func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32, keys *[]string) (err error) {
 	if v, ok := fares[file]; ok {
-		return v.Write(fare)
+		err = v.Write(fare)
+		if err == nil {
+			f.stateMan.AddToState(file, v.Fares)
+		}
+		return
 	}
+	*keys = append(*keys, file)
+	f.stateMan.AddToState("keys", *keys)
 	fw, err := newFareWriter(filepath.Join(f.workdir, "fares", file))
 	if err != nil {
 		return err
 	}
 
 	fares[file] = fw
-	return fw.Write(fare)
+	err = fw.Write(fare)
+	if err == nil {
+		f.stateMan.AddToState(file, fw.Fares)
+	}
+	return
 }
 
 type fareReader struct {

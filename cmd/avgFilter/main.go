@@ -85,37 +85,51 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
+	toRestart := make(map[string]*common.Filter)
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
 		filter := common.RecoverFromState(middleware, id, sink, workdir, stateMan)
-		filter.Restart(signalCtx)
+		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
 		log.Fatal(err)
 	}
-	beaterClient := beater.StartBeaterClient(v)
-	beaterClient.Run()
 	for queue := range queues {
-		go func(id string, ch <-chan mid.Delivery) {
-			ctx, cancel := context.WithCancel(signalCtx)
-			defer cancel()
-
-			workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
-			filter, err := common.NewFilter(middleware, id, sink, workdir)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer filter.Close()
-
-			if err := filter.Run(ctx, ch); err != nil {
-				log.Error(err)
-			} else if err := middleware.EOF(ctx, sink, id); err != nil {
-				log.Error(err)
-			}
-		}(queue.Id, queue.Ch)
+		if f, ok := toRestart[queue.Id]; ok {
+			go func(f *common.Filter, id string, ch <-chan mid.Delivery){
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
+				defer f.Close()
+				if err := f.Run(ctx, ch); err != nil {
+					log.Error(err)
+				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+					log.Error(err)
+				}
+			}(f, queue.Id, queue.Ch)
+		}else{
+			go func(id string, ch <-chan mid.Delivery) {
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
+	
+				workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
+				filter, err := common.NewFilter(middleware, id, sink, workdir)
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer filter.Close()
+	
+				if err := filter.Run(ctx, ch); err != nil {
+					log.Error(err)
+				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+					log.Error(err)
+				}
+			}(queue.Id, queue.Ch)
+		}
 	}
 	beater.StopBeaterClient(beaterClient)
 }

@@ -103,7 +103,7 @@ func main() {
 	for _, rec := range recovered {
 		id, _, stateMan := rec.Id, rec.Workdir, rec.State
 		filter := common.RecoverFromState(middleware, id, sinks, stateMan)
-		toRestart[id] = filter
+		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
@@ -113,6 +113,7 @@ func main() {
 	beaterClient.Run()
 	for queue := range queues {
 		if f, ok := toRestart[queue.Id]; ok {
+			delete(toRestart, queue.Id)
 			go func(id string, ch <-chan mid.Delivery, f *common.Filter) {
 				ctx, cancel := context.WithCancel(signalCtx)
 				defer cancel()

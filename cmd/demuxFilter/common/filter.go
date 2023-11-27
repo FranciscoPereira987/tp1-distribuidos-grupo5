@@ -11,6 +11,7 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,6 +19,12 @@ const (
 	Fastest
 	Average
 	Result
+)
+
+const (
+	Recieving = iota
+	NotYetSent
+	Finished 
 )
 
 type Filter struct {
@@ -66,12 +73,52 @@ func RecoverFromState(m *mid.Middleware, id string, sinks []string, stateMan *st
 	f.stateMan = stateMan
 	return
 }
+func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter)  {
 
-func (f *Filter) StoreState() error {
+	switch f.stateMan.GetInt("state") {
+	case Recieving:
+		logrus.Infof("action: restarting reciving filter | result: in progress")
+		toRestart[f.id] = f
+	case NotYetSent:
+		ctx, cancel := context.WithCancel(ctx)
+		go func() {
+			defer cancel()
+			logrus.Info("action: restarting sending filter | result: in progress")
+			fareSum, fareCount := f.GetFareInfo()
+			if err := f.sendAverageFare(ctx, fareSum, fareCount); err != nil {
+				logrus.Infof("action: sending average fare | result: failed | reason: %s", err)
+			}
+			if err := f.Close(); err != nil {
+				logrus.Infof("action: removing state files | result: failed | reason: %s", err)
+			}
+		}()
+	case Finished:
+		//Already finished, so just go ahead and finished execution
+		if err := f.Close(); err != nil {
+			logrus.Info("action: restarting finished filter | result: failed | reason: %s", err)
+		}
+	}
+}
+
+func (f *Filter) Close() error {
+	return os.RemoveAll(filepath.Base(f.stateMan.Filename))
+}
+
+func (f *Filter) StoreState(sum float64, count, state int) error {
 	f.stateMan.AddToState("generators", f.keyGens)
 	f.filter.AddToState(f.stateMan)
 
+	f.stateMan.AddToState("sum", sum)
+	f.stateMan.AddToState("count", count)
+	f.stateMan.AddToState("state", state)
+
 	return f.stateMan.DumpState()
+}
+
+func (f *Filter) GetFareInfo() (fareSum float64, fareCount int) {
+	fareCount = f.stateMan.GetInt("count")
+	fareSum, _ = f.stateMan.Get("sum").(float64)
+	return
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
@@ -79,7 +126,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	if err != nil {
 		return err
 	}
-	fareSum, fareCount := 0.0, 0
+	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
 
 	rr := f.keyGens[Distance].NewRoundRobinKeysGenerator()
@@ -128,7 +175,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			return err
 		}
 		f.filter.ChangeLast(msg)
-		if err := f.StoreState(); err != nil {
+		if err := f.StoreState(fareSum, fareCount, Recieving); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
@@ -140,6 +187,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
+		f.StoreState(fareSum, fareCount, NotYetSent)
 	}
 
 	return f.sendAverageFare(ctx, fareSum, fareCount)
@@ -195,5 +243,12 @@ func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount
 	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.id)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
-	return bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
+	err := bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
+
+	if err == nil {
+		f.StoreState(fareSum, fareCount, Finished)
+	}
+
+	return err
 }
+

@@ -112,6 +112,7 @@ services:
       - DEMUX_NAME=demux_filter1
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
+      - demuxState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -128,6 +129,7 @@ services:
       - DISTANCE_NAME=distance_filter1
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
+      - distanceState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -144,6 +146,7 @@ services:
       - FAST_NAME=fastest_filter1
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
+      - fastestState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -160,9 +163,16 @@ services:
       - AVG_NAME=avg_filter1
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
+      - avgState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+volumes:
+  distanceState:
+  fastestState:
+  avgState:
+  demuxState:
 
 networks:
   testing_net:

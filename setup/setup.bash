@@ -94,6 +94,7 @@ do
       - DEMUX_NAME="demux_filter$n"
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
+      - demuxState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -114,6 +115,7 @@ do
       - DISTANCE_NAME="distance_filter$n"
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
+      - distanceState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -134,6 +136,7 @@ do
       - FAST_NAME="fastest_filter$n"
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
+      - fastestState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -154,12 +157,19 @@ do
       - AVG_NAME="avg_filter$n"
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
+      - avgState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
 done
 
 echo '
+volumes:
+  distanceState:
+  fastestState:
+  avgState:
+  demuxState:
+
 networks:
   testing_net:
     ipam:

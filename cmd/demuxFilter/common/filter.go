@@ -95,7 +95,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter)  {
 	case Finished:
 		//Already finished, so just go ahead and finished execution
 		if err := f.Close(); err != nil {
-			logrus.Info("action: restarting finished filter | result: failed | reason: %s", err)
+			logrus.Infof("action: restarting finished filter | result: failed | reason: %s", err)
 		}
 	}
 }

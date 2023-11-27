@@ -51,16 +51,16 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *sta
 	return
 }
 
-func (f *Filter) Restart(ctx context.Context, delivery <-chan mid.Delivery) error {
+func (f *Filter) Restart(ctx context.Context, delivery <-chan mid.Delivery) (err error) {
 	coordinatedLoaded, _ := f.stateMan.Get("coordinates-load").(bool)
 	if !coordinatedLoaded {
 		logrus.Info("Restarting at AddCoordinates")
-		if err := f.AddCoords(ctx, delivery); err != nil {
-			return err
-		}
+		err = f.AddCoords(ctx, delivery)
+	} else {
+		err = f.Run(ctx, delivery)
 	}
 
-	return f.Run(ctx, delivery)
+	return
 }
 
 func (f *Filter) StoreState() error {

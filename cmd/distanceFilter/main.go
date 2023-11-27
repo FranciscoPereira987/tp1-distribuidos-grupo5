@@ -71,8 +71,87 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	return qCoords, qFlights, sink, m.Ready(ctx, status)
 }
 
-func runNewFilter(middleware *mid.Middleware, flightsChs map[string]chan (<-chan mid.Delivery), coordsQueue mid.Client, mtx *sync.Mutex, signalCtx context.Context, workdir string, sink string) {
+func main() {
+	v, err := utils.InitConfig("distance", "cmd/distanceFilter")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := utils.InitLogger(v.GetString("log.level")); err != nil {
+		log.Fatal(err)
+	}
 
+	middleware, err := mid.Dial(v.GetString("server.url"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer middleware.Close()
+
+	parentCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	signalCtx := utils.WithSignal(parentCtx)
+
+	coordsSource, flightsSource, sink, err := setupMiddleware(signalCtx, middleware, v)
+	if err != nil {
+		log.Fatal(err)
+	}
+	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	flightsChs := make(map[string]chan (<-chan mid.Delivery))
+	var mtx sync.Mutex
+	recovered := state.RecoverStateFiles(workdir)
+	for _, rec := range recovered {
+		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
+		if onFlights, _ := stateMan.Get("coordinates-load").(bool); !onFlights {
+			continue
+		}
+		ch := make(chan (<-chan mid.Delivery))
+		flightsChs[id] = ch
+
+		go func() {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+			filter, _ := common.NewFilter(middleware, id, sink, workdir)
+			defer filter.Close()
+			select {
+			case <-ctx.Done():
+				return
+			case delivery := <-ch:
+				mtx.Lock()
+				delete(flightsChs, id)
+				mtx.Unlock()
+				log.Info("action: restart_worker | status: on_flights")
+				if err := filter.Run(ctx, delivery); err != nil {
+					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
+				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+					log.Error(err)
+				}
+			}
+		}()
+	}
+	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	flightsQueues, err := middleware.Consume(signalCtx, flightsSource)
+	if err != nil {
+		log.Fatal(err)
+	}
+	beaterClient := beater.StartBeaterClient(v)
+	beaterClient.Run()
+	go func() {
+		for flightsQueue := range flightsQueues {
+			id := flightsQueue.Id
+			mtx.Lock()
+			ch, ok := flightsChs[id]
+			if !ok {
+				ch = make(chan (<-chan mid.Delivery), 1)
+				flightsChs[id] = ch
+			}
+			mtx.Unlock()
+			ch <- flightsQueue.Ch
+		}
+	}()
+	for coordsQueue := range coordsQueues {
 	go func(id string, ch <-chan mid.Delivery) {
 		ctx, cancel := context.WithCancel(signalCtx)
 		defer cancel()
@@ -109,125 +188,6 @@ func runNewFilter(middleware *mid.Middleware, flightsChs map[string]chan (<-chan
 			log.Error(err)
 		}
 	}(coordsQueue.Id, coordsQueue.Ch)
-}
-
-func main() {
-	v, err := utils.InitConfig("distance", "cmd/distanceFilter")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := utils.InitLogger(v.GetString("log.level")); err != nil {
-		log.Fatal(err)
-	}
-
-	middleware, err := mid.Dial(v.GetString("server.url"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer middleware.Close()
-
-	parentCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	signalCtx := utils.WithSignal(parentCtx)
-
-	coordsSource, flightsSource, sink, err := setupMiddleware(signalCtx, middleware, v)
-	if err != nil {
-		log.Fatal(err)
-	}
-	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
-	toRestart := make(map[string]*common.Filter)
-	flightsChs := make(map[string]chan (<-chan mid.Delivery))
-	var mtx sync.Mutex
-	recovered := state.RecoverStateFiles(workdir)
-	for _, rec := range recovered {
-		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		filter, onFlights := common.RecoverFromState(middleware, id, sink, workdir, stateMan)
-		if onFlights {
-			ch := make(chan (<-chan mid.Delivery))
-			flightsChs[id] = ch
-
-			go func(ch chan (<-chan mid.Delivery), filter *common.Filter, ctx context.Context, id string) {
-				ctx, cancel := context.WithCancel(ctx)
-				defer cancel()
-				defer filter.Close()
-				select {
-				case <-ctx.Done():
-					return
-				case delivery := <-ch:
-					mtx.Lock()
-					delete(flightsChs, id)
-					mtx.Unlock()
-					log.Info("action: restart_worker | status: on_flights")
-					if err := filter.Run(ctx, delivery); err != nil {
-						log.Errorf("action: restarted worker | status: failed | reason: %s", err)
-					}
-				}
-			}(ch, filter, signalCtx, id)
-		} else {
-			toRestart[id] = filter
-		}
-	}
-	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
-	if err != nil {
-		log.Fatal(err)
-	}
-	flightsQueues, err := middleware.Consume(signalCtx, flightsSource)
-	if err != nil {
-		log.Fatal(err)
-	}
-	beaterClient := beater.StartBeaterClient(v)
-	beaterClient.Run()
-	go func() {
-		for flightsQueue := range flightsQueues {
-			id := flightsQueue.Id
-			mtx.Lock()
-			ch, ok := flightsChs[id]
-			if !ok {
-				ch = make(chan (<-chan mid.Delivery), 1)
-				flightsChs[id] = ch
-			}
-			mtx.Unlock()
-			ch <- flightsQueue.Ch
-		}
-	}()
-	for coordsQueue := range coordsQueues {
-		if recovered, ok := toRestart[coordsQueue.Id]; ok {
-			delete(toRestart, coordsQueue.Id)
-			go func(coordsQueue mid.Client, recovered *common.Filter) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-				defer recovered.Close()
-				mtx.Lock()
-				flightsCh, ok := flightsChs[coordsQueue.Id]
-				if !ok {
-					flightsCh = make(chan (<-chan mid.Delivery))
-					flightsChs[coordsQueue.Id] = flightsCh
-				}
-				mtx.Unlock()
-				log.Info("action: restart_worker | status: on_coords")
-				if err := recovered.AddCoords(ctx, coordsQueue.Ch); err != nil {
-					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
-				}
-				var ch <-chan mid.Delivery
-				select {
-				case <-ctx.Done():
-					return
-				case ch = <-flightsCh:
-					mtx.Lock()
-					delete(flightsChs, coordsQueue.Id)
-					mtx.Unlock()
-				}
-				if err := recovered.Run(ctx, ch); err != nil {
-					log.Error(err)
-				} else if err := middleware.EOF(ctx, sink, coordsQueue.Id); err != nil {
-					log.Error(err)
-				}
-
-			}(coordsQueue, recovered)
-		} else {
-			runNewFilter(middleware, flightsChs, coordsQueue, &mtx, signalCtx, workdir, sink)
-		}
 	}
 	beater.StopBeaterClient(beaterClient)
 }

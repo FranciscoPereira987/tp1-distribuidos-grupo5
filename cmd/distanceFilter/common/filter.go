@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -24,34 +23,16 @@ type Filter struct {
 	id       string
 	sink     string
 	workdir  string
-	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 	err := os.MkdirAll(filepath.Join(workdir, "coordinates"), 0755)
-	err = errors.Join(err, os.MkdirAll(filepath.Join(workdir, "distance"), 0755))
 	return &Filter{
 		m,
 		id,
 		sink,
 		workdir,
-		state.NewStateManager(workdir),
 	}, err
-}
-
-func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *state.StateManager) (f *Filter, onFlights bool) {
-	f = new(Filter)
-	f.m = m
-	f.id = id
-	f.sink = sink
-	f.workdir = workdir
-	f.stateMan = stateMan
-	onFlights, _ = stateMan.Get("coordinates-load").(bool)
-	return
-}
-
-func (f *Filter) StoreState() error {
-	return f.stateMan.DumpState()
 }
 
 func (f *Filter) Close() error {
@@ -68,18 +49,18 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 		if err := state.WriteFile(filepath.Join(f.workdir, "coordinates", code), msg); err != nil {
 			return err
 		}
-		if err := f.StoreState(); err != nil {
-			return err
-		}
 		if err := f.m.Ack(tag); err != nil {
 			return err
 		}
 	}
-	f.stateMan.AddToState("coordinates-load", true)
-	if err := f.StoreState(); err != nil {
-		return err
+	select {
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	default:
+		sm := state.NewStateManager(f.workdir)
+		sm.AddToState("coordinates-load", true)
+		return sm.DumpState()
 	}
-	return context.Cause(ctx)
 }
 
 func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
@@ -113,9 +94,6 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
 				return err
 			}
-		}
-		if err := f.StoreState(); err != nil {
-			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
 			return err

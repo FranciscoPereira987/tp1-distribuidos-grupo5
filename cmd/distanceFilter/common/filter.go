@@ -21,11 +21,11 @@ import (
 const distanceFactor = 4
 
 type Filter struct {
-	m         *mid.Middleware
-	id        string
-	sink      string
-	workdir   string
-	stateMan  *state.StateManager
+	m        *mid.Middleware
+	id       string
+	sink     string
+	workdir  string
+	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {

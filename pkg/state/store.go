@@ -78,14 +78,15 @@ type recovered struct {
 // State files are stored in a subdirectory of the worker's working directory.
 // This subdirectory is named using the associated client's id.
 // Example (with workdir := "/clients"):
-//   $ tree /clients
-//   /clients
-//   ├── 0841bcc1
-//   │   └── state.json
-//   ├── 94519ae2
-//   │   └── state.json
-//   └── a9e48a18
-//       └── state.json
+//
+//	$ tree /clients
+//	/clients
+//	├── 0841bcc1
+//	│   └── state.json
+//	├── 94519ae2
+//	│   └── state.json
+//	└── a9e48a18
+//	    └── state.json
 func RecoverStateFiles(workdir string) []recovered {
 	subdirs, _ := os.ReadDir(workdir)
 	rec := make([]recovered, 0, len(subdirs))

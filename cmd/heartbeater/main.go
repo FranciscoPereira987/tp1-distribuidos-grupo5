@@ -16,7 +16,7 @@ const (
 	PeerName    = "peer_name"
 	PeerNetName = "net_name"
 	HeartBeat   = "heartbeat_port"
-	Containers = "containers"
+	Containers  = "containers"
 )
 
 var (

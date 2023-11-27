@@ -98,11 +98,12 @@ func main() {
 		v.GetInt("workers.q4"),
 	}
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
+	toRestart := make(map[string]*common.Filter)
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, _, stateMan := rec.Id, rec.Workdir, rec.State
 		filter := common.RecoverFromState(middleware, id, sinks, stateMan)
-		filter.Restart(signalCtx)
+		toRestart[id] = filter
 	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
@@ -111,31 +112,39 @@ func main() {
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
 	for queue := range queues {
-		go func(id string, ch <-chan mid.Delivery) {
-			ctx, cancel := context.WithCancel(signalCtx)
-			defer cancel()
+		if f, ok := toRestart[queue.Id]; ok {
+			go func(id string, ch <-chan mid.Delivery, f *common.Filter) {
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
+				f.Run(ctx, ch)
+			}(queue.Id, queue.Ch, f)
+		} else {
+			go func(id string, ch <-chan mid.Delivery) {
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
 
-			filter := common.NewFilter(middleware, id, sinks, nWorkers, workdir)
+				filter := common.NewFilter(middleware, id, sinks, nWorkers, workdir)
 
-			if err := filter.Run(ctx, ch); err != nil {
-				log.Error(err)
-			}
+				if err := filter.Run(ctx, ch); err != nil {
+					log.Error(err)
+				}
 
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
 
-			// send EOF to sinks
-			errs := make([]error, 0, len(sinks))
-			for _, exchange := range sinks {
-				errs = append(errs, middleware.EOF(ctx, exchange, id))
-			}
-			if err := errors.Join(errs...); err != nil {
-				log.Error(err)
-			}
-		}(queue.Id, queue.Ch)
+				// send EOF to sinks
+				errs := make([]error, 0, len(sinks))
+				for _, exchange := range sinks {
+					errs = append(errs, middleware.EOF(ctx, exchange, id))
+				}
+				if err := errors.Join(errs...); err != nil {
+					log.Error(err)
+				}
+			}(queue.Id, queue.Ch)
+		}
 	}
 	beater.StopBeaterClient(beaterClient)
 }

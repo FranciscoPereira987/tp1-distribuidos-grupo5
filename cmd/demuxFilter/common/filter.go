@@ -67,11 +67,6 @@ func RecoverFromState(m *mid.Middleware, id string, sinks []string, stateMan *st
 	return
 }
 
-// TODO: Implement
-func (f *Filter) Restart(ctx context.Context) error {
-	return nil
-}
-
 func (f *Filter) StoreState() error {
 	f.stateMan.AddToState("generators", f.keyGens)
 	f.filter.AddToState(f.stateMan)

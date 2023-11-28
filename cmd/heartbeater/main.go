@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/invitation"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -9,63 +9,35 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	Name        = "name"
-	NetPort     = "net_port"
-	Peers       = "peers"
-	PeerName    = "peer_name"
-	PeerNetName = "net_name"
-	HeartBeat   = "heartbeat_port"
-	Containers  = "containers"
-)
-
-var (
-	InvalidPeerNameErr    = errors.New("invalid peer name")
-	InvalidPeerNetNameErr = errors.New("invalid peer net name")
-)
-
 func parseConfig(v *viper.Viper) (config *invitation.Config, err error) {
-	port := v.GetString(NetPort)
-	id := v.GetInt32(Name)
+	port := v.GetString("net_port")
+	id := v.GetUint("name")
 
-	config, err = invitation.NewConfigOn(uint(id), port)
-	if err == nil {
-		mapped := v.Get(Peers).([]interface{})
-		for _, value := range mapped {
-			value := value.(map[string]any)
-			peerName, ok := value[PeerName].(int)
-			if !ok {
-				err = InvalidPeerNameErr
-				return
-			}
-			peerNetName, ok := value[PeerNetName].(string)
-			if !ok {
-				err = InvalidPeerNetNameErr
-				return
-			}
-			if uint(id) != uint(peerName) {
-				config.Mapping[uint(peerName)] = peerNetName + ":" + port
-				config.Peers = append(config.Peers, uint(peerName))
-				config.Names = append(config.Names, peerNetName)
-			} else {
-				config.Name = peerNetName
-			}
+	if config, err = invitation.NewConfigOn(id, port); err != nil {
+		return config, err
+	}
+	peerPrefix := v.GetString("peers.prefix")
+	for peerSuffix := v.GetUint("peers.count"); peerSuffix > 0; peerSuffix-- {
+		peerNetName := fmt.Sprintf("%s%d", peerPrefix, peerSuffix)
+		if id != peerSuffix {
+			config.Mapping[peerSuffix] = peerNetName + ":" + port
+			config.Peers = append(config.Peers, peerSuffix)
+			config.Names = append(config.Names, peerNetName)
+		} else {
+			config.Name = peerNetName
 		}
 	}
 
-	if err == nil {
-		mapped := v.Get(Containers).([]interface{})
-		for _, value := range mapped {
-			value := value.(map[string]any)
-			containerName, ok := value[PeerName].(string)
-			if !ok {
-				err = InvalidPeerNameErr
-				return
-			}
+	vContainers := v.Sub("containers")
+	for _, worker := range []string{"demux", "distance", "fastest", "average"} {
+		vWorker := vContainers.Sub(worker)
+		workerPrefix := vWorker.GetString("prefix")
+		for suffix := vWorker.GetUint("count"); suffix > 0; suffix-- {
+			containerName := fmt.Sprintf("%s%d", workerPrefix, suffix)
 			config.Names = append(config.Names, containerName)
 		}
 	}
-	config.Heartbeat = v.GetString(HeartBeat)
+	config.Heartbeat = v.GetString("heartbeat_port")
 
 	return
 }

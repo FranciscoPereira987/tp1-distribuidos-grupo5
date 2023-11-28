@@ -298,13 +298,13 @@ func (m *Middleware) Publish(ctx context.Context, c Confirmer, exchange, key str
 func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) error {
 	msgs, err := m.ch.ConsumeWithContext(
 		ctx,
-		name,  // queue
-		"",    // consumer
-		false, // auto-ack
-		false, // exclusive
-		false, // no-local
-		false, // no-wait
-		nil,   // args
+		name,    // queue
+		"ready", // consumer
+		false,   // auto-ack
+		false,   // exclusive
+		false,   // no-local
+		false,   // no-wait
+		nil,     // args
 	)
 	if err != nil {
 		return err
@@ -313,10 +313,22 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 	for d := range msgs {
 		workers--
 		if workers <= 0 {
-			return m.ch.Ack(d.DeliveryTag, true)
+			if err := m.ch.Ack(d.DeliveryTag, true); err != nil {
+				return err
+			}
+		}
+		if workers == 0 {
+			if err := m.ch.Cancel("ready", false); err != nil {
+				return err
+			}
 		}
 	}
-	return ErrMiddleware
+
+	if workers > 0 {
+		return ErrMiddleware
+	} else {
+		return nil
+	}
 }
 
 type BasicConfirmer struct {

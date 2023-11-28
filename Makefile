@@ -7,6 +7,8 @@ BIN := $(addprefix bin/,$(CMD))
 
 BEAT_CONFIG = cmd/heartbeater/config.yaml
 
+MANIAC_CONFIG = cmd/maniac/config.yaml
+
 all: $(BIN)
 .PHONY: all
 
@@ -27,6 +29,7 @@ build-image:
 	docker build -t avg_filter -f cmd/avgFilter/Dockerfile .
 	docker build -t client -f cmd/client/Dockerfile .
 	docker build -t invitation -f cmd/heartbeater/Dockerfile .
+	docker build -t maniac -f cmd/maniac/Dockerfile .
 .PHONY: build-image
 
 fmt:
@@ -40,11 +43,16 @@ test:
 setup: docker-compose-dev.yaml
 	setup/setup.bash > $^
 	setup/beat-config.bash > $(BEAT_CONFIG)
+	setup/maniac-config.bash > $(MANIAC_CONFIG)
 .PHONY: setup
 
 run-client:
-	docker run --rm -v ./client:/client --network tp1_testing_net --entrypoint /cliente client
+	docker run --rm -v ./client:/client  --network tp1_testing_net --entrypoint /cliente client
 .PHONY: run-client
+
+run-maniac:
+	docker run --rm -v ./cmd/maniac:/cmd/maniac -v /var/run/docker.sock:/var/run/docker.sock --network tp1_testing_net --entrypoint /maniac maniac
+.PHONY: run-maniac
 
 docker-compose-up:
 	# Hay que agregar la creacion de todas las imagenes

@@ -1,0 +1,27 @@
+
+    targets:
+
+        - peer1 
+
+
+        - peer2 
+
+
+        - peer3 
+
+
+        - demux_filter1 
+
+
+        - distance_filter1 
+
+
+        - fastest_filter1 
+
+
+        - avg_filter1 
+
+
+    interval: 15s
+
+    kill-number: 2

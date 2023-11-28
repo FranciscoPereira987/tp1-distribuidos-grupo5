@@ -49,6 +49,13 @@ func (dood *DooD) StartIncoming() chan string {
 	return channel
 }
 
+/*
+Kills the container
+*/
+func (dood *DooD) Kill(container string) error{
+	return dood.cli.ContainerKill(dood.ctx, container, "SIGKILL")
+}
+
 func (dood *DooD) LogDockerImages() error {
 	summary, err := dood.cli.ImageList(dood.ctx, types.ImageListOptions{})
 	if err == nil {

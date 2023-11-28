@@ -2,21 +2,21 @@ package middleware
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 	"os"
-	"encoding/hex"
 	"path/filepath"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 )
 
 const MaxMessageSize = 8192
-const ControlRoutingKey = "control"
+const EofRoutingKey = "eof"
 const Workdir = "middleware"
 
 var (
@@ -38,7 +38,7 @@ type Middleware struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
 
-	controlCount map[string]int
+	eofCount map[string]int
 }
 
 type Confirmer interface {
@@ -72,9 +72,9 @@ func Dial(url string) (*Middleware, error) {
 	}
 
 	return &Middleware{
-		conn:         conn,
-		ch:           ch,
-		controlCount: make(map[string]int),
+		conn:     conn,
+		ch:       ch,
+		eofCount: make(map[string]int),
 	}, nil
 }
 
@@ -136,20 +136,32 @@ func (c DeferredConfirmer) AddWithContext(ctx context.Context, dc *amqp.Deferred
 	}
 }
 
-func (m *Middleware) SetExpectedControlCount(queue string, count int) {
-	m.controlCount[queue] = count
+func (m *Middleware) SetExpectedEofCount(queue string, count int) {
+	m.eofCount[queue] = count
 }
 
+// Declares a `fanout' exchange. These are meant for EOF or `fanout' messages.
+// If you need to send a message directly to a queue use the default exchange
+// with the desired queue's name as routing key.
 func (m *Middleware) ExchangeDeclare(name string) (string, error) {
 	return name, m.ch.ExchangeDeclare(
 		name,     // name
-		"direct", // type
+		"fanout", // type
 		true,     // durable
 		false,    // delete when unused
 		false,    // internal
 		false,    // no-wait
 		nil,      // arguments
 	)
+}
+
+func QueueName(worker, id string) (string, error) {
+	if worker == "" {
+		return "", fmt.Errorf("middleware.QueueName: %w for 'worker'", utils.ErrMissingConfig)
+	} else if id == "" {
+		return "", fmt.Errorf("middleware.QueueName: %w for 'id'", utils.ErrMissingConfig)
+	}
+	return worker + "." + id, nil
 }
 
 func (m *Middleware) QueueDeclare(name string) (string, error) {
@@ -168,17 +180,18 @@ func (m *Middleware) QueueDeclare(name string) (string, error) {
 	return q.Name, err
 }
 
-func (m *Middleware) QueueBind(queue, exchange string, routingKeys []string) error {
-	for _, key := range routingKeys {
+// Bind the specified `fanout' exchanges to the given queue.
+func (m *Middleware) QueueBind(queue string, exchanges ...string) error {
+	for _, exchange := range exchanges {
 		err := m.ch.QueueBind(
-			queue,
-			key,
-			exchange,
+			queue,    // queue
+			"",       // routing key
+			exchange, // exchange
 			false,
 			nil,
 		)
 		if err != nil {
-			return fmt.Errorf("Failed to bind exchange to queue with routing key '%s': %w", key, err)
+			return fmt.Errorf("Failed to bind %q exchange to %q queue: %w", exchange, queue, err)
 		}
 	}
 	return nil
@@ -234,7 +247,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 				}
 				ret <- Client{clientId, ch}
 			}
-			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
+			if d.RoutingKey == EofRoutingKey {
 				pair.sm.State[string(msg)] = true
 				if err := pair.sm.DumpState(); err != nil {
 					log.Errorf("action: store_eof | result: failure | queue: %q | worker: %s | error: %s", name, clientId, err)
@@ -257,7 +270,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 			}
 		}
 		log.Error(ErrMiddleware)
-	}(m.controlCount[name])
+	}(m.eofCount[name])
 
 	return ret, nil
 }
@@ -330,24 +343,16 @@ func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, 
 	return bc.Confirm(ctx)
 }
 
-func (m *Middleware) Ready(ctx context.Context, exchange string) error {
+func (m *Middleware) Ready(ctx context.Context, key string) error {
 	var bc BasicConfirmer
-	return bc.Publish(ctx, m, exchange, ControlRoutingKey, nil)
+	return bc.Publish(ctx, m, "", key, nil)
 }
 
 func (m *Middleware) EOF(ctx context.Context, exchange, workerId, clientId string) error {
 	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q", exchange)
 	msg := append([]byte(clientId), workerId...)
-	return bc.Publish(ctx, m, exchange, ControlRoutingKey, msg)
-}
-
-func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, workerId, clientId string) error {
-	var bc BasicConfirmer
-	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
-	rKey := ControlRoutingKey + "." + topic
-	msg := append([]byte(clientId), workerId...)
-	return bc.Publish(ctx, m, exchange, rKey, msg)
+	return bc.Publish(ctx, m, exchange, EofRoutingKey, msg)
 }
 
 func (m *Middleware) Close() {

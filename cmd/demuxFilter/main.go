@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -16,55 +15,53 @@ import (
 )
 
 // Describes the topology around this node.
-func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, []string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("source"))
+func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, []string, string, error) {
+	source, err := m.ExchangeDeclare(v.GetString("source.queue"))
 	if err != nil {
-		return "", nil, err
+		return "", nil, "", err
 	}
 
-	q := v.GetString("queue")
-	if q == "" {
-		q = source + "." + v.GetString("id")
+	q, err := mid.QueueName(source, v.GetString("id"))
+	if err != nil {
+		return "", nil, "", err
 	}
 	if _, err = m.QueueDeclare(q); err != nil {
-		return "", nil, err
+		return "", nil, "", err
 	}
 
-	// Subscribe to filter specific and EOF events.
-	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(q, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
-		return "", nil, err
+	// Subscribe to EOF events.
+	if err := m.QueueBind(q, source); err != nil {
+		return "", nil, "", err
 	}
-	distance, err := m.ExchangeDeclare(v.GetString("exchange.distance"))
-	if err != nil {
-		return "", nil, err
+
+	distance := v.GetString("sink.distance")
+	if distance == "" {
+		return "", nil, "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.distance")
 	}
-	fastest, err := m.ExchangeDeclare(v.GetString("exchange.fastest"))
-	if err != nil {
-		return "", nil, err
+	fastest := v.GetString("sink.fastest")
+	if fastest == "" {
+		return "", nil, "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.fastest")
 	}
-	average, err := m.ExchangeDeclare(v.GetString("exchange.average"))
-	if err != nil {
-		return "", nil, err
+	average := v.GetString("sink.average")
+	if average == "" {
+		return "", nil, "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.average")
 	}
-	results := v.GetString("exchange.results")
+	results := v.GetString("sink.results")
 	if results == "" {
-		return "", nil, fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.results")
+		return "", nil, "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.results")
+	}
+	eof := v.GetString("sink.eof")
+	if eof == "" {
+		return "", nil, "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.eof")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
 	if err != nil {
-		return "", nil, err
-	}
-	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", nil, err
-	}
-	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
-		return "", nil, err
+		return "", nil, "", err
 	}
 
 	log.Info("demux filter worker up")
-	return q, []string{distance, fastest, average, results}, m.Ready(ctx, status)
+	return q, []string{distance, fastest, average, results}, eof, m.Ready(ctx, status)
 }
 
 func main() {
@@ -87,7 +84,7 @@ func main() {
 
 	signalCtx := utils.WithSignal(parentCtx)
 
-	source, sinks, err := setupMiddleware(signalCtx, middleware, v)
+	source, sinks, eof, err := setupMiddleware(signalCtx, middleware, v)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -138,11 +135,7 @@ func main() {
 				}
 
 				// send EOF to sinks
-				errs := make([]error, 0, len(sinks))
-				for _, exchange := range sinks {
-					errs = append(errs, middleware.EOF(ctx, exchange, workerId, id))
-				}
-				if err := errors.Join(errs...); err != nil {
+				if err := middleware.EOF(ctx, eof, workerId, id); err != nil {
 					log.Error(err)
 				}
 			}(queue.Id, queue.Ch)

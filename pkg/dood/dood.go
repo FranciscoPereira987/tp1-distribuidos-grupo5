@@ -57,7 +57,7 @@ func (dood *DooD) StartIncoming() chan string {
 /*
 Kills the container
 */
-func (dood *DooD) Kill(container string) error{
+func (dood *DooD) Kill(container string) error {
 	return dood.cli.ContainerKill(dood.ctx, container, "SIGKILL")
 }
 

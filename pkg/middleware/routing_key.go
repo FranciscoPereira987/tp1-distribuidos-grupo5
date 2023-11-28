@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"fmt"
 	"hash/fnv"
-	"strconv"
 )
 
 type KeyGenerator int
@@ -15,7 +15,7 @@ func ShardKey(id string) string {
 	return id
 }
 
-func (kg KeyGenerator) KeyFrom(origin, destination string) string {
+func (kg KeyGenerator) KeyFrom(sink, origin, destination string) string {
 	h := fnv.New32()
 
 	h.Write([]byte(origin))
@@ -24,28 +24,23 @@ func (kg KeyGenerator) KeyFrom(origin, destination string) string {
 
 	v := h.Sum32()%uint32(kg) + 1
 
-	return strconv.Itoa(int(v))
+	return fmt.Sprintf("%s.%d", sink, v)
 }
 
 func (kg KeyGenerator) NewRoundRobinKeysGenerator() RoundRobinKeysGenerator {
-	keys := make([]string, 0, int(kg))
-	for i := 1; i <= cap(keys); i++ {
-		keys = append(keys, ShardKey(strconv.Itoa(i)))
-	}
-
 	return RoundRobinKeysGenerator{
-		keys:  keys,
+		mod:   int(kg),
 		index: 0,
 	}
 }
 
 type RoundRobinKeysGenerator struct {
-	keys  []string
+	mod   int
 	index int
 }
 
-func (rr *RoundRobinKeysGenerator) NextKey() string {
-	key := rr.keys[rr.index]
-	rr.index = (rr.index + 1) % len(rr.keys)
-	return key
+func (rr *RoundRobinKeysGenerator) NextKey(sink string) string {
+	v := rr.index + 1
+	rr.index = v % rr.mod
+	return fmt.Sprintf("%s.%d", sink, v)
 }

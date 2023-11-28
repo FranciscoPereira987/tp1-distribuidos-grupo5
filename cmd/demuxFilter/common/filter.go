@@ -24,7 +24,7 @@ const (
 const (
 	Recieving = iota
 	NotYetSent
-	Finished 
+	Finished
 )
 
 type Filter struct {
@@ -73,7 +73,7 @@ func RecoverFromState(m *mid.Middleware, id string, sinks []string, stateMan *st
 	f.stateMan = stateMan
 	return
 }
-func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter)  {
+func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 
 	switch f.stateMan.GetInt("state") {
 	case Recieving:
@@ -151,23 +151,23 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			fareCount++
 
 			f.marshalDistanceFilter(bDistance, &data)
-			f.marshalAverageFilter(mAverage, &data)
+			f.marshalAverageFilter(mAverage, f.sinks[Average], &data)
 			if strings.Count(data.Stops, "||") >= 3 {
-				f.marshalFastestFilter(mFastest, &data)
+				f.marshalFastestFilter(mFastest, f.sinks[Fastest], &data)
 				f.marshalResult(bResult, &data)
 			}
 		}
-		if err := f.sendBuffer(ctx, dc, f.sinks[Distance], rr.NextKey(), bDistance); err != nil {
+		if err := f.sendBuffer(ctx, dc, rr.NextKey(f.sinks[Distance]), bDistance); err != nil {
 			return err
 		}
-		if err := f.sendMap(ctx, dc, f.sinks[Average], mAverage); err != nil {
+		if err := f.sendMap(ctx, dc, mAverage); err != nil {
 			return err
 		}
 		if len(mFastest) > 0 {
-			if err := f.sendMap(ctx, dc, f.sinks[Fastest], mFastest); err != nil {
+			if err := f.sendMap(ctx, dc, mFastest); err != nil {
 				return err
 			}
-			if err := f.sendBuffer(ctx, dc, f.sinks[Result], f.sinks[Result], bResult); err != nil {
+			if err := f.sendBuffer(ctx, dc, f.sinks[Result], bResult); err != nil {
 				return err
 			}
 		}
@@ -200,8 +200,8 @@ func (f *Filter) marshalDistanceFilter(b *bytes.Buffer, data *typing.Flight) {
 	}
 }
 
-func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, data *typing.Flight) {
-	key := f.keyGens[Average].KeyFrom(data.Origin, data.Destination)
+func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, data *typing.Flight) {
+	key := f.keyGens[Average].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
 		b = bytes.NewBufferString(f.id)
@@ -211,8 +211,8 @@ func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, data *typing.F
 	typing.AverageFilterMarshal(b, data)
 }
 
-func (f *Filter) marshalFastestFilter(m map[string]*bytes.Buffer, data *typing.Flight) {
-	key := f.keyGens[Fastest].KeyFrom(data.Origin, data.Destination)
+func (f *Filter) marshalFastestFilter(m map[string]*bytes.Buffer, sink string, data *typing.Flight) {
+	key := f.keyGens[Fastest].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
 		b = bytes.NewBufferString(f.id)
@@ -226,13 +226,13 @@ func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.Flight) {
 	typing.ResultQ1Marshal(b, data)
 }
 
-func (f *Filter) sendBuffer(ctx context.Context, c mid.Confirmer, sink, key string, b *bytes.Buffer) error {
-	return f.m.Publish(ctx, c, sink, key, b.Bytes())
+func (f *Filter) sendBuffer(ctx context.Context, c mid.Confirmer, key string, b *bytes.Buffer) error {
+	return f.m.Publish(ctx, c, "", key, b.Bytes())
 }
 
-func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, sink string, m map[string]*bytes.Buffer) error {
+func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, m map[string]*bytes.Buffer) error {
 	for key, b := range m {
-		if err := f.m.Publish(ctx, c, sink, key, b.Bytes()); err != nil {
+		if err := f.m.Publish(ctx, c, "", key, b.Bytes()); err != nil {
 			return err
 		}
 	}
@@ -251,4 +251,3 @@ func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount
 
 	return err
 }
-

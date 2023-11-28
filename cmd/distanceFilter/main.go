@@ -19,51 +19,50 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("source"))
+	coords, err := m.ExchangeDeclare(v.GetString("source.coords.exchange"))
 	if err != nil {
 		return "", "", "", err
 	}
 
-	qCoords := v.GetString("queue.coords")
-	if qCoords == "" {
-		qCoords = "coords." + v.GetString("id")
+	qCoords, err := mid.QueueName(v.GetString("source.coords.queue"), v.GetString("id"))
+	if err != nil {
+		return "", "", "", err
 	}
 	if _, err = m.QueueDeclare(qCoords); err != nil {
 		return "", "", "", err
 	}
 
 	// Subscribe to coordinates and EOF events.
-	if err := m.QueueBind(qCoords, source, []string{"coords", mid.ControlRoutingKey + ".coords"}); err != nil {
+	if err := m.QueueBind(qCoords, coords); err != nil {
 		return "", "", "", err
 	}
 
-	qFlights := v.GetString("queue.flights")
-	if qFlights == "" {
-		qFlights = "distance." + v.GetString("id")
-	}
-	if _, err := m.QueueDeclare(qFlights); err != nil {
+	eof, err := m.ExchangeDeclare(v.GetString("source.flights.eof"))
+	if err != nil {
 		return "", "", "", err
 	}
-	// Subscribe to filter specific and EOF events.
-	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(qFlights, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
-		return "", "", "", err
-	}
-	m.SetExpectedControlCount(qFlights, v.GetInt("demuxers"))
 
-	sink := v.GetString("exchange.sink")
+	qFlights, err := mid.QueueName(v.GetString("source.flights.queue"), v.GetString("id"))
+	if err != nil {
+		return "", "", "", err
+	}
+	if _, err = m.QueueDeclare(qFlights); err != nil {
+		return "", "", "", err
+	}
+
+	// Subscribe to EOF events.
+	if err := m.QueueBind(qFlights, eof); err != nil {
+		return "", "", "", err
+	}
+	m.SetExpectedEofCount(qFlights, v.GetInt("demuxers"))
+
+	sink := v.GetString("sink.results")
 	if sink == "" {
-		return "", "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.sink")
+		return "", "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.results")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
 	if err != nil {
-		return "", "", "", err
-	}
-	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", "", "", err
-	}
-	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", "", err
 	}
 
@@ -153,42 +152,42 @@ func main() {
 		}
 	}()
 	for coordsQueue := range coordsQueues {
-	go func(id string, ch <-chan mid.Delivery) {
-		ctx, cancel := context.WithCancel(signalCtx)
-		defer cancel()
-		workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
-		filter, err := common.NewFilter(middleware, id, sink, workdir)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		defer filter.Close()
+		go func(id string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
+			filter, err := common.NewFilter(middleware, id, sink, workdir)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			defer filter.Close()
 
-		if err := filter.AddCoords(ctx, ch); err != nil {
-			log.Error(err)
-			return
-		}
-		mtx.Lock()
-		flightsCh, ok := flightsChs[id]
-		if !ok {
-			flightsCh = make(chan (<-chan mid.Delivery))
-			flightsChs[id] = flightsCh
-		}
-		mtx.Unlock()
-		select {
-		case <-ctx.Done():
-			return
-		case ch = <-flightsCh:
+			if err := filter.AddCoords(ctx, ch); err != nil {
+				log.Error(err)
+				return
+			}
 			mtx.Lock()
-			delete(flightsChs, id)
+			flightsCh, ok := flightsChs[id]
+			if !ok {
+				flightsCh = make(chan (<-chan mid.Delivery))
+				flightsChs[id] = flightsCh
+			}
 			mtx.Unlock()
-		}
-		if err := filter.Run(ctx, ch); err != nil {
-			log.Error(err)
-		} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-			log.Error(err)
-		}
-	}(coordsQueue.Id, coordsQueue.Ch)
+			select {
+			case <-ctx.Done():
+				return
+			case ch = <-flightsCh:
+				mtx.Lock()
+				delete(flightsChs, id)
+				mtx.Unlock()
+			}
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Error(err)
+			} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
+				log.Error(err)
+			}
+		}(coordsQueue.Id, coordsQueue.Ch)
 	}
 	beater.StopBeaterClient(beaterClient)
 }

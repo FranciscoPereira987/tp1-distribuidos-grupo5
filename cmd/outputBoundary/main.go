@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync"
 
@@ -17,29 +18,29 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
+	source := v.GetString("source.queue")
+	if source == "" {
+		return "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "source.queue")
+	}
+
+	if _, err := m.ExchangeDeclare(source); err != nil {
+		return "", err
+	}
+	eof, err := m.ExchangeDeclare(v.GetString("source.eof"))
 	if err != nil {
 		return "", err
 	}
-	_, err = m.QueueDeclare(source)
-	if err != nil {
+
+	if _, err = m.QueueDeclare(source); err != nil {
 		return "", err
 	}
-	if err := m.QueueBind(source, source, []string{source, mid.ControlRoutingKey}); err != nil {
+	// Subscribe to EOF events.
+	if err := m.QueueBind(source, source, eof); err != nil {
 		return "", err
 	}
-	m.SetExpectedControlCount(source, v.GetInt("workers"))
+	m.SetExpectedEofCount(source, v.GetInt("workers"))
 
 	status, err := m.QueueDeclare(v.GetString("status"))
-	if err != nil {
-		return "", err
-	}
-	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", err
-	}
-	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
-		return "", err
-	}
 
 	log.Info("output boundary up")
 	return source, m.Ready(ctx, status)

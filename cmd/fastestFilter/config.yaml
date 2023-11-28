@@ -2,9 +2,11 @@
 # demuxers: x
 
 status: "status"
-exchange:
-  source: "fastest"
-  sink: "results"
+source:
+  eof: "demux.eof"
+  queue: "fastest"
+sink:
+  results: "results"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

@@ -1,8 +1,9 @@
 # workers: x + y + z + w
 
 status: "status"
-exchange:
-  source: "results"
+source:
+  eof: "demux.eof"
+  queue: "results"
 
 port: "7777"
 

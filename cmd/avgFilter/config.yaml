@@ -2,9 +2,12 @@
 # demuxers: x
 
 status: "status"
-exchange:
-  source: "average"
-  sink: "results"
+source:
+  eof: "demux.eof"
+  average: "average"
+  queue: "average"
+sink:
+  results: "results"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

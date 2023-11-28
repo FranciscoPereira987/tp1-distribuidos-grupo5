@@ -42,7 +42,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err != nil {
 		return err
 	}
-	if err := g.m.TopicEOF(ctx, g.coords, "coords", workerId, g.id); err != nil {
+	if err := g.m.EOF(ctx, g.coords, workerId, g.id); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		if err != nil {
 			if err == io.EOF {
 				if i != mid.MaxMessageSize/typing.FlightSize {
-					err = bc.Publish(ctx, g.m, g.flights, rr.NextKey(), b.Bytes())
+					err = bc.Publish(ctx, g.m, "", rr.NextKey(g.flights), b.Bytes())
 				} else {
 					err = nil
 				}
@@ -123,7 +123,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			continue
 		}
 		if i--; i <= 0 {
-			if err := bc.Publish(ctx, g.m, g.flights, rr.NextKey(), b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, g.m, "", rr.NextKey(g.flights), b.Bytes()); err != nil {
 				return err
 			}
 			i = mid.MaxMessageSize / typing.AirportCoordsSize

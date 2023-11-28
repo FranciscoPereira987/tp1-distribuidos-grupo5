@@ -20,40 +20,31 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	source, err := m.ExchangeDeclare(v.GetString("exchange.source"))
+	eof, err := m.ExchangeDeclare(v.GetString("source.eof"))
 	if err != nil {
 		return "", "", err
 	}
 
-	q := v.GetString("queue")
-	if q == "" {
-		q = source + "." + v.GetString("id")
+	q, err := mid.QueueName(v.GetString("source.queue"), v.GetString("id"))
+	if err != nil {
+		return "", "", err
 	}
 	if _, err = m.QueueDeclare(q); err != nil {
 		return "", "", err
 	}
-	// Subscribe to shards specific and EOF events.
-	shardKey := mid.ShardKey(v.GetString("id"))
-	if err := m.QueueBind(q, source, []string{shardKey, mid.ControlRoutingKey}); err != nil {
+
+	// Subscribe to EOF events.
+	if err := m.QueueBind(q, eof); err != nil {
 		return "", "", err
 	}
-	m.SetExpectedControlCount(q, v.GetInt("demuxers"))
+	m.SetExpectedEofCount(q, v.GetInt("demuxers"))
 
-	sink := v.GetString("exchange.sink")
+	sink := v.GetString("sink.results")
 	if sink == "" {
-		return "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "exchange.sink")
+		return "", "", fmt.Errorf("%w: %q", utils.ErrMissingConfig, "sink.results")
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
-	if err != nil {
-		return "", "", err
-	}
-	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", "", err
-	}
-	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
-		return "", "", err
-	}
 
 	log.Info("fastest filter worker up")
 	return q, sink, m.Ready(ctx, status)
@@ -111,7 +102,7 @@ func main() {
 					logrus.Errorf("action: re-started | status: failed | reason: %s", err)
 				}
 			}(f, queue.Ch)
-			}else{
+		} else {
 			go func(id string, ch <-chan mid.Delivery) {
 				ctx, cancel := context.WithCancel(signalCtx)
 				defer cancel()

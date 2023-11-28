@@ -16,23 +16,17 @@ import (
 
 // Describes the topology around this node.
 func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (string, string, error) {
-	coords, err := m.ExchangeDeclare(v.GetString("exchange.coords"))
+	coords, err := m.ExchangeDeclare(v.GetString("sink.coords"))
 	if err != nil {
 		return "", "", err
 	}
-	flights, err := m.ExchangeDeclare(v.GetString("exchange.flights"))
+	flights, err := m.ExchangeDeclare(v.GetString("sink.flights"))
 	if err != nil {
 		return "", "", err
 	}
 
 	status, err := m.QueueDeclare(v.GetString("status"))
 	if err != nil {
-		return "", "", err
-	}
-	if _, err := m.ExchangeDeclare(status); err != nil {
-		return "", "", err
-	}
-	if err := m.QueueBind(status, status, []string{mid.ControlRoutingKey}); err != nil {
 		return "", "", err
 	}
 

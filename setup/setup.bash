@@ -72,9 +72,7 @@ do
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       rabbitmq:
-        condition: service_healthy
-
-  "
+        condition: service_healthy"
 done
 
 for ((n = 1; n <= WORKERS_QUERY1; n++))

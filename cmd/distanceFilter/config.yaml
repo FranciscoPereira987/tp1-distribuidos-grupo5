@@ -1,9 +1,15 @@
 # demuxers: x
 
 status: "status"
-source: "distance"
-exchange:
-  sink: "results"
+source:
+  coords:
+    exchange: "coords"
+    queue: "coords"
+  flights:
+    eof: "demux.eof"
+    queue: "distance"
+sink:
+  results: "results"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

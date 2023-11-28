@@ -14,10 +14,10 @@ import (
 )
 
 type Maniac struct {
-	conn *dood.DooD
+	conn     *dood.DooD
 	killable []string
-	gen *rand.Rand
-	targets int
+	gen      *rand.Rand
+	targets  int
 }
 
 func (m *Maniac) shuffleFunc() func(i, j int) {
@@ -42,7 +42,6 @@ func NewManiac(possibleTargets []string, targets int) (m *Maniac, err error) {
 	return
 }
 
-
 func (m *Maniac) KillTargets() {
 	m.gen.Shuffle(len(m.killable), m.shuffleFunc())
 	for _, toKill := range m.killable[:m.targets] {
@@ -52,9 +51,7 @@ func (m *Maniac) KillTargets() {
 	}
 }
 
-
-
-func parseConfig(v *viper.Viper) (m *Maniac, err error){
+func parseConfig(v *viper.Viper) (m *Maniac, err error) {
 	m, err = NewManiac(v.GetStringSlice("targets"), v.GetInt("kill-number"))
 
 	return
@@ -80,7 +77,7 @@ func main() {
 loop:
 	for {
 		select {
-		case <- ch:
+		case <-ch:
 			break loop
 		default:
 		}

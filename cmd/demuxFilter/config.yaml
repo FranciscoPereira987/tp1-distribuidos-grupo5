@@ -4,12 +4,14 @@
 #   q4: w
 
 status: "status"
-source: "demux"
-exchange:
+source:
+  queue: "demux"
+sink:
   distance: "distance"
   fastest: "fastest"
   average: "average"
   results: "results"
+  eof: "demux.eof"
 
 server:
   url: "amqp://guest:guest@rabbitmq:5672/"

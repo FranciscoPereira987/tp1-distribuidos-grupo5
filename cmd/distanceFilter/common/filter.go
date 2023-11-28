@@ -19,10 +19,10 @@ import (
 const distanceFactor = 4
 
 type Filter struct {
-	m        *mid.Middleware
-	id       string
-	sink     string
-	workdir  string
+	m       *mid.Middleware
+	id      string
+	sink    string
+	workdir string
 }
 
 func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
@@ -91,7 +91,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			}
 		}
 		if b.Len() > len(f.id) {
-			if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 				return err
 			}
 		}

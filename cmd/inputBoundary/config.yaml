@@ -2,8 +2,8 @@
 # demuxers: x
 
 status: "status"
-exchange:
-  coords: "distance"
+sink:
+  coords: "coords"
   flights: "demux"
 
 port: "6666"

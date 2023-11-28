@@ -61,7 +61,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 		log.Info("action: re-start filter | status: re-sending results")
 		go func() {
 			fares, fareSum, count, _ := f.GetRunVariables()
-			if err := f.sendResults(ctx, fares, float32(fareSum / float64(count))); err != nil {
+			if err := f.sendResults(ctx, fares, float32(fareSum/float64(count))); err != nil {
 				log.Infof("action: re-start filter sending results | status: failed | reason: %s", err)
 			}
 		}()
@@ -99,7 +99,7 @@ func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map
 }
 
 func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, []string) {
-	
+
 	fareSum, _ := f.stateMan.Get("fare-sum").(float64)
 	fareCount := f.stateMan.GetInt("fare-count")
 	keys, fares := recoverKeysAndFares(f.stateMan)
@@ -111,7 +111,6 @@ func (f *Filter) updateFares(sum float64, count int) {
 	f.stateMan.AddToState("fare-count", count)
 	f.stateMan.AddToState("fare-sum", sum)
 }
-
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 	fares, fareSum, count, keys := f.GetRunVariables()
@@ -187,7 +186,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 			return err
 		} else if newResult {
 			if i--; i <= 0 {
-				if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
@@ -196,7 +195,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ4Size {
-		if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 			return err
 		}
 	}
@@ -247,8 +246,8 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, av
 }
 
 type fareWriter struct {
-	bw   *bufio.Writer
-	file *os.File
+	bw    *bufio.Writer
+	file  *os.File
 	Fares int
 }
 

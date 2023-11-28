@@ -46,7 +46,7 @@ func (f *Filter) recoverSended() map[string]bool {
 	mapped := make(map[string]bool)
 	value, ok := f.stateMan.Get("sended").(map[any]any)
 	if ok {
-		for key, val := range value{
+		for key, val := range value {
 			mapped[key.(string)] = val.(bool)
 		}
 	}
@@ -54,11 +54,11 @@ func (f *Filter) recoverSended() map[string]bool {
 }
 
 // TODO: Implement
-func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter){
+func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 	processed := f.stateMan.Get("processed").(bool)
 	if processed {
 		log.Info("action: re-start worker | result: re-sending results")
-		go func(){
+		go func() {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			value := f.recoverSended()
@@ -68,7 +68,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter){
 			}
 			if err != nil {
 				logrus.Infof("action: re-sending results | status: failed | reason: %s", err)
-			} 
+			}
 		}()
 	} else {
 		log.Info("action: re-start worker | result: add to map")
@@ -190,7 +190,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	return f.SendResults(ctx, fastest, processed)
 }
 
-func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sended map[string]bool) (error){
+func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sended map[string]bool) error {
 
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
@@ -203,7 +203,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 		for _, v := range arr {
 			typing.ResultQ3Marshal(b, &v)
 			if i--; i <= 0 {
-				if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}
 				f.stateMan.AddToState("sended", sended)
@@ -218,7 +218,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 		sended[key] = true
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
-		if err := bc.Publish(ctx, f.m, f.sink, f.sink, b.Bytes()); err != nil {
+		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 			return err
 		}
 	}

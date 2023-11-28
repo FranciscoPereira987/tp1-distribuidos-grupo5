@@ -28,6 +28,11 @@ func NewDockerClient(host string) (*DooD, error) {
 	return dood, err
 }
 
+func (dood *DooD) Shutdown() {
+	dood.cancel()
+	dood.cli.Close()
+}
+
 func NewDockerClientDefault() (*DooD, error) {
 	return NewDockerClient("unix:///var/run/docker.sock")
 }

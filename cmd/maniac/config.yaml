@@ -22,6 +22,6 @@
         - avg_filter1 
 
 
-    interval: 15s
+    interval: 10s
 
     kill-number: 2

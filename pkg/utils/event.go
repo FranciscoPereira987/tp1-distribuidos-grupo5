@@ -32,8 +32,8 @@ func (bckoff *BackoffTimer) IncreaseTimeOut() {
 }
 
 func (bckoff *BackoffTimer) TimeOut() time.Time {
-	nano := bckoff.source.Intn(int(bckoff.maxTimeout)) + 1
-	timeOut := time.Second * time.Duration(nano)
+	nano := 100 * (bckoff.source.Intn(int(bckoff.maxTimeout)) + 1)
+	timeOut := time.Millisecond * time.Duration(nano)
 	return time.Now().Add(timeOut)
 }
 

@@ -111,7 +111,7 @@ func NewTimer(at string, name string, restart chan string) *timer {
 	t.OutboundChan = make(chan *net.UDPAddr, 1)
 	t.clientAddr = at
 	t.name = name
-	t.maxTime = time.Second * 2
+	t.maxTime = time.Millisecond * 20
 	t.restartChan = restart
 
 	return t
@@ -317,6 +317,7 @@ func (b *BeaterServer) Run() {
 
 func (b *BeaterServer) Stop() error {
 	err := b.sckt.Close()
+	b.dood.Shutdown()
 	b.shutdown <- syscall.SIGTERM
 	err = errors.Join(err, <-b.resultsChan)
 

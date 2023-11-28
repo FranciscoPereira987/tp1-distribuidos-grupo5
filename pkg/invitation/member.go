@@ -25,7 +25,7 @@ func (st *Status) ActAsMember() (uint, error) {
 					st.peers.Members,
 				}
 			}
-			logrus.Infof("action: acting as member | status: recieved invite from: %s", addr.String())
+			logrus.Infof("action: acting as member | status: recieved invite from: %s | leader: %d", addr.String(), st.leaderId)
 			err = writeTo(msg, st.dial, addr.String())
 		case Change:
 			ch, err := deserializeChange(msg[1:])

@@ -32,6 +32,12 @@ func (st *Status) ActAsLeader() (uint, error) {
 		logrus.Infof("action: acting leader | status: recieved invitation")
 		st.checkInvitation(msg, addr, nil)
 		return st.runElection()
+	case Accept:
+		msg, err := deserializeAcc(msg[1:])
+		if err == nil {
+			st.addToGroup(msg.From, msg.Members)
+		}
+		return Coordinator, err
 	case Heartbeat:
 		//logrus.Infof("action: acting leader | status: recieved heartbeat")
 		return Coordinator, writeTo(ok{}, st.dial, addr.String())

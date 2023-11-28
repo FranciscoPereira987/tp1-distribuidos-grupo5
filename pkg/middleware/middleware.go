@@ -362,7 +362,14 @@ func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, 
 // which it consumes messages.
 func (m *Middleware) Ready(ctx context.Context, workerId, key string) error {
 	var bc BasicConfirmer
-	return bc.Publish(ctx, m, "", key, []byte(workerId))
+	if f, err := os.Open(filepath.Join(Workdir, "ready")); err == nil {
+		f.Close()
+		return nil
+	}
+	if err := bc.Publish(ctx, m, "", key, []byte(workerId)); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(Workdir, "ready"), nil, 0640)
 }
 
 // `workerId' should be a unique identifier for the worker, like the queue from

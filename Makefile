@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 
-CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter
+CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter heartbeater maniac
 BIN := $(addprefix bin/,$(CMD))
 
 BEAT_CONFIG = cmd/heartbeater/config.yaml

@@ -67,6 +67,11 @@ do
       - testing_net
     environment:
       - INV_NAME=$n
+      - INV_PEERS_COUNT=$WORKERS_HEARTBEATER
+      - INV_CONTAINERS_DEMUX_COUNT=$WORKERS_QUERY1
+      - INV_CONTAINERS_DISTANCE_COUNT=$WORKERS_QUERY2
+      - INV_CONTAINERS_FASTEST_COUNT=$WORKERS_QUERY3
+      - INV_CONTAINERS_AVERAGE_COUNT=$WORKERS_QUERY4
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock

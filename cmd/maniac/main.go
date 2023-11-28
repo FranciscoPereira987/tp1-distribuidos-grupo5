@@ -20,10 +20,8 @@ type Maniac struct {
 	targets  int
 }
 
-func (m *Maniac) shuffleFunc() func(i, j int) {
-	return func(i, j int) {
-		m.killable[i], m.killable[j] = m.killable[j], m.killable[i]
-	}
+func (m *Maniac) shuffleFunc(i, j int) {
+	m.killable[i], m.killable[j] = m.killable[j], m.killable[i]
 }
 
 func NewManiac(possibleTargets []string, targets int) (m *Maniac, err error) {
@@ -43,7 +41,7 @@ func NewManiac(possibleTargets []string, targets int) (m *Maniac, err error) {
 }
 
 func (m *Maniac) KillTargets() {
-	m.gen.Shuffle(len(m.killable), m.shuffleFunc())
+	m.gen.Shuffle(len(m.killable), m.shuffleFunc)
 	for _, toKill := range m.killable[:m.targets] {
 		if err := m.conn.Kill(toKill); err != nil {
 			logrus.Infof("action: killing container %s | status: failed | reason: %s", toKill, err)
@@ -51,10 +49,8 @@ func (m *Maniac) KillTargets() {
 	}
 }
 
-func parseConfig(v *viper.Viper) (m *Maniac, err error) {
-	m, err = NewManiac(v.GetStringSlice("targets"), v.GetInt("kill-number"))
-
-	return
+func parseConfig(v *viper.Viper) (*Maniac, error) {
+	return NewManiac(v.GetStringSlice("targets"), v.GetInt("kill"))
 }
 
 func main() {
@@ -70,19 +66,18 @@ func main() {
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGKILL)
-	interval, err := time.ParseDuration(v.GetString("interval"))
-	if err != nil {
-		logrus.Fatalf("action: parsing interval | status: failed | reason: %s", err)
+	interval := v.GetDuration("interval")
+	if interval <= 0 {
+		logrus.Fatal("action: parsing interval | status: failed | reason: non-positive interval")
 	}
 loop:
-	for {
+	for ticker := time.Tick(interval); ; {
+		logrus.Info("action: Killing | status: sleeping for a bit")
 		select {
 		case <-ch:
 			break loop
-		default:
+		case <-ticker:
 		}
-		logrus.Info("action: Killing | status: sleeping for a bit")
-		time.Sleep(interval)
 		logrus.Info("action: killing | status: grabbing a gun")
 		m.KillTargets()
 		logrus.Info("action: killing | status: perfect crime")

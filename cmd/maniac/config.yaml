@@ -8,4 +8,4 @@ targets:
   - avg_filter1
 
 interval: 10s
-kill-number: 2
+kill: 2

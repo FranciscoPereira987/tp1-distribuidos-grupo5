@@ -42,7 +42,6 @@ test:
 
 setup: docker-compose-dev.yaml
 	setup/setup.bash > $^
-	setup/beat-config.bash > $(BEAT_CONFIG)
 	setup/maniac-config.bash > $(MANIAC_CONFIG)
 .PHONY: setup
 

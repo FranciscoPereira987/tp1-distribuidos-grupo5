@@ -55,14 +55,17 @@ services:
       - testing_net
     environment:
       - INV_NAME=1
+      - INV_PEERS_COUNT=3
+      - INV_CONTAINERS_DEMUX_COUNT=1
+      - INV_CONTAINERS_DISTANCE_COUNT=1
+      - INV_CONTAINERS_FASTEST_COUNT=1
+      - INV_CONTAINERS_AVERAGE_COUNT=1
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-  
 
   peer2:
     container_name: peer2
@@ -72,14 +75,17 @@ services:
       - testing_net
     environment:
       - INV_NAME=2
+      - INV_PEERS_COUNT=3
+      - INV_CONTAINERS_DEMUX_COUNT=1
+      - INV_CONTAINERS_DISTANCE_COUNT=1
+      - INV_CONTAINERS_FASTEST_COUNT=1
+      - INV_CONTAINERS_AVERAGE_COUNT=1
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-  
 
   peer3:
     container_name: peer3
@@ -89,14 +95,17 @@ services:
       - testing_net
     environment:
       - INV_NAME=3
+      - INV_PEERS_COUNT=3
+      - INV_CONTAINERS_DEMUX_COUNT=1
+      - INV_CONTAINERS_DISTANCE_COUNT=1
+      - INV_CONTAINERS_FASTEST_COUNT=1
+      - INV_CONTAINERS_AVERAGE_COUNT=1
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-  
 
   demuxFilter1:
     container_name: demux_filter1

@@ -83,7 +83,7 @@ func (f *Filter) Close() error {
 func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map[string]fareWriter) {
 	fares = make(map[string]fareWriter)
 
-	values := stateMan.Get("keys").([]any)
+	values, _ := stateMan.Get("keys").([]any)
 
 	for _, value := range values {
 		key := value.(string)
@@ -100,7 +100,7 @@ func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map
 
 func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, []string) {
 	
-	fareSum := f.stateMan.Get("fare-sum").(float64)
+	fareSum, _ := f.stateMan.Get("fare-sum").(float64)
 	fareCount := f.stateMan.GetInt("fare-count")
 	keys, fares := recoverKeysAndFares(f.stateMan)
 

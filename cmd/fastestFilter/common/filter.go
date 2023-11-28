@@ -180,7 +180,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		return context.Cause(ctx)
 	default:
 		f.stateMan.AddToState("processed", true)
-		for key, _ := range fastest {
+		for key := range fastest {
 			processed[key] = false
 		}
 		f.stateMan.AddToState("sended", processed)

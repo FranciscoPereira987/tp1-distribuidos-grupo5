@@ -67,7 +67,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("distance filter worker up")
-	return qCoords, qFlights, sink, m.Ready(ctx, status)
+	return qCoords, qFlights, sink, m.Ready(ctx, status, qCoords)
 }
 
 func main() {
@@ -94,7 +94,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	workerId := flightsSource
+	workerId := coordsSource
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
 	flightsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex

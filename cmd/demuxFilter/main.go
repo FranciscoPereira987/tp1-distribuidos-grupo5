@@ -61,7 +61,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	}
 
 	log.Info("demux filter worker up")
-	return q, []string{distance, fastest, average, results}, eof, m.Ready(ctx, status)
+	return q, []string{distance, fastest, average, results}, eof, m.Ready(ctx, status, q)
 }
 
 func main() {

@@ -43,7 +43,7 @@ func setupMiddleware(ctx context.Context, m *mid.Middleware, v *viper.Viper) (st
 	status, err := m.QueueDeclare(v.GetString("status"))
 
 	log.Info("output boundary up")
-	return source, m.Ready(ctx, status)
+	return source, m.Ready(ctx, status, source)
 }
 
 func main() {

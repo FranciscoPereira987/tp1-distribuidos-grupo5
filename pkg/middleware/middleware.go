@@ -310,15 +310,18 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 		return err
 	}
 
+	workersReady := make(map[string]bool)
 	for d := range msgs {
-		workers--
-		if workers <= 0 {
-			if err := m.ch.Ack(d.DeliveryTag, true); err != nil {
+		if len(workersReady) == workers {
+			if err := m.ch.Cancel("ready", false); err != nil {
 				return err
 			}
+			workersReady = nil
+		} else {
+			workersReady[string(d.Body)] = true
 		}
-		if workers == 0 {
-			if err := m.ch.Cancel("ready", false); err != nil {
+		if workersReady == nil {
+			if err := m.ch.Ack(d.DeliveryTag, true); err != nil {
 				return err
 			}
 		}
@@ -355,11 +358,15 @@ func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, 
 	return bc.Confirm(ctx)
 }
 
-func (m *Middleware) Ready(ctx context.Context, key string) error {
+// `workerId' should be a unique identifier for the worker, like the queue from
+// which it consumes messages.
+func (m *Middleware) Ready(ctx context.Context, workerId, key string) error {
 	var bc BasicConfirmer
-	return bc.Publish(ctx, m, "", key, nil)
+	return bc.Publish(ctx, m, "", key, []byte(workerId))
 }
 
+// `workerId' should be a unique identifier for the worker, like the queue from
+// which it consumes messages.
 func (m *Middleware) EOF(ctx context.Context, exchange, workerId, clientId string) error {
 	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q", exchange)

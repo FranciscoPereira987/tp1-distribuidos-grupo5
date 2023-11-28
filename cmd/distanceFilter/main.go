@@ -95,6 +95,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workerId := flightsSource
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
 	flightsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
@@ -122,7 +123,7 @@ func main() {
 				log.Info("action: restart_worker | status: on_flights")
 				if err := filter.Run(ctx, delivery); err != nil {
 					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
-				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 					log.Error(err)
 				}
 			}
@@ -184,7 +185,7 @@ func main() {
 		}
 		if err := filter.Run(ctx, ch); err != nil {
 			log.Error(err)
-		} else if err := middleware.EOF(ctx, sink, id); err != nil {
+		} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 			log.Error(err)
 		}
 	}(coordsQueue.Id, coordsQueue.Ch)

@@ -13,6 +13,8 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
+const workerId = "input"
+
 type Gateway struct {
 	m       *mid.Middleware
 	id      string
@@ -40,7 +42,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err != nil {
 		return err
 	}
-	if err := g.m.TopicEOF(ctx, g.coords, "coords", g.id); err != nil {
+	if err := g.m.TopicEOF(ctx, g.coords, "coords", workerId, g.id); err != nil {
 		return err
 	}
 
@@ -51,7 +53,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	if err := g.ForwardFlights(ctx, &flightsReader, demuxers); err != nil {
 		return err
 	}
-	return g.m.EOF(ctx, g.flights, g.id)
+	return g.m.EOF(ctx, g.flights, workerId, g.id)
 }
 
 func (g *Gateway) ForwardCoords(ctx context.Context, in io.Reader) (int, error) {

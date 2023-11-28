@@ -18,36 +18,36 @@ It should only be stored in state, objects that implement either:
 */
 type StateManager struct {
 	Filename string
-	state    map[string]any
+	State    map[string]any
 }
 
 func NewStateManager(workdir string) *StateManager {
 	return &StateManager{
 		Filename: filepath.Join(workdir, StateFileName),
-		state:    make(map[string]any),
+		State:    make(map[string]any),
 	}
 }
 
 func (sw *StateManager) AddToState(key string, value any) {
-	sw.state[key] = value
+	sw.State[key] = value
 }
 
 func (sw *StateManager) Get(key string) any {
-	return sw.state[key]
+	return sw.State[key]
 }
 
 func (sw *StateManager) GetString(key string) string {
-	s, _ := sw.state[key].(string)
+	s, _ := sw.State[key].(string)
 	return s
 }
 
 func (sw *StateManager) GetInt(key string) int {
-	i, _ := sw.state[key].(int)
+	i, _ := sw.State[key].(int)
 	return i
 }
 
 func (sw *StateManager) DumpState() error {
-	buf, err := json.Marshal(sw.state)
+	buf, err := json.Marshal(sw.State)
 
 	if err == nil {
 		err = WriteFile(sw.Filename, buf)
@@ -63,7 +63,7 @@ func (sw *StateManager) RecoverState() (err error) {
 	if err == nil {
 		defer file.Close()
 		dec := json.NewDecoder(file)
-		err = dec.Decode(&sw.state)
+		err = dec.Decode(&sw.State)
 	}
 
 	return

@@ -5,14 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"os"
+	"encoding/hex"
+	"path/filepath"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	amqp "github.com/rabbitmq/amqp091-go"
 	log "github.com/sirupsen/logrus"
 )
 
 const MaxMessageSize = 8192
 const ControlRoutingKey = "control"
+const Workdir = "middleware"
 
 var (
 	ErrMiddleware = errors.New("rabbitMQ channel closed")
@@ -48,6 +53,9 @@ type DeferredConfirmer struct {
 }
 
 func Dial(url string) (*Middleware, error) {
+	if err := os.MkdirAll(Workdir, 0755); err != nil {
+		return nil, err
+	}
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err
@@ -198,7 +206,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 	ret := make(chan Client)
 	go func(cc int) {
 		pairs := make(map[string]struct {
-			cc int
+			sm *state.StateManager
 			ch chan<- Delivery
 		})
 		defer func() {
@@ -212,23 +220,33 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 			clientId, msg := string(d.Body[:id.Len]), d.Body[id.Len:]
 			pair, ok := pairs[clientId]
 			if !ok {
-				log.Infof("action: new_client | result: success | queue: %q | client: %x", name, clientId)
 				ch := make(chan Delivery)
-				pair.cc = cc
+				dir := filepath.Join(Workdir, name, hex.EncodeToString(d.Body[:id.Len]))
+				pair.sm = state.NewStateManager(dir)
 				pair.ch = ch
 				pairs[clientId] = pair
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					log.Errorf("action: new_client | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
+					return
+				} else {
+					log.Infof("action: new_client | result: success | queue: %q | client: %x", name, clientId)
+					pair.sm.RecoverState()
+				}
 				ret <- Client{clientId, ch}
 			}
 			if strings.HasPrefix(d.RoutingKey, ControlRoutingKey) {
-				pair.cc--
-				pairs[clientId] = pair
-				// TODO: store EOF state
+				pair.sm.State[string(msg)] = true
+				if err := pair.sm.DumpState(); err != nil {
+					log.Errorf("action: store_eof | result: failure | queue: %q | worker: %s | error: %s", name, clientId, err)
+					return
+				}
 				if err := m.Ack(d.DeliveryTag); err != nil {
 					log.Errorf("action: ack_eof | result: failure | queue: %q | client: %x | error: %s", name, clientId, err)
 					return
 				}
-				if pair.cc <= 0 {
+				if len(pair.sm.State) >= cc {
 					log.Infof("action: EOF | result: success | queue: %q | client: %x", name, clientId)
+					os.RemoveAll(filepath.Join(Workdir, name, hex.EncodeToString([]byte(clientId))))
 					close(pair.ch)
 					delete(pairs, clientId)
 				} else {
@@ -317,17 +335,19 @@ func (m *Middleware) Ready(ctx context.Context, exchange string) error {
 	return bc.Publish(ctx, m, exchange, ControlRoutingKey, nil)
 }
 
-func (m *Middleware) EOF(ctx context.Context, exchange, clientId string) error {
+func (m *Middleware) EOF(ctx context.Context, exchange, workerId, clientId string) error {
 	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q", exchange)
-	return bc.Publish(ctx, m, exchange, ControlRoutingKey, []byte(clientId))
+	msg := append([]byte(clientId), workerId...)
+	return bc.Publish(ctx, m, exchange, ControlRoutingKey, msg)
 }
 
-func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, clientId string) error {
+func (m *Middleware) TopicEOF(ctx context.Context, exchange, topic, workerId, clientId string) error {
 	var bc BasicConfirmer
 	log.Infof("sending EOF into exchange %q for topic %q", exchange, topic)
 	rKey := ControlRoutingKey + "." + topic
-	return bc.Publish(ctx, m, exchange, rKey, []byte(clientId))
+	msg := append([]byte(clientId), workerId...)
+	return bc.Publish(ctx, m, exchange, rKey, msg)
 }
 
 func (m *Middleware) Close() {

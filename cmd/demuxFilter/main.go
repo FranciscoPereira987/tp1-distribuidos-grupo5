@@ -91,6 +91,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workerId := source
 
 	nWorkers := []int{
 		v.GetInt("workers.q2"),
@@ -139,7 +140,7 @@ func main() {
 				// send EOF to sinks
 				errs := make([]error, 0, len(sinks))
 				for _, exchange := range sinks {
-					errs = append(errs, middleware.EOF(ctx, exchange, id))
+					errs = append(errs, middleware.EOF(ctx, exchange, workerId, id))
 				}
 				if err := errors.Join(errs...); err != nil {
 					log.Error(err)

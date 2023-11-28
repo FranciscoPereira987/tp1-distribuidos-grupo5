@@ -86,6 +86,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workerId := source
 	workdir := fmt.Sprintf("/clients/%d", v.GetInt("id"))
 	recovered := state.RecoverStateFiles(workdir)
 	toRestart := make(map[string]*common.Filter)
@@ -125,7 +126,7 @@ func main() {
 
 				if err := filter.Run(ctx, ch); err != nil {
 					log.Error(err)
-				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 					log.Error(err)
 				}
 			}(queue.Id, queue.Ch)

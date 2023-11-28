@@ -85,6 +85,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	workerId := source
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
 	toRestart := make(map[string]*common.Filter)
@@ -107,7 +108,7 @@ func main() {
 				defer f.Close()
 				if err := f.Run(ctx, ch); err != nil {
 					log.Error(err)
-				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 					log.Error(err)
 				}
 			}(f, queue.Id, queue.Ch)
@@ -125,7 +126,7 @@ func main() {
 	
 				if err := filter.Run(ctx, ch); err != nil {
 					log.Error(err)
-				} else if err := middleware.EOF(ctx, sink, id); err != nil {
+				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 					log.Error(err)
 				}
 			}(queue.Id, queue.Ch)

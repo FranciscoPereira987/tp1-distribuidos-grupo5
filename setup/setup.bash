@@ -98,7 +98,6 @@ do
       - DEMUX_NAME="demux_filter$n"
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
-      - demuxState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -119,7 +118,6 @@ do
       - DISTANCE_NAME="distance_filter$n"
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
-      - distanceState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -140,7 +138,6 @@ do
       - FAST_NAME="fastest_filter$n"
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
-      - fastestState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
@@ -161,22 +158,21 @@ do
       - AVG_NAME="avg_filter$n"
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml
-      - avgState:/clients/
     depends_on:
       rabbitmq:
         condition: service_healthy"
 done
 
 echo '
-volumes:
-  distanceState:
-  fastestState:
-  avgState:
-  demuxState:
-
 networks:
   testing_net:
     ipam:
       driver: default
       config:
         - subnet: 172.25.125.0/24'
+
+sed "
+s/%I/${INTERVAL:-10s}/
+s/%V/${VICTIMS:-$(((HB+Q1+Q2+Q3+Q4)/2))}/
+" setup/maniac-template.bash >bin/maniac.bash
+chmod +x bin/maniac.bash

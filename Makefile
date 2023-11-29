@@ -5,10 +5,6 @@ GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter heartbeater maniac
 BIN := $(addprefix bin/,$(CMD))
 
-BEAT_CONFIG = cmd/heartbeater/config.yaml
-
-MANIAC_CONFIG = cmd/maniac/config.yaml
-
 all: $(BIN)
 .PHONY: all
 
@@ -42,7 +38,6 @@ test:
 
 setup: docker-compose-dev.yaml
 	setup/setup.bash > $^
-	setup/maniac-config.bash > $(MANIAC_CONFIG)
 .PHONY: setup
 
 run-client:
@@ -50,7 +45,7 @@ run-client:
 .PHONY: run-client
 
 run-maniac:
-	docker run --rm -v ./cmd/maniac:/cmd/maniac -v /var/run/docker.sock:/var/run/docker.sock --network tp1_testing_net --entrypoint /maniac maniac
+	bin/maniac.bash
 .PHONY: run-maniac
 
 docker-compose-up:

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 const StateFileName = "state.json"
@@ -126,7 +125,7 @@ func LinkTmp(f *os.File, name string) (err error) {
 }
 
 func WriteFile(filename string, p []byte) error {
-	f, err := os.CreateTemp(filepath.Dir(filename), "tmp.")
+	f, err := os.CreateTemp(filepath.Join(filepath.Dir(filename), "tmp"), ".")
 	if err != nil {
 		return err
 	}
@@ -137,8 +136,4 @@ func WriteFile(filename string, p []byte) error {
 	}
 
 	return LinkTmp(f, filename)
-}
-
-func IsTmp(filename string) bool {
-	return strings.HasPrefix(filename, "tmp.")
 }

@@ -111,8 +111,7 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 	}
 
 	for _, file := range files {
-		if state.IsTmp(file.Name()) {
-			os.Remove(filepath.Join(f.workdir, "fastest", file.Name()))
+		if file.IsDir() {
 			continue
 		}
 		buf, err := os.ReadFile(filepath.Join(f.workdir, "fastest", file.Name()))

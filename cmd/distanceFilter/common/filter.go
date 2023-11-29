@@ -117,8 +117,7 @@ func (f *Filter) loadDistanceComputer() (*distance.DistanceComputer, error) {
 
 	comp := distance.NewComputer()
 	for _, file := range files {
-		if state.IsTmp(file.Name()) {
-			os.Remove(filepath.Join(coordsDir, file.Name()))
+		if file.IsDir() {
 			continue
 		}
 		if err := loadCoordinates(comp, filepath.Join(coordsDir, file.Name())); err != nil {

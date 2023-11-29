@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-WORKERS_HEARTBEATER=${WORKERS_HEARTBEATER:-3}
-WORKERS_QUERY1=${WORKERS_QUERY1:-1}
-WORKERS_QUERY2=${WORKERS_QUERY2:-1}
-WORKERS_QUERY3=${WORKERS_QUERY3:-1}
-WORKERS_QUERY4=${WORKERS_QUERY4:-1}
+
+HB=${HB:-3}
+Q1=${Q1:-1}
+Q2=${Q2:-1}
+Q3=${Q3:-1}
+Q4=${Q4:-1}
 
 echo '
 name: tp1
@@ -31,8 +32,8 @@ echo "
     networks:
       - testing_net
     environment:
-      - IN_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
-      - IN_DEMUXERS=$WORKERS_QUERY1
+      - IN_WORKERS=$((Q1 + Q2 + Q3 + Q4))
+      - IN_DEMUXERS=$Q1
       - IN_NAME="input"
     depends_on:
       rabbitmq:
@@ -48,7 +49,7 @@ echo "
     networks:
       - testing_net
     environment:
-      - OUT_WORKERS=$((WORKERS_QUERY1 + WORKERS_QUERY2 + WORKERS_QUERY3 + WORKERS_QUERY4))
+      - OUT_WORKERS=$((Q1 + Q2 + Q3 + Q4))
       - OUT_NAME="output"
     depends_on:
       rabbitmq:
@@ -56,7 +57,7 @@ echo "
     volumes:
       - ./cmd/outputBoundary/config.yaml:/config.yaml"
 
-for ((n = 1; n <= WORKERS_HEARTBEATER; n++))
+for ((n = 1; n <= HB; n++))
 do
   echo "
   peer$n:
@@ -67,11 +68,11 @@ do
       - testing_net
     environment:
       - INV_NAME=$n
-      - INV_PEERS_COUNT=$WORKERS_HEARTBEATER
-      - INV_CONTAINERS_DEMUX_COUNT=$WORKERS_QUERY1
-      - INV_CONTAINERS_DISTANCE_COUNT=$WORKERS_QUERY2
-      - INV_CONTAINERS_FASTEST_COUNT=$WORKERS_QUERY3
-      - INV_CONTAINERS_AVERAGE_COUNT=$WORKERS_QUERY4
+      - INV_PEERS_COUNT=$HB
+      - INV_CONTAINERS_DEMUX_COUNT=$Q1
+      - INV_CONTAINERS_DISTANCE_COUNT=$Q2
+      - INV_CONTAINERS_FASTEST_COUNT=$Q3
+      - INV_CONTAINERS_AVERAGE_COUNT=$Q4
     volumes:
       - ./cmd/heartbeater/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
@@ -80,7 +81,7 @@ do
         condition: service_healthy"
 done
 
-for ((n = 1; n <= WORKERS_QUERY1; n++))
+for ((n = 1; n <= Q1; n++))
 do
     echo "
   demuxFilter$n:
@@ -91,9 +92,9 @@ do
       - testing_net
     environment:
       - DEMUX_ID=$n
-      - DEMUX_WORKERS_Q2=$WORKERS_QUERY2
-      - DEMUX_WORKERS_Q3=$WORKERS_QUERY3
-      - DEMUX_WORKERS_Q4=$WORKERS_QUERY4
+      - DEMUX_WORKERS_Q2=$Q2
+      - DEMUX_WORKERS_Q3=$Q3
+      - DEMUX_WORKERS_Q4=$Q4
       - DEMUX_NAME="demux_filter$n"
     volumes:
       - ./cmd/demuxFilter/config.yaml:/config.yaml
@@ -103,7 +104,7 @@ do
         condition: service_healthy"
 done
 
-for ((n = 1; n <= WORKERS_QUERY2; n++))
+for ((n = 1; n <= Q2; n++))
 do
     echo "
   distanceFilter$n:
@@ -114,7 +115,7 @@ do
       - testing_net
     environment:
       - DISTANCE_ID=$n
-      - DISTANCE_DEMUXERS=$WORKERS_QUERY1
+      - DISTANCE_DEMUXERS=$Q1
       - DISTANCE_NAME="distance_filter$n"
     volumes:
       - ./cmd/distanceFilter/config.yaml:/config.yaml
@@ -124,7 +125,7 @@ do
         condition: service_healthy"
 done
 
-for ((n = 1; n <= WORKERS_QUERY3; n++))
+for ((n = 1; n <= Q3; n++))
 do
     echo "
   fastestFilter$n:
@@ -135,7 +136,7 @@ do
       - testing_net
     environment:
       - FAST_ID=$n
-      - FAST_DEMUXERS=$WORKERS_QUERY1
+      - FAST_DEMUXERS=$Q1
       - FAST_NAME="fastest_filter$n"
     volumes:
       - ./cmd/fastestFilter/config.yaml:/config.yaml
@@ -145,7 +146,7 @@ do
         condition: service_healthy"
 done
 
-for ((n = 1; n <= WORKERS_QUERY4; n++))
+for ((n = 1; n <= Q4; n++))
 do
     echo "
   avgFilter$n:
@@ -156,7 +157,7 @@ do
       - testing_net
     environment:
       - AVG_ID=$n
-      - AVG_DEMUXERS=$WORKERS_QUERY1
+      - AVG_DEMUXERS=$Q1
       - AVG_NAME="avg_filter$n"
     volumes:
       - ./cmd/avgFilter/config.yaml:/config.yaml

@@ -327,7 +327,7 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 		}
 	}
 
-	if workers > 0 {
+	if workersReady != nil {
 		return ErrMiddleware
 	} else {
 		return nil

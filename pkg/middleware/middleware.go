@@ -276,6 +276,7 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 }
 
 func (m *Middleware) Publish(ctx context.Context, c Confirmer, exchange, key string, body []byte) error {
+	log.Infof("exchange=%s | key=%s | body=%s", exchange, key, body)
 	dc, err := m.ch.PublishWithDeferredConfirmWithContext(
 		ctx,
 		exchange, // exchange
@@ -360,7 +361,7 @@ func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, 
 
 // `workerId' should be a unique identifier for the worker, like the queue from
 // which it consumes messages.
-func (m *Middleware) Ready(ctx context.Context, workerId, key string) error {
+func (m *Middleware) Ready(ctx context.Context, key, workerId string) error {
 	var bc BasicConfirmer
 	if f, err := os.Open(filepath.Join(Workdir, "ready")); err == nil {
 		f.Close()

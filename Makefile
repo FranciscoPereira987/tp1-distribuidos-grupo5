@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
 
-CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter heartbeater maniac
+CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter heartbeater
 BIN := $(addprefix bin/,$(CMD))
 
 all: $(BIN)
@@ -25,7 +25,6 @@ build-image:
 	docker build -t avg_filter -f cmd/avgFilter/Dockerfile .
 	docker build -t client -f cmd/client/Dockerfile .
 	docker build -t invitation -f cmd/heartbeater/Dockerfile .
-	docker build -t maniac -f cmd/maniac/Dockerfile .
 .PHONY: build-image
 
 fmt:

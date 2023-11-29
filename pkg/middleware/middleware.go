@@ -312,16 +312,17 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 
 	workersReady := make(map[string]bool)
 	for d := range msgs {
+		if workersReady != nil {
+			workersReady[string(d.Body)] = true
+		}
 		if len(workersReady) == workers {
 			if err := m.ch.Cancel("ready", false); err != nil {
 				return err
 			}
 			workersReady = nil
-		} else {
-			workersReady[string(d.Body)] = true
 		}
 		if workersReady == nil {
-			if err := m.ch.Ack(d.DeliveryTag, true); err != nil {
+			if err := d.Ack(true); err != nil {
 				return err
 			}
 		}

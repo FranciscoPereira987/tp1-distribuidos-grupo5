@@ -104,9 +104,9 @@ func main() {
 				defer cancel()
 				defer f.Close()
 				if err := f.Run(ctx, ch); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 			}(f, queue.Id, queue.Ch)
 		} else {
@@ -122,9 +122,9 @@ func main() {
 				defer filter.Close()
 
 				if err := filter.Run(ctx, ch); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 			}(queue.Id, queue.Ch)
 		}

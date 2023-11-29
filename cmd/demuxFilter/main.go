@@ -105,7 +105,7 @@ func main() {
 	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
@@ -125,7 +125,7 @@ func main() {
 				filter := common.NewFilter(middleware, id, sinks, nWorkers, workdir)
 
 				if err := filter.Run(ctx, ch); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 
 				select {
@@ -136,7 +136,7 @@ func main() {
 
 				// send EOF to sinks
 				if err := middleware.EOF(ctx, eof, workerId, id); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 			}(queue.Id, queue.Ch)
 		}

@@ -110,15 +110,15 @@ func main() {
 				workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
 				filter, err := common.NewFilter(middleware, id, sink, workdir)
 				if err != nil {
-					log.Error(err)
+					log.Fatal(err)
 					return
 				}
 				defer filter.Close()
 
 				if err := filter.Run(ctx, ch); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 			}(queue.Id, queue.Ch)
 		}

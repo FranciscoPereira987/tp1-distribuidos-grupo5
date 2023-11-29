@@ -123,7 +123,7 @@ func main() {
 				if err := filter.Run(ctx, delivery); err != nil {
 					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
 				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Error(err)
+					log.Fatal(err)
 				}
 			}
 		}()
@@ -158,13 +158,13 @@ func main() {
 			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
 			filter, err := common.NewFilter(middleware, id, sink, workdir)
 			if err != nil {
-				log.Error(err)
+				log.Fatal(err)
 				return
 			}
 			defer filter.Close()
 
 			if err := filter.AddCoords(ctx, ch); err != nil {
-				log.Error(err)
+				log.Fatal(err)
 				return
 			}
 			mtx.Lock()
@@ -183,9 +183,9 @@ func main() {
 				mtx.Unlock()
 			}
 			if err := filter.Run(ctx, ch); err != nil {
-				log.Error(err)
+				log.Fatal(err)
 			} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-				log.Error(err)
+				log.Fatal(err)
 			}
 		}(coordsQueue.Id, coordsQueue.Ch)
 	}

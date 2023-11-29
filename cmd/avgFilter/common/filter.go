@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -193,9 +194,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 			return err
 		} else if newResult {
 			if i--; i <= 0 {
-				pubBuf := bytes.NewBuffer(nil)
-				typing.HeaderIntoBuffer(pubBuf, file)
-				b.WriteTo(pubBuf)
+
 				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}
@@ -249,6 +248,9 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, av
 		Destination: destination,
 		AverageFare: float32(fareSum / float64(count)),
 		MaxFare:     fareMax,
+	}
+	if b.Len() == len(f.id) {
+		typing.HeaderIntoBuffer(b, fmt.Sprintf("%s.%s", origin, destination))
 	}
 	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)

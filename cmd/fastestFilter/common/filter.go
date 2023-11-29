@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 
@@ -200,12 +201,9 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 			continue
 		}
 		for _, v := range arr {
-			typing.ResultQ3Marshal(b, &v)
+			f.marshalResult(b, &v)
 			if i--; i <= 0 {
-				pubBuf := bytes.NewBuffer(nil)
-				typing.HeaderIntoBuffer(pubBuf, v.Origin+"."+v.Destination)
-				b.WriteTo(pubBuf)
-				if err := bc.Publish(ctx, f.m, "", f.sink, pubBuf.Bytes()); err != nil {
+				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}
 				f.stateMan.AddToState("sended", sended)
@@ -226,4 +224,12 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	}
 	log.Infof("finished publishing results into %q queue", f.sink)
 	return nil
+}
+
+func (f *Filter) marshalResult(b *bytes.Buffer, v *typing.FastestFilter) {
+	if b.Len() == len(f.id) {
+		typing.HeaderIntoBuffer(b, hex.EncodeToString(v.ID[:]))
+	}
+	typing.ResultQ3Marshal(b, v)
+
 }

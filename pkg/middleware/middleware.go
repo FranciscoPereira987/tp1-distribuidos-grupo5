@@ -276,7 +276,6 @@ func (m *Middleware) Consume(ctx context.Context, name string) (<-chan Client, e
 }
 
 func (m *Middleware) Publish(ctx context.Context, c Confirmer, exchange, key string, body []byte) error {
-	log.Infof("exchange=%s | key=%s | body=%s", exchange, key, body)
 	dc, err := m.ch.PublishWithDeferredConfirmWithContext(
 		ctx,
 		exchange, // exchange

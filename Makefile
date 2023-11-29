@@ -48,8 +48,6 @@ run-maniac:
 .PHONY: run-maniac
 
 docker-compose-up:
-	# Hay que agregar la creacion de todas las imagenes
-	# Supongo que estan creadas
 	docker compose -f docker-compose-dev.yaml up -d
 .PHONY: docker-compose-up
 

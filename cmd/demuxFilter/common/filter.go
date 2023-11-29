@@ -52,27 +52,20 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 	}
 }
 
-func recoverKeyGens(stateMan *state.StateManager) (keyGens []mid.KeyGenerator) {
-	values := stateMan.Get("generators")
-	if array, ok := values.([]any); ok {
-		for _, generator := range array {
-			keyGens = append(keyGens, generator.(mid.KeyGenerator))
-		}
-	}
-	return
-}
-
-func RecoverFromState(m *mid.Middleware, id string, sinks []string, stateMan *state.StateManager) (f *Filter) {
-	f = new(Filter)
+func RecoverFromState(m *mid.Middleware, id string, sinks []string, nWorkers []int, stateMan *state.StateManager) *Filter {
+	f := new(Filter)
 	f.m = m
 	f.id = id
 	f.sinks = sinks
-	f.keyGens = recoverKeyGens(stateMan)
+	for _, mod := range nWorkers {
+		f.keyGens = append(f.keyGens, mid.NewKeyGenerator(mod))
+	}
 	f.filter = duplicates.NewDuplicateFilter(nil)
 	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
-	return
+	return f
 }
+
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 
 	switch f.stateMan.GetInt("state") {
@@ -105,7 +98,6 @@ func (f *Filter) Close() error {
 }
 
 func (f *Filter) StoreState(sum float64, count, state int) error {
-	f.stateMan.AddToState("generators", f.keyGens)
 	f.filter.AddToState(f.stateMan)
 
 	f.stateMan.AddToState("sum", sum)

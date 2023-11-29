@@ -100,7 +100,7 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, _, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, id, sinks, stateMan)
+		filter := common.RecoverFromState(middleware, id, sinks, nWorkers, stateMan)
 		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)

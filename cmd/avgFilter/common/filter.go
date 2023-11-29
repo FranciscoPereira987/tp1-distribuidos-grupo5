@@ -15,6 +15,7 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -34,13 +35,13 @@ func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
 		id,
 		sink,
 		workdir,
-		duplicates.NewDuplicateFilter(nil),
+		duplicates.NewDuplicateFilter(""),
 		state.NewStateManager(workdir),
 	}, err
 }
 
 func RecoverFromState(m *mid.Middleware, id, sink, workdir string, state *state.StateManager) *Filter {
-	filter := duplicates.NewDuplicateFilter(nil)
+	filter := duplicates.NewDuplicateFilter("")
 	filter.RecoverFromState(state)
 	return &Filter{
 		m,
@@ -130,7 +131,13 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 			f.m.Ack(tag)
 			continue
 		}
-		for r := bytes.NewReader(msg); r.Len() > 0; {
+		r, err := f.filter.ChangeLast(msg)
+		if err != nil {
+			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			f.m.Ack(tag)
+			continue
+		}
+		for r.Len() > 0 {
 			data, err := typing.AverageFilterUnmarshal(r)
 			if err != nil {
 				return err
@@ -150,7 +157,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 				log.Debugf("new fare for route %s-%s: %f", v.Origin, v.Destination, v.Fare)
 			}
 		}
-		f.filter.ChangeLast(msg)
+
 		if err := f.StoreState(); err != nil {
 			return err
 		}
@@ -186,6 +193,9 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 			return err
 		} else if newResult {
 			if i--; i <= 0 {
+				pubBuf := bytes.NewBuffer(nil)
+				typing.HeaderIntoBuffer(pubBuf, file)
+				b.WriteTo(pubBuf)
 				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}

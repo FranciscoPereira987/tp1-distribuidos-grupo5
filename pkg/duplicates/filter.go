@@ -6,6 +6,7 @@ import (
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 type DuplicateFilterConfig struct {
@@ -16,29 +17,38 @@ type DuplicateFilterConfig struct {
 }
 
 type DuplicateFilter struct {
-	lastMessage []byte
+	LastMessage string
 }
 
-func NewDuplicateFilter(lastMessage []byte) *DuplicateFilter {
+func NewDuplicateFilter(lastMessage string) *DuplicateFilter {
 	return &DuplicateFilter{
-		lastMessage: lastMessage,
+		LastMessage: string(lastMessage),
 	}
 }
 
 func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
-	stateMan.AddToState("last-received", string(df.lastMessage))
+	stateMan.AddToState("last-received", df.LastMessage)
 }
 
 func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
 	if value := stateMan.Get("last-received"); value != nil {
-		df.lastMessage = []byte(value.(string))
+		df.LastMessage = value.(string)
 	}
 }
 
-func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) {
-	df.lastMessage = newLastMessage
+func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) (*bytes.Reader, error) {
+	r := bytes.NewReader(newLastMessage)
+	h, err := typing.HeaderUnmarshall(r)
+	df.LastMessage = h.ID
+
+	return r, err
 }
 
-func (df DuplicateFilter) IsDuplicate(body []byte) bool {
-	return bytes.Equal(df.lastMessage, body)
+func (df DuplicateFilter) IsDuplicate(body []byte) (dup bool) {
+	r := bytes.NewReader(body)
+	h, err := typing.HeaderUnmarshall(r)
+	if err == nil {
+		dup = h.ID == df.LastMessage
+	}
+	return
 }

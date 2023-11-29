@@ -47,7 +47,7 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 		id:       id,
 		sinks:    sinks,
 		keyGens:  kgs,
-		filter:   duplicates.NewDuplicateFilter(nil),
+		filter:   duplicates.NewDuplicateFilter(""),
 		stateMan: state.NewStateManager(workDir),
 	}
 }
@@ -60,7 +60,7 @@ func RecoverFromState(m *mid.Middleware, id string, sinks []string, nWorkers []i
 	for _, mod := range nWorkers {
 		f.keyGens = append(f.keyGens, mid.NewKeyGenerator(mod))
 	}
-	f.filter = duplicates.NewDuplicateFilter(nil)
+	f.filter = duplicates.NewDuplicateFilter("")
 	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
 	return f
@@ -97,13 +97,12 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(filepath.Base(f.stateMan.Filename))
 }
 
-func (f *Filter) StoreState(sum float64, count, state int, rr mid.RoundRobinKeysGenerator) error {
+func (f *Filter) StoreState(sum float64, count, state int) error {
 	f.filter.AddToState(f.stateMan)
 
 	f.stateMan.AddToState("sum", sum)
 	f.stateMan.AddToState("count", count)
 	f.stateMan.AddToState("state", state)
-	rr.AddToState(f.stateMan)
 	return f.stateMan.DumpState()
 }
 
@@ -116,6 +115,12 @@ func (f *Filter) GetFareInfo() (fareSum float64, fareCount int) {
 func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
 
 	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
+}
+
+func (f Filter) marshalHeaderInto(bufs ...*bytes.Buffer) {
+	for _, buf := range bufs {
+		typing.HeaderIntoBuffer(buf, f.filter.LastMessage)
+	}
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
@@ -133,13 +138,20 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			f.m.Ack(tag)
 			continue
 		}
+		r, err := f.filter.ChangeLast(msg)
+		if err != nil {
+			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			f.m.Ack(tag)
+			continue
+		}
 		var (
 			bDistance = bytes.NewBufferString(f.id)
 			bResult   = bytes.NewBufferString(f.id)
 			mAverage  = make(map[string]*bytes.Buffer)
 			mFastest  = make(map[string]*bytes.Buffer)
 		)
-		for r := bytes.NewReader(msg); r.Len() > 0; {
+		f.marshalHeaderInto(bResult)
+		for r.Len() > 0 {
 			data, err := typing.FlightUnmarshal(r)
 			if err != nil {
 				return err
@@ -171,8 +183,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		if err := dc.Confirm(ctx); err != nil {
 			return err
 		}
-		f.filter.ChangeLast(msg)
-		if err := f.StoreState(fareSum, fareCount, Recieving, rr); err != nil {
+		rr.AddToState(f.stateMan)
+		if err := f.StoreState(fareSum, fareCount, Recieving); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
@@ -202,6 +214,7 @@ func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, d
 	b, ok := m[key]
 	if !ok {
 		b = bytes.NewBufferString(f.id)
+		f.marshalHeaderInto(b)
 		m[key] = b
 	}
 

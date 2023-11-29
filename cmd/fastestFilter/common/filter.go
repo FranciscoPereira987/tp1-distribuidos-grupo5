@@ -197,13 +197,16 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.id)
 	for key, arr := range fastest {
-		if processed, _ := sended[key]; processed {
+		if processed := sended[key]; processed {
 			continue
 		}
 		for _, v := range arr {
 			typing.ResultQ3Marshal(b, &v)
 			if i--; i <= 0 {
-				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
+				pubBuf := bytes.NewBuffer(nil)
+				typing.HeaderIntoBuffer(pubBuf, v.Origin+"."+v.Destination)
+				b.WriteTo(pubBuf)
+				if err := bc.Publish(ctx, f.m, "", f.sink, pubBuf.Bytes()); err != nil {
 					return err
 				}
 				f.stateMan.AddToState("sended", sended)

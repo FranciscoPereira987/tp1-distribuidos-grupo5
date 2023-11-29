@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
@@ -74,12 +75,13 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	for d := range flights {
 		msg, tag := d.Msg, d.Tag
 		b := bytes.NewBufferString(f.id)
+		id := ""
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.DistanceFilterUnmarshal(r)
 			if err != nil {
 				return err
 			}
-
+			id = hex.EncodeToString(data.ID[:])
 			log.Debugf("new flight for route %s-%s", data.Origin, data.Destination)
 			distanceMi, err := comp.Distance(data.Origin, data.Destination)
 			if err != nil {
@@ -91,7 +93,10 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			}
 		}
 		if b.Len() > len(f.id) {
-			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
+			pubBuf := bytes.NewBuffer(nil)
+			typing.HeaderIntoBuffer(pubBuf, id)
+			b.WriteTo(pubBuf)
+			if err := bc.Publish(ctx, f.m, "", f.sink, pubBuf.Bytes()); err != nil {
 				return err
 			}
 		}

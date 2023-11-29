@@ -68,7 +68,9 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	if err != nil && record[indices[5]] == "" {
 		err = ErrMissingDistance
 	}
-
+	if b.Len() == 0 {
+		HeaderIntoBuffer(b, record[0])
+	}
 	b.Write(id)
 	WriteString(b, record[indices[1]])
 	WriteString(b, record[indices[2]])

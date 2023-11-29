@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
@@ -12,6 +11,7 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
+	"github.com/sirupsen/logrus"
 )
 
 type Gateway struct {
@@ -22,7 +22,7 @@ type Gateway struct {
 func NewGateway(m *mid.Middleware) *Gateway {
 	return &Gateway{
 		m:      m,
-		filter: duplicates.NewDuplicateFilter(nil),
+		filter: duplicates.NewDuplicateFilter(""),
 	}
 }
 
@@ -45,7 +45,13 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 			g.m.Ack(tag)
 			continue
 		}
-		for r := bytes.NewReader(msg); r.Len() > 0; {
+		r, err := g.filter.ChangeLast(msg)
+		if err != nil {
+			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			g.m.Ack(tag)
+			continue
+		}
+		for r.Len() > 0 {
 			result, err := typing.ResultUnmarshal(r)
 			if err != nil {
 				return err
@@ -54,8 +60,6 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 				return err
 			}
 		}
-		g.filter.ChangeLast(msg)
-		// TODO: store state and flush writer
 		if err := g.m.Ack(tag); err != nil {
 			return err
 		}

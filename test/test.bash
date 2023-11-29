@@ -27,7 +27,11 @@ then
 fi
 
 test_query() {
-    diff <(sort $dataset/$1.csv) <(sort client/results/$1.csv) >test/diff/$1.diff || echo $1 query failed
+    if diff <(sort $dataset/$1.csv) <(sort client/results/$1.csv) >test/diff/$1.diff
+        then echo $1 query succeeded
+    else
+        echo $1 query failed
+    fi
 }
 
 test_query first

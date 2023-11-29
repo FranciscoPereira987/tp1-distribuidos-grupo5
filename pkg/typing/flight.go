@@ -53,7 +53,7 @@ const (
 )
 
 func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
-	id, err := hex.DecodeString(record[indices[0]])
+	flightId, err := hex.DecodeString(record[indices[0]])
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	if b.Len() == id.Len {
 		HeaderIntoBuffer(b, record[0])
 	}
-	b.Write(id)
+	b.Write(flightId)
 	WriteString(b, record[indices[1]])
 	WriteString(b, record[indices[2]])
 	binary.Write(b, binary.LittleEndian, uint32(duration))

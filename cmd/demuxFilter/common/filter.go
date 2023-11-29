@@ -97,13 +97,13 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(filepath.Base(f.stateMan.Filename))
 }
 
-func (f *Filter) StoreState(sum float64, count, state int) error {
+func (f *Filter) StoreState(sum float64, count, state int, rr mid.RoundRobinKeysGenerator) error {
 	f.filter.AddToState(f.stateMan)
 
 	f.stateMan.AddToState("sum", sum)
 	f.stateMan.AddToState("count", count)
 	f.stateMan.AddToState("state", state)
-
+	rr.AddToState(f.stateMan)
 	return f.stateMan.DumpState()
 }
 
@@ -111,6 +111,11 @@ func (f *Filter) GetFareInfo() (fareSum float64, fareCount int) {
 	fareCount = f.stateMan.GetInt("count")
 	fareSum, _ = f.stateMan.Get("sum").(float64)
 	return
+}
+
+func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
+
+	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
@@ -121,7 +126,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
 
-	rr := f.keyGens[Distance].NewRoundRobinKeysGenerator()
+	rr := f.GetRoundRobinGenerator()
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
 		if f.filter.IsDuplicate(msg) {
@@ -167,7 +172,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			return err
 		}
 		f.filter.ChangeLast(msg)
-		if err := f.StoreState(fareSum, fareCount, Recieving); err != nil {
+		if err := f.StoreState(fareSum, fareCount, Recieving, rr); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {

@@ -3,6 +3,8 @@ package middleware
 import (
 	"fmt"
 	"hash/fnv"
+
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 )
 
 type KeyGenerator int
@@ -43,4 +45,21 @@ func (rr *RoundRobinKeysGenerator) NextKey(sink string) string {
 	v := rr.index + 1
 	rr.index = v % rr.mod
 	return fmt.Sprintf("%s.%d", sink, v)
+}
+
+func (rr RoundRobinKeysGenerator) AddToState(stateMan *state.StateManager) {
+	stateMan.AddToState("rr-mod", rr.mod)
+	stateMan.AddToState("rr-index", rr.index)
+}
+
+func RoundRobinFromState(stateMan *state.StateManager, key KeyGenerator) RoundRobinKeysGenerator {
+	mod := stateMan.GetInt("rr-mod")
+	if mod == 0 {
+		return key.NewRoundRobinKeysGenerator()
+	}
+	index := stateMan.GetInt("rr-index")
+	return RoundRobinKeysGenerator{
+		mod:   mod,
+		index: index,
+	}
 }

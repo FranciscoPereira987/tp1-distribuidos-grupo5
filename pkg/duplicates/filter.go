@@ -38,7 +38,7 @@ func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
 
 func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) (*bytes.Reader, error) {
 	r := bytes.NewReader(newLastMessage)
-	h, err := typing.HeaderUnmarshall(r)
+	h, err := typing.HeaderUnmarshal(r)
 	df.LastMessage = h.ID
 
 	return r, err
@@ -46,7 +46,7 @@ func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) (*bytes.Reader, err
 
 func (df DuplicateFilter) IsDuplicate(body []byte) (dup bool) {
 	r := bytes.NewReader(body)
-	h, err := typing.HeaderUnmarshall(r)
+	h, err := typing.HeaderUnmarshal(r)
 	if err == nil {
 		dup = h.ID == df.LastMessage
 	}

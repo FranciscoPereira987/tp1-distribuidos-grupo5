@@ -110,34 +110,47 @@ func RecoverStateFiles(workdir string) []recovered {
 	return rec
 }
 
-func LinkTmp(f *os.File, name string) (err error) {
-	defer func() {
-		if err != nil {
-			os.Remove(f.Name())
-		}
-	}()
-
-	if err := f.Sync(); err != nil {
-		return err
-	}
-
-	return os.Rename(f.Name(), name)
-}
-
-func WriteFile(filename string, p []byte) error {
+// given a /path/to/file, create and return a temporary file
+// in /path/to/tmp/file to be renamed later using LinkTmp()
+func CreateTmp(filename string) (*os.File, error) {
 	tmpDir := filepath.Join(filepath.Dir(filename), "tmp")
 	if err := os.Mkdir(tmpDir, 0755); err != nil && !os.IsExist(err) {
-		return err
+		return nil, err
 	}
-	f, err := os.CreateTemp(tmpDir, ".")
+	return os.Create(filepath.Join(tmpDir, filepath.Base(filename)))
+}
+
+// given a /path/to/file (`filename'), renames the temporary
+// file /path/to/tmp/file to /path/to/file. removing the tmp/ component from
+// the path
+func LinkTmp(oldpath, newpath string) error {
+	err := os.Rename(oldpath, newpath)
 	if err != nil {
-		return err
+		os.Remove(oldpath)
+	}
+	return err
+}
+
+// writes a temporary file to link it later with LinkTmp()
+func WriteTmp(filename string, p []byte) (string, error) {
+	f, err := CreateTmp(filename)
+	if err != nil {
+		return "", err
 	}
 	defer f.Close()
 
 	if _, err = f.Write(p); err != nil {
+		return "", err
+	}
+	return f.Name(), f.Sync()
+}
+
+// convenience function to write the temporary file and link it at once
+func WriteFile(filename string, p []byte) error {
+	tmp, err := WriteTmp(filename, p)
+	if err != nil {
 		return err
 	}
 
-	return LinkTmp(f, filename)
+	return LinkTmp(tmp, filename)
 }

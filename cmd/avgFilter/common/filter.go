@@ -71,8 +71,6 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 }
 
 func (f *Filter) StoreState() error {
-	f.stateMan.AddToState("id", f.id)
-	f.stateMan.AddToState("sink", f.sink)
 	f.filter.AddToState(f.stateMan)
 
 	return f.stateMan.DumpState()

@@ -62,7 +62,7 @@ func (df *DuplicateFilter) manageSizes() {
 
 func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) (*bytes.Reader, error) {
 	r := bytes.NewReader(newLastMessage)
-	h, err := typing.HeaderUnmarshall(r)
+	h, err := typing.HeaderUnmarshal(r)
 
 	if err == nil {
 		df.lastMessages[h.ID] = true
@@ -76,7 +76,7 @@ func (df *DuplicateFilter) ChangeLast(newLastMessage []byte) (*bytes.Reader, err
 
 func (df DuplicateFilter) IsDuplicate(body []byte) (dup bool) {
 	r := bytes.NewReader(body)
-	h, err := typing.HeaderUnmarshall(r)
+	h, err := typing.HeaderUnmarshal(r)
 	if err == nil {
 		dup = h.ID == df.LastMessage
 	}

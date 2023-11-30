@@ -110,26 +110,32 @@ func RecoverStateFiles(workdir string) []recovered {
 	return rec
 }
 
-func LinkTmp(f *os.File, name string) (err error) {
-	defer func() {
-		if err != nil {
-			os.Remove(f.Name())
-		}
-	}()
-
-	if err := f.Sync(); err != nil {
-		return err
+// given a /path/to/file, create and return a temporary file
+// in /path/to/tmp/file to be renamed later using LinkTmp()
+func CreateTmp(filename string) (*os.File, error) {
+	tmpDir := filepath.Join(filepath.Dir(filename), "tmp")
+	if err := os.Mkdir(tmpDir, 0755); err != nil && !os.IsExist(err) {
+		return nil, err
 	}
+	return os.Create(filepath.Join(tmpDir, filepath.Base(filename)))
+}
 
-	return os.Rename(f.Name(), name)
+// renames the file /path/to/tmp/file to /path/to/file
+// removing the tmp/ component from the path
+func LinkTmp(f *os.File) error {
+	old_name := f.Name()
+	base := filepath.Base(old_name)
+	new_name := filepath.Clean(filepath.Join(old_name, "../..", base))
+
+	err := os.Rename(old_name, new_name)
+	if err != nil {
+		os.Remove(old_name)
+	}
+	return err
 }
 
 func WriteFile(filename string, p []byte) error {
-	tmpDir := filepath.Join(filepath.Dir(filename), "tmp")
-	if err := os.Mkdir(tmpDir, 0755); err != nil && !os.IsExist(err) {
-		return err
-	}
-	f, err := os.CreateTemp(tmpDir, ".")
+	f, err := CreateTmp(filename)
 	if err != nil {
 		return err
 	}
@@ -138,6 +144,9 @@ func WriteFile(filename string, p []byte) error {
 	if _, err = f.Write(p); err != nil {
 		return err
 	}
+	if err = f.Sync(); err != nil {
+		return err
+	}
 
-	return LinkTmp(f, filename)
+	return LinkTmp(f)
 }

@@ -29,11 +29,27 @@ func NewDuplicateFilter(lastMessage string) *DuplicateFilter {
 
 func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
 	stateMan.AddToState("last-received", df.LastMessage)
+	stateMan.AddToState("recieved-queue", df.queueLast)
+}
+
+func (df *DuplicateFilter) recoverQueue(value any) {
+	queue, ok := value.([]any)
+	if ok {
+		for _, element := range queue {
+			if asString, ok := element.(string); ok {
+				df.lastMessages[asString] = true
+				df.queueLast = append(df.queueLast, asString)
+			}
+		}
+	}
 }
 
 func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
 	if value := stateMan.GetString("last-received"); value != "" {
 		df.LastMessage = value
+	}
+	if value := stateMan.Get("recieved-queue"); value != nil {
+		df.recoverQueue(value)
 	}
 }
 

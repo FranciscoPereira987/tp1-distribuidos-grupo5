@@ -89,11 +89,6 @@ Un member, frente a mensajes de INVITE responde con REJECT, junto con el ID de s
 Cuando un nodo actua como lider de un grupo, tiene la responsabilidad de contestar con OK a todos los HEARTBEATs que reciba de parte de los miembros de su grupo. Frente a mensajes de INVITE, el lider puede responder con ACCEPT o REJECT (segun el tamaño del grupo de quien lo invita). Tambien 
 se tiene que encargar de procesar mensajes ACCEPT o REJECT de peers que previamente no hayan estado disponibles y de enviar invitaciones a estos peers segun corresponda.
 
-### Diagrama de secuencia para la eleccion
-
-### Diagrama de secuencia para *members* y *leader*
-
-
 
 ###### Referencias
 

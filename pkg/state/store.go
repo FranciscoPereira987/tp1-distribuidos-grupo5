@@ -123,35 +123,34 @@ func CreateTmp(filename string) (*os.File, error) {
 // given a /path/to/file (`filename'), renames the temporary
 // file /path/to/tmp/file to /path/to/file. removing the tmp/ component from
 // the path
-func LinkTmp(filename string) error {
-	tmp_name := filepath.Join(filepath.Dir(filename), "tmp", filepath.Base(filename))
-
-	err := os.Rename(tmp_name, filename)
+func LinkTmp(oldpath, newpath string) error {
+	err := os.Rename(oldpath, newpath)
 	if err != nil {
-		os.Remove(tmp_name)
+		os.Remove(oldpath)
 	}
 	return err
 }
 
 // writes a temporary file to link it later with LinkTmp()
-func WriteTmp(filename string, p []byte) error {
+func WriteTmp(filename string, p []byte) (string, error) {
 	f, err := CreateTmp(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 
 	if _, err = f.Write(p); err != nil {
-		return err
+		return "", err
 	}
-	return f.Sync()
+	return f.Name(), f.Sync()
 }
 
 // convenience function to write the temporary file and link it at once
 func WriteFile(filename string, p []byte) error {
-	if err := WriteTmp(filename, p); err != nil {
+	tmp, err := WriteTmp(filename, p)
+	if err != nil {
 		return err
 	}
 
-	return LinkTmp(filename)
+	return LinkTmp(tmp, filename)
 }

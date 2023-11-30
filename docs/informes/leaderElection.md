@@ -92,3 +92,10 @@ se tiene que encargar de procesar mensajes ACCEPT o REJECT de peers que previame
 ### Diagrama de secuencia para la eleccion
 
 ### Diagrama de secuencia para *members* y *leader*
+
+
+
+###### Referencias
+
+- Petrov, Alex. (2019). Database Internals (First edition). Publisher. O’Reilly Media, Inc.
+    - Capitulo 10

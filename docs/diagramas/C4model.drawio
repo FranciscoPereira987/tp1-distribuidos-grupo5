@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-10-12T19:15:28.077Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="Z-frm50DrvsfZa1OGLjL" version="22.0.4" type="device" pages="6">
+<mxfile host="app.diagrams.net" modified="2023-11-30T20:57:18.186Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0" etag="itBhXlW4N4PsbmKwwHIe" version="22.1.5" type="device" pages="7">
   <diagram name="Capa1" id="V0aKmFcZMrBBoX7ab7Hi">
-    <mxGraphModel dx="1434" dy="766" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="868" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -60,7 +60,7 @@
         </object>
         <object placeholders="1" c4Name="System Context diagram for Flight Optimizer" c4Type="ContainerScopeBoundary" c4Description="El diagrama de contexto para el sistema Flight Optimizer" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="2fWxIVcv2hveIanKwdGA-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="120" y="620" width="340" height="50" as="geometry" />
+            <mxGeometry x="120" y="620" width="360" height="50" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="2sRaQuthpF-_65fdrM6E-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="Sdf5AA9gZ9jZ3btD_5vj-4" target="Sdf5AA9gZ9jZ3btD_5vj-2" edge="1">
@@ -81,20 +81,20 @@
     </mxGraphModel>
   </diagram>
   <diagram id="4VK4LPRrDb0IE4Kp0EUA" name="Capa2">
-    <mxGraphModel dx="2284" dy="1866" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1240" dy="1783" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <object placeholders="1" c4Name="Flight Optimizer" c4Type="SystemScopeBoundary" c4Application="Software System" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="3yO6nDxkP5TGrZ0nWbCh-1">
           <mxCell style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="200" y="-20" width="600" height="520" as="geometry" />
+            <mxGeometry x="200" y="-20" width="900" height="520" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="nFHtH5VLZ7HZycMmdanv-1" target="ho5M7ZNqVZKx9qSSUWGQ-2" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="180" y="220" />
-              <mxPoint x="180" y="220" />
+              <mxPoint x="520" y="-50" />
+              <mxPoint x="350" y="-50" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -105,89 +105,150 @@
         </mxCell>
         <object placeholders="1" c4Name="Cliente" c4Type="Person" c4Description="Provee los datos de vuelos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#cccccc&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-1">
           <mxCell style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#083F75;strokeColor=#06315C;fontColor=#ffffff;shape=mxgraph.c4.person2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" parent="1" vertex="1">
-            <mxGeometry x="-100" y="-70" width="200" height="180" as="geometry" />
+            <mxGeometry x="940" y="-280" width="200" height="180" as="geometry" />
           </mxCell>
         </object>
-        <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-2" target="ho5M7ZNqVZKx9qSSUWGQ-7" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="nFHtH5VLZ7HZycMmdanv-8" value="&lt;div&gt;Consulta vuelos&lt;/div&gt;&lt;div&gt;más rápidos&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ho5M7ZNqVZKx9qSSUWGQ-9" vertex="1" connectable="0">
-          <mxGeometry x="-0.0961" y="4" relative="1" as="geometry">
-            <mxPoint as="offset" />
+        <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;edgeStyle=orthogonalEdgeStyle;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-5" target="BOtJWD_fx5EyxpNZ_f_z-1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="550" y="220" />
+              <mxPoint x="550" y="60" />
+            </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-2" target="ho5M7ZNqVZKx9qSSUWGQ-6" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="nFHtH5VLZ7HZycMmdanv-8" value="&lt;div&gt;Envia vuelos con&lt;/div&gt;&lt;div&gt;muchas escalas&lt;br&gt;&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ho5M7ZNqVZKx9qSSUWGQ-9" vertex="1" connectable="0">
+          <mxGeometry x="-0.0961" y="4" relative="1" as="geometry">
+            <mxPoint x="4" y="-26" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;edgeStyle=orthogonalEdgeStyle;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-5" target="ho5M7ZNqVZKx9qSSUWGQ-6" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="280" />
+              <mxPoint x="670" y="420" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="nFHtH5VLZ7HZycMmdanv-9" value="&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;vuelos largos&lt;br&gt;&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ho5M7ZNqVZKx9qSSUWGQ-10" vertex="1" connectable="0">
           <mxGeometry x="-0.0799" relative="1" as="geometry">
-            <mxPoint y="1" as="offset" />
+            <mxPoint x="26" y="40" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="ho5M7ZNqVZKx9qSSUWGQ-11" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-2" target="ho5M7ZNqVZKx9qSSUWGQ-5" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="nFHtH5VLZ7HZycMmdanv-10" value="&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;estadísticas&lt;/div&gt;&lt;div&gt;de precios&lt;br&gt;&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ho5M7ZNqVZKx9qSSUWGQ-11" vertex="1" connectable="0">
+        <mxCell id="nFHtH5VLZ7HZycMmdanv-10" value="&lt;div&gt;Realiza&lt;/div&gt;&lt;div&gt;consulta&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="ho5M7ZNqVZKx9qSSUWGQ-11" vertex="1" connectable="0">
           <mxGeometry x="-0.0886" y="-3" relative="1" as="geometry">
             <mxPoint x="1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="nFHtH5VLZ7HZycMmdanv-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-2" target="nFHtH5VLZ7HZycMmdanv-1" edge="1">
+        <mxCell id="nFHtH5VLZ7HZycMmdanv-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="BOtJWD_fx5EyxpNZ_f_z-1" target="nFHtH5VLZ7HZycMmdanv-1" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="180" y="270" />
-              <mxPoint x="180" y="270" />
+              <mxPoint x="750" y="-50" />
+              <mxPoint x="600" y="-50" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="nFHtH5VLZ7HZycMmdanv-12" value="&lt;div&gt;Envía resultados&lt;/div&gt;&lt;div&gt;(Plain Text)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nFHtH5VLZ7HZycMmdanv-2" vertex="1" connectable="0">
+        <mxCell id="nFHtH5VLZ7HZycMmdanv-12" value="&lt;div&gt;Envía&lt;/div&gt;&lt;div&gt;resultados&lt;/div&gt;&lt;div&gt;(CSV)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nFHtH5VLZ7HZycMmdanv-2" vertex="1" connectable="0">
           <mxGeometry x="-0.5445" relative="1" as="geometry">
             <mxPoint x="-20" as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Name="Interfaz" c4Type="Container" c4Technology="Golang" c4Description="Prepara los datos de vuelos para los workers." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-2">
+        <object placeholders="1" c4Name="Input Boundary" c4Type="Container" c4Technology="Golang" c4Description="Prepara los datos de vuelos para los workers." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-2">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="220" y="180" width="240" height="120" as="geometry" />
+            <mxGeometry x="230" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Promedio y Máximo" c4Type="Container" c4Technology="Golang" c4Description="Calcula el promedio y el máximo por trayecto de los vuelos con precio mayor a la media general de precios." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-5">
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-5" target="BOtJWD_fx5EyxpNZ_f_z-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="350" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-5" value="&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;estadísticas&lt;/div&gt;&lt;div&gt;de tarifas&lt;br&gt;&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="BOtJWD_fx5EyxpNZ_f_z-3">
+          <mxGeometry x="0.0339" y="-1" relative="1" as="geometry">
+            <mxPoint x="1" y="-27" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-7" target="BOtJWD_fx5EyxpNZ_f_z-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="950" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-12" value="&lt;div&gt;Responde&lt;/div&gt;&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="BOtJWD_fx5EyxpNZ_f_z-4">
+          <mxGeometry x="-0.1403" relative="1" as="geometry">
+            <mxPoint y="-6" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-5" target="ho5M7ZNqVZKx9qSSUWGQ-7">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="570" y="250" />
+              <mxPoint x="570" y="230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-11" value="&lt;div&gt;Consulta vuelos&lt;/div&gt;&lt;div&gt;más rápidos&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="BOtJWD_fx5EyxpNZ_f_z-8">
+          <mxGeometry x="0.0952" y="-1" relative="1" as="geometry">
+            <mxPoint x="43" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <object placeholders="1" c4Name="Demux" c4Type="Container" c4Technology="Golang" c4Description="Calcula la media general de tarifas. Filtra los vuelos con más de 3 escalas y proyecta los datos sobre las columnas que usan los demás filtros." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-5">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="540" y="360" width="240" height="120" as="geometry" />
+            <mxGeometry x="230" y="190" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-6" target="BOtJWD_fx5EyxpNZ_f_z-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="400" />
+              <mxPoint x="1000" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-13" value="&lt;div&gt;Responde&lt;/div&gt;&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="BOtJWD_fx5EyxpNZ_f_z-7">
+          <mxGeometry x="-0.1962" y="1" relative="1" as="geometry">
+            <mxPoint x="1" y="-7" as="offset" />
+          </mxGeometry>
+        </mxCell>
         <object placeholders="1" c4Name="Filtro Distancia" c4Type="Container" c4Technology="Golang" c4Description="Filtra los vuelos cuya distancia total sea mayor a cuatro veces la distancia directa entre puntos origen-destino." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-6">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="540" y="180" width="240" height="120" as="geometry" />
+            <mxGeometry x="700" y="340" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
         <object placeholders="1" c4Name="Vuelos Más Rápidos" c4Type="Container" c4Technology="Golang" c4Description="Obtiene los 2 vuelos más rápidos para los trayectos con 3 o más escalas." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="ho5M7ZNqVZKx9qSSUWGQ-7">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="540" width="240" height="120" as="geometry" />
+            <mxGeometry x="700" y="170" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="nFHtH5VLZ7HZycMmdanv-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="nFHtH5VLZ7HZycMmdanv-1" target="ho5M7ZNqVZKx9qSSUWGQ-1" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="40" y="150" />
-              <mxPoint x="40" y="150" />
+              <mxPoint x="760" y="-140" />
+              <mxPoint x="760" y="-140" />
             </Array>
+            <mxPoint x="300" y="-140" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="nFHtH5VLZ7HZycMmdanv-13" value="&lt;div&gt;Muestra resultados&lt;/div&gt;&lt;div&gt;(Plain Text)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nFHtH5VLZ7HZycMmdanv-3" vertex="1" connectable="0">
+        <mxCell id="nFHtH5VLZ7HZycMmdanv-13" value="&lt;div&gt;Muestra resultados&lt;/div&gt;&lt;div&gt;(CSV)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nFHtH5VLZ7HZycMmdanv-3" vertex="1" connectable="0">
           <mxGeometry x="0.0083" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
         <object placeholders="1" c4Name="Container diagram for Flight Optimizer" c4Type="ContainerDiagramTitle" c4Description="El diagrama de contenedores para el sistema Flight Optimizer." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="CIElOUX1r249Eu75P-aG-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="-110" y="530" width="320" height="50" as="geometry" />
+            <mxGeometry x="200" y="500" width="360" height="50" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="F6kiRXmlnhaIHTo1RnHr-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="ho5M7ZNqVZKx9qSSUWGQ-1" target="nFHtH5VLZ7HZycMmdanv-1" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="-40" y="150" />
-              <mxPoint x="-40" y="150" />
+              <mxPoint x="820" y="-180" />
+              <mxPoint x="820" y="-180" />
             </Array>
             <mxPoint y="110" as="sourcePoint" />
             <mxPoint x="220" y="240" as="targetPoint" />
@@ -200,20 +261,44 @@
         </mxCell>
         <object placeholders="1" c4Name="Consola" c4Type="Software System" c4Description="Muestra información." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#cccccc&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="nFHtH5VLZ7HZycMmdanv-1">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#8C8496;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#736782;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="-110" y="180" width="240" height="120" as="geometry" />
+            <mxGeometry x="440" y="-220" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Output Boundary" c4Type="Container" c4Technology="Golang" c4Description="Convierte los resultados a formato CSV y los envia al cliente." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="BOtJWD_fx5EyxpNZ_f_z-1">
+          <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+            <mxGeometry x="630" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="BOtJWD_fx5EyxpNZ_f_z-2" target="BOtJWD_fx5EyxpNZ_f_z-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="480" />
+              <mxPoint x="1050" y="480" />
+              <mxPoint x="1050" y="20" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BOtJWD_fx5EyxpNZ_f_z-14" value="&lt;div&gt;Responde&lt;/div&gt;&lt;div&gt;Consulta&lt;/div&gt;&lt;div&gt;(RabbitMQ)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="BOtJWD_fx5EyxpNZ_f_z-6">
+          <mxGeometry x="0.4567" y="-3" relative="1" as="geometry">
+            <mxPoint y="196" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <object placeholders="1" c4Name="Promedio y Máximo" c4Type="Container" c4Technology="Golang" c4Description="Calcula el promedio y el máximo por trayecto de los vuelos con precio mayor a la media general de precios." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="BOtJWD_fx5EyxpNZ_f_z-2">
+          <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+            <mxGeometry x="400" y="340" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="a4GH23tJ-PzenRf8MUEK" name="Capa3-Interfaz">
-    <mxGraphModel dx="2284" dy="1866" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <diagram id="a4GH23tJ-PzenRf8MUEK" name="Capa3-Boundaries">
+    <mxGraphModel dx="1718" dy="1578" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <object placeholders="1" c4Name="Interfaz" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-1">
+        <object placeholders="1" c4Name="Input Boundary" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-1">
           <mxCell style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="190" y="50" width="280" height="340" as="geometry" />
+            <mxGeometry x="190" y="30" width="280" height="190" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="4mCkLbSu5lydg45IY8-H-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-2" target="mBINOJE2ZGo54DC58A5B-7" edge="1">
@@ -237,51 +322,49 @@
         <mxCell id="mBINOJE2ZGo54DC58A5B-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-3" target="mBINOJE2ZGo54DC58A5B-9" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="330" y="50" />
-              <mxPoint x="330" y="50" />
+              <mxPoint x="330" y="-20" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="8BhIZX_u5_OBPNACJ6y9-2" value="&lt;div&gt;Envia datos&lt;/div&gt;&lt;div&gt;listos para&lt;/div&gt;&lt;div&gt;procesar&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-10" vertex="1" connectable="0">
+        <mxCell id="8BhIZX_u5_OBPNACJ6y9-2" value="&lt;div&gt;Envia coordenadas&lt;/div&gt;&lt;div&gt;de aeropuertos&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-10" vertex="1" connectable="0">
           <mxGeometry x="0.0214" y="1" relative="1" as="geometry">
-            <mxPoint as="offset" />
+            <mxPoint x="37" y="1" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="4mCkLbSu5lydg45IY8-H-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-7" target="mBINOJE2ZGo54DC58A5B-3" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="160" y="210" />
+              <mxPoint x="160" y="230" />
               <mxPoint x="160" y="130" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="QDs9pbRXK0qgMFBVVcnp-1" value="&lt;div&gt;Envia datos&lt;/div&gt;&lt;div&gt;de vuelos&lt;/div&gt;&lt;div&gt;(CSV)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="4mCkLbSu5lydg45IY8-H-3" vertex="1" connectable="0">
           <mxGeometry x="-0.0667" relative="1" as="geometry">
-            <mxPoint y="-1" as="offset" />
+            <mxPoint x="-10" y="-21" as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Name="Parser" c4Type="Component" c4Technology="Golang" c4Description="Parsea los datos de vuelos recibidos y calcula el promedio de precios." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-3">
+        <object placeholders="1" c4Name="Input Boundary" c4Type="Component" c4Technology="Golang" c4Description="Parsea los datos de vuelos y de coordenadas de aeropuertos. Preparendolos para los workers." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-3">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="210" y="70" width="240" height="120" as="geometry" />
+            <mxGeometry x="210" y="50" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="mBINOJE2ZGo54DC58A5B-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-4" target="mBINOJE2ZGo54DC58A5B-7" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="150" y="570" as="targetPoint" />
             <Array as="points">
-              <mxPoint x="160" y="280" />
-              <mxPoint x="160" y="250" />
+              <mxPoint y="320" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="8BhIZX_u5_OBPNACJ6y9-4" value="&lt;div&gt;Salida de datos&lt;/div&gt;&lt;div&gt;(Plain Text)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-6" vertex="1" connectable="0">
+        <mxCell id="8BhIZX_u5_OBPNACJ6y9-4" value="&lt;div&gt;Salida de datos&lt;/div&gt;&lt;div&gt;(CSV)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-6" vertex="1" connectable="0">
           <mxGeometry x="0.2354" y="2" relative="1" as="geometry">
-            <mxPoint x="7" y="19" as="offset" />
+            <mxPoint x="38" y="-2" as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Name="Agregador de Resultados" c4Type="Component" c4Technology="Golang" c4Description="Obtiene resultados y los envía a la consola." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-4">
+        <object placeholders="1" c4Name="Output Boundary" c4Type="Component" c4Technology="Golang" c4Description="Obtiene resultados y los envía a la consola." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-4">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="210" y="220" width="240" height="120" as="geometry" />
+            <mxGeometry x="210" y="260" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="mBINOJE2ZGo54DC58A5B-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-7" target="mBINOJE2ZGo54DC58A5B-2" edge="1">
@@ -292,7 +375,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="8BhIZX_u5_OBPNACJ6y9-5" value="&lt;div&gt;Muestra datos&lt;/div&gt;&lt;div&gt;(Plain Text)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-8" vertex="1" connectable="0">
+        <mxCell id="8BhIZX_u5_OBPNACJ6y9-5" value="&lt;div&gt;Muestra datos&lt;/div&gt;&lt;div&gt;(CSV)&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="mBINOJE2ZGo54DC58A5B-8" vertex="1" connectable="0">
           <mxGeometry x="0.0544" y="1" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
@@ -302,7 +385,7 @@
             <mxGeometry x="-120" y="170" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de datos parseados.&#xa;Cola de media general de precios." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-9">
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de coordenadas." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-9">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
             <mxGeometry x="540" y="-80" width="240" height="120" as="geometry" />
           </mxCell>
@@ -319,12 +402,12 @@
         </mxCell>
         <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de resultados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="mBINOJE2ZGo54DC58A5B-13">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
-            <mxGeometry x="540" y="220" width="240" height="120" as="geometry" />
+            <mxGeometry x="540" y="260" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Interfaz" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para la interfaz del sistema con la que se comunica el cliente." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="NtT2sLewx1wuq6glijiS-1">
+        <object placeholders="1" c4Name="Component diagrams for Flight Optimizer - Boundaries" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para la interfaz del sistema con la que se comunica el cliente." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="NtT2sLewx1wuq6glijiS-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="190" y="390" width="380" height="60" as="geometry" />
+            <mxGeometry x="-120" y="360" width="270" height="60" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="nOvskURUcRNgY6vPmoBd-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="mBINOJE2ZGo54DC58A5B-3" target="nOvskURUcRNgY6vPmoBd-3" edge="1">
@@ -332,25 +415,30 @@
             <mxPoint x="720" y="130" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="EMaNBHQobgLAE9KXXZak-1" value="&lt;div&gt;Envia vuelos&lt;/div&gt;&lt;div&gt;con 3 o más&lt;/div&gt;&lt;div&gt;escalas&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nOvskURUcRNgY6vPmoBd-4" vertex="1" connectable="0">
+        <mxCell id="EMaNBHQobgLAE9KXXZak-1" value="&lt;div&gt;Envia&lt;/div&gt;&lt;div&gt;vuelos&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nOvskURUcRNgY6vPmoBd-4" vertex="1" connectable="0">
           <mxGeometry x="-0.0612" y="-1" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de vuelos con 3 o más escalas.&#xa;Cola de resultados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="nOvskURUcRNgY6vPmoBd-3">
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de vuelos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="nOvskURUcRNgY6vPmoBd-3">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
-            <mxGeometry x="540" y="70" width="240" height="120" as="geometry" />
+            <mxGeometry x="540" y="90" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Output Boundary" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="5AMcygcg2ZTOZ4vUBK0a-1">
+          <mxCell style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+            <mxGeometry x="190" y="240" width="280" height="190" as="geometry" />
           </mxCell>
         </object>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="0LeEqebFHW4HfVMS8TUM" name="Capa3-fastests">
-    <mxGraphModel dx="2284" dy="766" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <diagram id="0LeEqebFHW4HfVMS8TUM" name="Capa3-Demux">
+    <mxGraphModel dx="1871" dy="562" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <object placeholders="1" c4Name="Vuelos Más Rápidos" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="Jo5OUUEPMmgcRM5QFY4P-2">
+        <object placeholders="1" c4Name="Demux" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="Jo5OUUEPMmgcRM5QFY4P-2">
           <mxCell style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
             <mxGeometry x="290" y="250" width="290" height="210" as="geometry" />
           </mxCell>
@@ -368,37 +456,146 @@
             <mxGeometry x="-10" y="280" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de resultados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="GKrBJz3_X5pwy4vNDQbh-7">
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de tarifas." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="GKrBJz3_X5pwy4vNDQbh-7">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
-            <mxGeometry x="640" y="280" width="240" height="120" as="geometry" />
+            <mxGeometry x="620" y="500" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Vuelos Más Rápidos" c4Type="Component" c4Technology="Golang" c4Description="Encuentra los 2 vuelos más rápidos para todos los trayectos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="GKrBJz3_X5pwy4vNDQbh-8">
+        <mxCell id="bKVPDBmvKF-ZQsXyWMvd-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="GKrBJz3_X5pwy4vNDQbh-8" target="bKVPDBmvKF-ZQsXyWMvd-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="600" y="350" />
+              <mxPoint x="600" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nIp7FQKb0s7SBC-Oeac1-1" value="&lt;div&gt;Envía vuelos&lt;/div&gt;&lt;div&gt;con muchas&lt;/div&gt;&lt;div&gt;escalas&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="bKVPDBmvKF-ZQsXyWMvd-4">
+          <mxGeometry x="0.0565" y="-1" relative="1" as="geometry">
+            <mxPoint x="1" y="3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bKVPDBmvKF-ZQsXyWMvd-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="GKrBJz3_X5pwy4vNDQbh-8" target="bKVPDBmvKF-ZQsXyWMvd-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="435" y="140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="laaAvOzXDmAyXP_gYICq-1" value="&lt;div&gt;Envia vuelos&lt;/div&gt;&lt;div&gt;con muchas&lt;/div&gt;&lt;div&gt;escalas&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="bKVPDBmvKF-ZQsXyWMvd-5">
+          <mxGeometry x="0.243" y="2" relative="1" as="geometry">
+            <mxPoint x="40" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bKVPDBmvKF-ZQsXyWMvd-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="1" source="GKrBJz3_X5pwy4vNDQbh-8" target="bKVPDBmvKF-ZQsXyWMvd-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="310" />
+              <mxPoint x="610" y="280" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nIp7FQKb0s7SBC-Oeac1-2" value="&lt;div&gt;Envia&lt;/div&gt;&lt;div&gt;vuelos&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="bKVPDBmvKF-ZQsXyWMvd-6">
+          <mxGeometry x="-0.1632" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <object placeholders="1" c4Name="Demux" c4Type="Component" c4Technology="Golang" c4Description="Proyecta los datos de vuelos sobre las columnas que utiliza cada worker, filtra los vuelos con pocas escalas y calcula la media general de precios." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="GKrBJz3_X5pwy4vNDQbh-8">
           <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="315" y="280" width="240" height="120" as="geometry" />
+            <mxGeometry x="315" y="270" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="GKrBJz3_X5pwy4vNDQbh-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="GKrBJz3_X5pwy4vNDQbh-8" target="GKrBJz3_X5pwy4vNDQbh-7" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="555" y="350" as="sourcePoint" />
-            <Array as="points" />
+            <Array as="points">
+              <mxPoint x="435" y="410" />
+              <mxPoint x="560" y="410" />
+              <mxPoint x="560" y="560" />
+            </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="sbigTwz71RjcJAvdQrK5-1" value="&lt;div&gt;Salida de&lt;/div&gt;&lt;div&gt;resultados&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="GKrBJz3_X5pwy4vNDQbh-14" vertex="1" connectable="0">
+        <mxCell id="sbigTwz71RjcJAvdQrK5-1" value="&lt;div&gt;Envia tarifas&lt;/div&gt;&lt;div&gt;y promedio&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="GKrBJz3_X5pwy4vNDQbh-14" vertex="1" connectable="0">
           <mxGeometry x="-0.0095" y="-1" relative="1" as="geometry">
-            <mxPoint as="offset" />
+            <mxPoint x="1" y="70" as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Vuelos Más Rápidos" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para el contenedor que encuentra los vuelos más rápidos por trayecto." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="-s0PCj7dFs_7I5CLCxja-1">
+        <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Vuelos Más Rápidos" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para el contenedor que proyecta los datos de vuelos sobre las columnas que utiliza cada worker." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="-s0PCj7dFs_7I5CLCxja-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="290" y="460" width="470" height="60" as="geometry" />
+            <mxGeometry x="-10" y="560" width="500" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de duraciones." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="bKVPDBmvKF-ZQsXyWMvd-1">
+          <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1" parent="1">
+            <mxGeometry x="640" y="360" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de distancias." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="bKVPDBmvKF-ZQsXyWMvd-2">
+          <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1" parent="1">
+            <mxGeometry x="640" y="220" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de resultados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="bKVPDBmvKF-ZQsXyWMvd-3">
+          <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1" parent="1">
+            <mxGeometry x="620" y="80" width="240" height="120" as="geometry" />
           </mxCell>
         </object>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="2NFGHiaOL7HoKb3J0yXa" name="Capa3-Distancias">
-    <mxGraphModel dx="2284" dy="766" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <diagram name="Capa3-Fastest" id="rfFWnL_3VCJOgp5fy158">
+    <mxGraphModel dx="1718" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="TM7zUNMHu38k20P7T_Da-0" />
+        <mxCell id="TM7zUNMHu38k20P7T_Da-1" parent="TM7zUNMHu38k20P7T_Da-0" />
+        <object placeholders="1" c4Name="Vuelos Más Rápidos" c4Type="ContainerScopeBoundary" c4Application="Container" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="TM7zUNMHu38k20P7T_Da-2">
+          <mxCell style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="TM7zUNMHu38k20P7T_Da-1">
+            <mxGeometry x="290" y="250" width="290" height="210" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="TM7zUNMHu38k20P7T_Da-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="TM7zUNMHu38k20P7T_Da-1" source="TM7zUNMHu38k20P7T_Da-5" target="TM7zUNMHu38k20P7T_Da-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TM7zUNMHu38k20P7T_Da-4" value="&lt;div&gt;Entrada&lt;/div&gt;&lt;div&gt;de datos&lt;/div&gt;&lt;div&gt;filtrados&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TM7zUNMHu38k20P7T_Da-3">
+          <mxGeometry x="-0.0105" y="-1" relative="1" as="geometry">
+            <mxPoint x="-12" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de duraciones." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="TM7zUNMHu38k20P7T_Da-5">
+          <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1" parent="TM7zUNMHu38k20P7T_Da-1">
+            <mxGeometry x="-10" y="280" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de resultados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="TM7zUNMHu38k20P7T_Da-6">
+          <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1" parent="TM7zUNMHu38k20P7T_Da-1">
+            <mxGeometry x="640" y="280" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Vuelos Más Rápidos" c4Type="Component" c4Technology="Golang" c4Description="Encuentra los 2 vuelos más rápidos para todos los trayectos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="TM7zUNMHu38k20P7T_Da-7">
+          <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="TM7zUNMHu38k20P7T_Da-1">
+            <mxGeometry x="315" y="280" width="240" height="120" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="TM7zUNMHu38k20P7T_Da-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" edge="1" parent="TM7zUNMHu38k20P7T_Da-1" source="TM7zUNMHu38k20P7T_Da-7" target="TM7zUNMHu38k20P7T_Da-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="555" y="350" as="sourcePoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TM7zUNMHu38k20P7T_Da-9" value="&lt;div&gt;Salida de&lt;/div&gt;&lt;div&gt;resultados&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TM7zUNMHu38k20P7T_Da-8">
+          <mxGeometry x="-0.0095" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Vuelos Más Rápidos" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para el contenedor que encuentra los vuelos más rápidos por trayecto." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="TM7zUNMHu38k20P7T_Da-10">
+          <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="TM7zUNMHu38k20P7T_Da-1">
+            <mxGeometry x="290" y="460" width="490" height="60" as="geometry" />
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="2NFGHiaOL7HoKb3J0yXa" name="Capa3-Distance">
+    <mxGraphModel dx="1718" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -415,7 +612,7 @@
             <mxPoint x="-12" as="offset" />
           </mxGeometry>
         </mxCell>
-        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de datos parseados." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="7q5CgnPdaydgNNOTYusy-1">
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de distancias." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="7q5CgnPdaydgNNOTYusy-1">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
             <mxGeometry x="-40" y="225" width="240" height="120" as="geometry" />
           </mxCell>
@@ -453,7 +650,7 @@
         </object>
         <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Filtro Distancia" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para el contenedor que filtra los vuelos cuya distancia excede 4 veces la distancia para el trayecto." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="MBtkEId0brpOOQ0qKU5c-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="250" y="400" width="440" height="60" as="geometry" />
+            <mxGeometry x="250" y="400" width="450" height="60" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="Fvs6mHKWfbktKWvMTfxb-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=8 8;" parent="1" source="Fvs6mHKWfbktKWvMTfxb-1" target="7q5CgnPdaydgNNOTYusy-4" edge="1">
@@ -472,8 +669,8 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="f2fLLamGP29_FRUvubN0" name="Capa3-Avg">
-    <mxGraphModel dx="1434" dy="766" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+  <diagram id="f2fLLamGP29_FRUvubN0" name="Capa3-Average">
+    <mxGraphModel dx="868" dy="478" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -490,7 +687,7 @@
             <mxGeometry x="330" y="190" width="300" height="200" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de datos parseados.&#xa;Cola de media general de precios de vuelos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="xtLyKEnM3EhWys9XnITA-1">
+        <object placeholders="1" c4Type="Middleware" c4Container="Container" c4Technology="RabbitMQ, Golang" c4Description="Cola de tarifas." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Type%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Container%:&amp;nbsp;%c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="xtLyKEnM3EhWys9XnITA-1">
           <mxCell style="shape=cylinder3;size=15;direction=south;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" parent="1" vertex="1">
             <mxGeometry x="20" y="230" width="240" height="120" as="geometry" />
           </mxCell>
@@ -519,7 +716,7 @@
         </mxCell>
         <mxCell id="CpWGDw5ku5Vt2GURIzue-7" value="&lt;div&gt;Entrada de&lt;/div&gt;&lt;div&gt;media general&lt;/div&gt;&lt;div&gt;de precios&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="xtLyKEnM3EhWys9XnITA-11" vertex="1" connectable="0">
           <mxGeometry x="0.0363" y="1" relative="1" as="geometry">
-            <mxPoint x="-2" y="61" as="offset" />
+            <mxPoint x="-12" y="61" as="offset" />
           </mxGeometry>
         </mxCell>
         <mxCell id="STzJnvoOwdcpZS1SMep5-1" value="&lt;div&gt;Entrada de&lt;/div&gt;&lt;div&gt;precio de&lt;/div&gt;&lt;div&gt;vuelos&lt;br&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="xtLyKEnM3EhWys9XnITA-11" vertex="1" connectable="0">
@@ -534,7 +731,7 @@
         </object>
         <object placeholders="1" c4Name="Component diagram for Flight Optimizer - Promedio y Máximo" c4Type="ContainerDiagramTitle" c4Description="El diagrama de componentes para el contenedor que calcula la media y el máximo por trayecto de los vuelos cuyo precio excede la media general de vuelos." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Description%&lt;/div&gt;" id="u-BJVqvz_y8dvuDIHoCl-1">
           <mxCell style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;metaEdit=1;allowArrows=0;resizable=1;rotatable=0;connectable=0;recursiveResize=0;expand=0;pointerEvents=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-            <mxGeometry x="330" y="390" width="470" height="60" as="geometry" />
+            <mxGeometry x="330" y="390" width="490" height="60" as="geometry" />
           </mxCell>
         </object>
       </root>

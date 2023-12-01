@@ -56,22 +56,19 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir strin
 	}
 }
 
-func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
-	processed := f.stateMan.State["processed"].(bool)
-	if !processed {
-		log.Info("action: re-start filter | status: adding to map")
-		toRestart[f.clientId] = f
-	} else {
-		log.Info("action: re-start filter | status: sending results")
-		go func() {
-			fares, fareSum, count, err := f.GetRunVariables()
-			if err != nil {
-				log.Error(err)
-			} else if err := f.sendResults(ctx, fares, float32(fareSum/float64(count))); err != nil {
-				log.Errorf("action: re-start filter sending results | status: failed | reason: %s", err)
-			}
-		}()
+func (f *Filter) ShouldRestart() bool {
+	processed, _ := f.stateMan.State["processed"].(bool)
+	return processed
+}
+
+func (f *Filter) Restart(ctx context.Context) error {
+	log.Info("action: re-start filter | status: sending results")
+
+	fares, fareSum, count, err := f.GetRunVariables()
+	if err != nil {
+		return err
 	}
+	return f.sendResults(ctx, fares, float32(fareSum/float64(count)))
 }
 
 func (f *Filter) Close() error {

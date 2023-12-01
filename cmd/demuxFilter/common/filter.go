@@ -3,6 +3,8 @@ package common
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,10 +24,12 @@ const (
 )
 
 const (
-	Recieving = iota
+	Receiving = iota
 	NotYetSent
 	Finished
 )
+
+var ErrUnsupported = errors.New("unsupported operation")
 
 type Filter struct {
 	m        *mid.Middleware
@@ -68,30 +72,23 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []stri
 	return f
 }
 
-func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
+func (f *Filter) ShouldRestart() bool {
+	v, _ := f.stateMan.State["state"].(int)
+	return v != Receiving
+}
+
+func (f *Filter) Restart(ctx context.Context) error {
 
 	switch v, _ := f.stateMan.State["state"].(int); v {
-	case Recieving:
-		log.Infof("action: restarting reciving filter | result: in progress")
-		toRestart[f.clientId] = f
+	default:
+		return fmt.Errorf("action: restarting | result: failure | reason: %w", ErrUnsupported)
 	case NotYetSent:
-		ctx, cancel := context.WithCancel(ctx)
-		go func() {
-			defer cancel()
-			log.Info("action: restarting sending filter | result: in progress")
-			fareSum, fareCount := f.GetFareInfo()
-			if err := f.sendAverageFare(ctx, fareSum, fareCount); err != nil {
-				log.Infof("action: sending average fare | result: failed | reason: %s", err)
-			}
-			if err := f.Close(); err != nil {
-				log.Infof("action: removing state files | result: failed | reason: %s", err)
-			}
-		}()
+		log.Info("action: restarting sending filter | result: in progress")
+		fareSum, fareCount := f.GetFareInfo()
+		return f.sendAverageFare(ctx, fareSum, fareCount)
 	case Finished:
-		//Already finished, so just go ahead and finished execution
-		if err := f.Close(); err != nil {
-			log.Infof("action: restarting finished filter | result: failed | reason: %s", err)
-		}
+		// Already finished, so just go ahead and finished execution
+		return nil
 	}
 }
 
@@ -168,7 +165,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			}
 		}
 		rr.AddToState(f.stateMan)
-		if err := f.Prepare(fareSum, fareCount, Recieving); err != nil {
+		if err := f.Prepare(fareSum, fareCount, Receiving); err != nil {
 			return err
 		}
 		if err := f.sendBuffer(ctx, dc, rr.NextKey(f.sinks[Distance]), bDistance); err != nil {

@@ -54,6 +54,9 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 		if err != nil {
 			return err
 		}
+		// We use state.WriteFile() because it conveniently syncs the
+		// filesystem after it's done.
+		// Otherwise, os.WriteFile() would suffice.
 		if err := state.WriteFile(filepath.Join(f.workdir, "coordinates", code), msg); err != nil {
 			return err
 		}

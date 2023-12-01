@@ -110,7 +110,10 @@ func main() {
 		go func() {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
-			filter, _ := common.NewFilter(middleware, workerId, id, sink, workdir)
+			filter, err := common.NewFilter(middleware, workerId, id, sink, workdir)
+			if err != nil {
+				log.Fatal(err)
+			}
 			defer filter.Close()
 			select {
 			case <-ctx.Done():
@@ -121,7 +124,7 @@ func main() {
 				mtx.Unlock()
 				log.Info("action: restart_worker | status: on_flights")
 				if err := filter.Run(ctx, delivery); err != nil {
-					log.Errorf("action: restarted worker | status: failed | reason: %s", err)
+					log.Fatal(err)
 				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
 					log.Fatal(err)
 				}
@@ -159,13 +162,11 @@ func main() {
 			filter, err := common.NewFilter(middleware, workerId, id, sink, workdir)
 			if err != nil {
 				log.Fatal(err)
-				return
 			}
 			defer filter.Close()
 
 			if err := filter.AddCoords(ctx, ch); err != nil {
 				log.Fatal(err)
-				return
 			}
 			mtx.Lock()
 			flightsCh, ok := flightsChs[id]

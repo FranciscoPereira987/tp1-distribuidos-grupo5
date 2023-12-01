@@ -84,7 +84,21 @@ func main() {
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
 		filter := common.RecoverFromState(middleware, workerId, id, sink, workdir, stateMan)
-		filter.Restart(signalCtx, toRestart)
+		if filter.ShouldRestart() {
+			go func() {
+				ctx, cancel := context.WithCancel(signalCtx)
+				defer cancel()
+				defer filter.Close()
+
+				if err := filter.Restart(signalCtx); err != nil {
+					log.Fatal(err)
+				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
+					log.Fatal(err)
+				}
+			}()
+		} else {
+			toRestart[id] = filter
+		}
 	}
 	queues, err := middleware.Consume(signalCtx, source)
 	if err != nil {

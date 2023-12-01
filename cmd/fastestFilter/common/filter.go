@@ -9,7 +9,6 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,25 +44,19 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir strin
 	return
 }
 
-func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
-	sent, ok := f.stateMan.State["sent"].([]string)
-	if ok {
-		log.Info("action: re-start worker | result: re-sending results")
-		go func() {
-			ctx, cancel := context.WithCancel(ctx)
-			defer cancel()
-			fastest, err := f.loadFastest()
-			if err == nil {
-				err = f.SendResults(ctx, fastest, sent)
-			}
-			if err != nil {
-				logrus.Infof("action: re-sending results | status: failed | reason: %s", err)
-			}
-		}()
-	} else {
-		log.Info("action: re-start worker | result: add to map")
-		toRestart[f.clientId] = f
+func (f *Filter) ShouldRestart() bool {
+	_, ok := f.stateMan.State["sent"]
+	return ok
+}
+
+func (f *Filter) Restart(ctx context.Context) error {
+	sent := f.stateMan.State["sent"].([]string)
+	log.Info("action: re-start worker | result: re-sending results")
+	fastest, err := f.loadFastest()
+	if err != nil {
+		return err
 	}
+	return f.SendResults(ctx, fastest, sent)
 }
 
 func (f *Filter) StoreState() error {

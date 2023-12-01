@@ -49,10 +49,9 @@ func (sw StateManager) Commit() error {
 }
 
 func (sw *StateManager) DumpState() error {
-	buf, err := json.Marshal(sw.State)
-
+	err := sw.Prepare()
 	if err == nil {
-		err = WriteFile(sw.Filename, buf)
+		err = sw.Commit()
 	}
 
 	return err

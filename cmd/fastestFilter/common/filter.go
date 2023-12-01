@@ -47,7 +47,7 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir strin
 
 func (f *Filter) recoverSent() map[string]bool {
 	mapped := make(map[string]bool)
-	if value, ok := f.stateMan.Get("sent").(map[any]any); ok {
+	if value, ok := f.stateMan.State["sent"].(map[any]any); ok {
 		for key, val := range value {
 			mapped[key.(string)] = val.(bool)
 		}
@@ -57,7 +57,7 @@ func (f *Filter) recoverSent() map[string]bool {
 
 // TODO: Implement
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
-	processed := f.stateMan.Get("processed").(bool)
+	processed := f.stateMan.State["processed"].(bool)
 	if processed {
 		log.Info("action: re-start worker | result: re-sending results")
 		go func() {

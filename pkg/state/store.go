@@ -31,20 +31,6 @@ func (sw *StateManager) AddToState(key string, value any) {
 	sw.State[key] = value
 }
 
-func (sw *StateManager) Get(key string) any {
-	return sw.State[key]
-}
-
-func (sw *StateManager) GetString(key string) string {
-	s, _ := sw.State[key].(string)
-	return s
-}
-
-func (sw *StateManager) GetInt(key string) int {
-	i, _ := sw.State[key].(int)
-	return i
-}
-
 func (sw *StateManager) DumpState() error {
 	buf, err := json.Marshal(sw.State)
 

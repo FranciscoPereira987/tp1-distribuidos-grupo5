@@ -48,18 +48,13 @@ func (rr *RoundRobinKeysGenerator) NextKey(sink string) string {
 }
 
 func (rr RoundRobinKeysGenerator) AddToState(stateMan *state.StateManager) {
-	stateMan.AddToState("rr-mod", rr.mod)
 	stateMan.AddToState("rr-index", rr.index)
 }
 
-func RoundRobinFromState(stateMan *state.StateManager, key KeyGenerator) RoundRobinKeysGenerator {
-	mod := stateMan.GetInt("rr-mod")
-	if mod == 0 {
-		return key.NewRoundRobinKeysGenerator()
-	}
-	index := stateMan.GetInt("rr-index")
+func RoundRobinFromState(stateMan *state.StateManager, kg KeyGenerator) RoundRobinKeysGenerator {
+	index := stateMan.State["rr-index"].(int)
 	return RoundRobinKeysGenerator{
-		mod:   mod,
+		mod:   int(kg),
 		index: index,
 	}
 }

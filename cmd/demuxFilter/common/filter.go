@@ -70,7 +70,7 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []stri
 
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 
-	switch f.stateMan.GetInt("state") {
+	switch v, _ := f.stateMan.State["state"].(int); v {
 	case Recieving:
 		log.Infof("action: restarting reciving filter | result: in progress")
 		toRestart[f.clientId] = f
@@ -109,8 +109,8 @@ func (f *Filter) StoreState(sum float64, count, state int) error {
 }
 
 func (f *Filter) GetFareInfo() (fareSum float64, fareCount int) {
-	fareCount = f.stateMan.GetInt("count")
-	fareSum, _ = f.stateMan.Get("sum").(float64)
+	fareCount, _ = f.stateMan.State["count"].(int)
+	fareSum, _ = f.stateMan.State["sum"].(float64)
 	return
 }
 

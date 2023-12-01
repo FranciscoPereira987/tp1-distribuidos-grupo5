@@ -101,7 +101,7 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		if onFlights, _ := stateMan.Get("coordinates-load").(bool); !onFlights {
+		if onFlights, _ := stateMan.State["coordinates-load"].(bool); !onFlights {
 			continue
 		}
 		ch := make(chan (<-chan mid.Delivery))

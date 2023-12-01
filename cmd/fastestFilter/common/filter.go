@@ -45,7 +45,7 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *sta
 
 func (f *Filter) recoverSended() map[string]bool {
 	mapped := make(map[string]bool)
-	value, ok := f.stateMan.Get("sended").(map[any]any)
+	value, ok := f.stateMan.Get("sent").(map[any]any)
 	if ok {
 		for key, val := range value {
 			mapped[key.(string)] = val.(bool)
@@ -180,7 +180,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		for key := range fastest {
 			processed[key] = false
 		}
-		f.stateMan.AddToState("sended", processed)
+		f.stateMan.AddToState("sent", processed)
 		if err := f.StoreState(); err != nil {
 			return err
 		}
@@ -189,35 +189,40 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	return f.SendResults(ctx, fastest, processed)
 }
 
-func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sended map[string]bool) error {
+func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sent map[string]bool) error {
 
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.id)
 	for key, arr := range fastest {
-		if processed := sended[key]; processed {
+		if processed := sent[key]; processed {
 			continue
 		}
 		for _, v := range arr {
 			f.marshalResult(b, &v)
-			if i--; i <= 0 {
-				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
-					return err
-				}
-				f.stateMan.AddToState("sended", sended)
-				if err := f.StoreState(); err != nil {
-					return err
-				}
-				i = mid.MaxMessageSize / typing.ResultQ3Size
-				b = bytes.NewBufferString(f.id)
-			}
+			i--
 		}
 		delete(fastest, key)
-		sended[key] = true
+		sent[key] = true
+		if i <= 0 {
+			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
+				return err
+			}
+			f.stateMan.AddToState("sent", sent)
+			if err := f.StoreState(); err != nil {
+				return err
+			}
+			i = mid.MaxMessageSize / typing.ResultQ3Size
+			b = bytes.NewBufferString(f.id)
+		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
 		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
+			return err
+		}
+		f.stateMan.AddToState("sent", sent)
+		if err := f.StoreState(); err != nil {
 			return err
 		}
 	}

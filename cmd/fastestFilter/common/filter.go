@@ -135,7 +135,6 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
-	var updated []string
 	if err := f.StoreState(); err != nil {
 		return err
 	}
@@ -145,6 +144,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	}
 
 	for d := range ch {
+		updated := make(map[string]bool)
 		msg, tag := d.Msg, d.Tag
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.FastestFilterUnmarshal(r)
@@ -152,11 +152,11 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 				return err
 			}
 			if key := updateFastest(fastest, data); key != "" {
-				updated = append(updated, key)
+				updated[key] = true
 			}
 		}
 
-		for _, key := range updated {
+		for key := range updated {
 			var b bytes.Buffer
 			for _, v := range fastest[key] {
 				v.Marshal(&b)
@@ -165,7 +165,6 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 				return err
 			}
 		}
-		updated = updated[:0]
 
 		if err := f.m.Ack(tag); err != nil {
 			return err

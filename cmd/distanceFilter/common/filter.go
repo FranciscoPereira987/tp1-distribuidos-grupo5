@@ -43,6 +43,11 @@ func (f *Filter) Close() error {
 }
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
+	sm := state.NewStateManager(f.workdir)
+	sm.State["coordinates-load"] = true
+	if err := sm.Prepare(); err != nil {
+		return err
+	}
 	for d := range coords {
 		msg, tag := d.Msg, d.Tag
 		code, err := typing.ReadString(bytes.NewReader(msg))
@@ -60,9 +65,7 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
-		sm := state.NewStateManager(f.workdir)
-		sm.AddToState("coordinates-load", true)
-		return sm.DumpState()
+		return sm.Commit()
 	}
 }
 
@@ -89,6 +92,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			continue
 		}
 		df.AddToState(sm)
+		if err := sm.Prepare(); err != nil {
+			return err
+		}
 		b := bytes.NewBufferString(f.clientId)
 		for r.Len() > 0 {
 			data, err := typing.DistanceFilterUnmarshal(r)
@@ -110,7 +116,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 				return err
 			}
 		}
-		if err := sm.DumpState(); err != nil {
+		if err := sm.Commit(); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {

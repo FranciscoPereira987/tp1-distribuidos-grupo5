@@ -47,8 +47,12 @@ func (rr *RoundRobinKeysGenerator) NextKey(sink string) string {
 	return fmt.Sprintf("%s.%d", sink, v)
 }
 
+func (rr RoundRobinKeysGenerator) RemoveFromState(stateMan *state.StateManager) {
+	delete(stateMan.State, "rr-index")
+}
+
 func (rr RoundRobinKeysGenerator) AddToState(stateMan *state.StateManager) {
-	stateMan.AddToState("rr-index", rr.index)
+	stateMan.State["rr-index"] = rr.index
 }
 
 func RoundRobinFromState(stateMan *state.StateManager, kg KeyGenerator) RoundRobinKeysGenerator {

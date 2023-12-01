@@ -74,12 +74,6 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 	}
 }
 
-func (f *Filter) StoreState() error {
-	f.filter.AddToState(f.stateMan)
-
-	return f.stateMan.DumpState()
-}
-
 func (f *Filter) Close() error {
 	return os.RemoveAll(f.workdir)
 }
@@ -151,6 +145,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 			f.m.Ack(tag)
 			continue
 		}
+		f.filter.AddToState(f.stateMan)
 		for r.Len() > 0 {
 			data, err := typing.AverageFilterUnmarshal(r)
 			if err != nil {
@@ -178,7 +173,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 			}
 		}
 
-		if err := f.StoreState(); err != nil {
+		if err := f.stateMan.DumpState(); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
@@ -191,7 +186,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 		return context.Cause(ctx)
 	default:
 		f.stateMan.State["processed"] = true
-		if err := f.StoreState(); err != nil {
+		f.filter.RemoveFromState(f.stateMan)
+		if err := f.stateMan.DumpState(); err != nil {
 			return err
 		}
 	}
@@ -210,11 +206,13 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		} else if newResult {
 			delete(f.stateMan.State["fares"].(map[string]int), file)
 			if i--; i <= 0 {
-				// TODO: split writing state
+				if err := f.stateMan.Prepare(); err != nil {
+					return err
+				}
 				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
 				}
-				if err := f.stateMan.DumpState(); err != nil {
+				if err := f.stateMan.Commit(); err != nil {
 					// This may result in duplicated messages
 					log.Errorf("action: dump_state | status: failure | reason: %s", err)
 				}
@@ -224,11 +222,13 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ4Size {
-		// TODO: split writing state
+		if err := f.stateMan.Prepare(); err != nil {
+			return err
+		}
 		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 			return err
 		}
-		if err := f.stateMan.DumpState(); err != nil {
+		if err := f.stateMan.Commit(); err != nil {
 			log.Errorf("action: dump_state | status: failure | reason: %s", err)
 		}
 	}

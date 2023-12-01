@@ -99,19 +99,19 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(filepath.Base(f.stateMan.Filename))
 }
 
-func (f *Filter) StoreState(sum float64, count, state int) error {
+func (f *Filter) Prepare(sum float64, count, state int) error {
 	f.filter.AddToState(f.stateMan)
+	f.stateMan.State["sum"] = sum
+	f.stateMan.State["count"] = count
+	f.stateMan.State["state"] = state
 
-	f.stateMan.AddToState("sum", sum)
-	f.stateMan.AddToState("count", count)
-	f.stateMan.AddToState("state", state)
-	return f.stateMan.DumpState()
+	return f.stateMan.Prepare()
 }
 
-func (f *Filter) GetFareInfo() (fareSum float64, fareCount int) {
-	fareCount, _ = f.stateMan.State["count"].(int)
-	fareSum, _ = f.stateMan.State["sum"].(float64)
-	return
+func (f *Filter) GetFareInfo() (float64, int) {
+	sum, _ := f.stateMan.State["sum"].(float64)
+	count, _ := f.stateMan.State["count"].(int)
+	return sum, count
 }
 
 func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
@@ -167,6 +167,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 				f.marshalResult(bResult, &data)
 			}
 		}
+		rr.AddToState(f.stateMan)
+		if err := f.Prepare(fareSum, fareCount, Recieving); err != nil {
+			return err
+		}
 		if err := f.sendBuffer(ctx, dc, rr.NextKey(f.sinks[Distance]), bDistance); err != nil {
 			return err
 		}
@@ -184,8 +188,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		if err := dc.Confirm(ctx); err != nil {
 			return err
 		}
-		rr.AddToState(f.stateMan)
-		if err := f.StoreState(fareSum, fareCount, Recieving); err != nil {
+		if err := f.stateMan.Commit(); err != nil {
 			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
@@ -197,7 +200,12 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
-		f.StoreState(fareSum, fareCount, NotYetSent)
+		f.filter.RemoveFromState(f.stateMan)
+		rr.RemoveFromState(f.stateMan)
+		f.stateMan.State["state"] = NotYetSent
+		if err := f.stateMan.DumpState(); err != nil {
+			log.Error("action: dump_state | result: failure | reason:", err)
+		}
 	}
 
 	return f.sendAverageFare(ctx, fareSum, fareCount)
@@ -254,10 +262,16 @@ func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount
 	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.clientId)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
+	delete(f.stateMan.State, "sum")
+	delete(f.stateMan.State, "count")
+	f.stateMan.State["state"] = Finished
+	if err := f.stateMan.Prepare(); err != nil {
+		return err
+	}
 	err := bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
 
 	if err == nil {
-		f.StoreState(fareSum, fareCount, Finished)
+		f.stateMan.Commit()
 	}
 
 	return err

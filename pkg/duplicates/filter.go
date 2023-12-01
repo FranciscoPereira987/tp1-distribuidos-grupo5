@@ -19,8 +19,12 @@ func NewDuplicateFilter() *DuplicateFilter {
 	}
 }
 
+func (df DuplicateFilter) RemoveFromState(stateMan *state.StateManager) {
+	delete(stateMan.State, "last-received")
+}
+
 func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
-	stateMan.AddToState("last-received", df.lastMessages)
+	stateMan.State["last-received"] = df.lastMessages
 }
 
 func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {

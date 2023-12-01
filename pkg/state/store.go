@@ -18,6 +18,7 @@ It should only be stored in state, objects that implement either:
 type StateManager struct {
 	Filename string
 	State    map[string]any
+	tmp      string
 }
 
 func NewStateManager(workdir string) *StateManager {
@@ -29,6 +30,22 @@ func NewStateManager(workdir string) *StateManager {
 
 func (sw *StateManager) AddToState(key string, value any) {
 	sw.State[key] = value
+}
+
+func (sw *StateManager) Prepare() error {
+	buf, err := json.Marshal(sw.State)
+	if err != nil {
+		return err
+	}
+	name, err := WriteTmp(sw.Filename, buf)
+	if err == nil {
+		sw.tmp = name
+	}
+	return err
+}
+
+func (sw StateManager) Commit() error {
+	return LinkTmp(sw.tmp, sw.Filename)
 }
 
 func (sw *StateManager) DumpState() error {

@@ -45,28 +45,16 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir strin
 	return
 }
 
-func (f *Filter) recoverSent() map[string]bool {
-	mapped := make(map[string]bool)
-	if value, ok := f.stateMan.State["sent"].(map[any]any); ok {
-		for key, val := range value {
-			mapped[key.(string)] = val.(bool)
-		}
-	}
-	return mapped
-}
-
-// TODO: Implement
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
-	processed := f.stateMan.State["processed"].(bool)
-	if processed {
+	sent, ok := f.stateMan.State["sent"].([]string)
+	if ok {
 		log.Info("action: re-start worker | result: re-sending results")
 		go func() {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
-			value := f.recoverSent()
 			fastest, err := f.loadFastest()
 			if err == nil {
-				err = f.SendResults(ctx, fastest, value)
+				err = f.SendResults(ctx, fastest, sent)
 			}
 			if err != nil {
 				logrus.Infof("action: re-sending results | status: failed | reason: %s", err)
@@ -136,7 +124,8 @@ func (f *Filter) loadFastest() (FastestFlightsMap, error) {
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
-	if err := f.StoreState(); err != nil {
+	f.stateMan.State["sent"] = []string{}
+	if err := f.stateMan.Prepare(); err != nil {
 		return err
 	}
 	fastest, err := f.loadFastest()
@@ -172,45 +161,44 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 	}
 
-	processed := make(map[string]bool)
 	select {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
-		f.stateMan.AddToState("processed", true)
-		for key := range fastest {
-			processed[key] = false
-		}
-		f.stateMan.AddToState("sent", processed)
-		if err := f.StoreState(); err != nil {
-			return err
+		if err := f.stateMan.Commit(); err != nil {
+			log.Error("action: commit | result: failure | reason:", err)
 		}
 	}
 
-	return f.SendResults(ctx, fastest, processed)
+	return f.SendResults(ctx, fastest, nil)
 }
 
-func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sent map[string]bool) error {
+func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sent []string) error {
 
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.clientId)
 	for key, arr := range fastest {
-		if sent[key] {
-			continue
+		for _, s := range sent {
+			if key == s {
+				continue
+			}
 		}
+		sent = append(sent, key)
+		f.stateMan.State["sent"] = sent
 		for _, v := range arr {
 			f.marshalResult(b, &v)
 			i--
 		}
-		sent[key] = true
 		if i <= 0 {
+			if err := f.stateMan.Prepare(); err != nil {
+				return err
+			}
 			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 				return err
 			}
-			f.stateMan.AddToState("sent", sent)
-			if err := f.StoreState(); err != nil {
+			if err := f.stateMan.Commit(); err != nil {
 				return err
 			}
 			i = mid.MaxMessageSize / typing.ResultQ3Size
@@ -218,11 +206,13 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
+		if err := f.stateMan.Prepare(); err != nil {
+			return err
+		}
 		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 			return err
 		}
-		f.stateMan.AddToState("sent", sent)
-		if err := f.StoreState(); err != nil {
+		if err := f.stateMan.Commit(); err != nil {
 			return err
 		}
 	}

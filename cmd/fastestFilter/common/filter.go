@@ -202,7 +202,6 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 			f.marshalResult(b, &v)
 			i--
 		}
-		delete(fastest, key)
 		sent[key] = true
 		if i <= 0 {
 			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {

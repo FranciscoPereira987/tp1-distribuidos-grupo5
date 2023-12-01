@@ -90,7 +90,7 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, id, sink, workdir, stateMan)
+		filter := common.RecoverFromState(middleware, workerId, id, sink, workdir, stateMan)
 		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)
@@ -103,7 +103,7 @@ func main() {
 			delete(toRestart, queue.Id)
 		} else {
 			workdir := filepath.Join("clients", hex.EncodeToString([]byte(queue.Id)))
-			f, err = common.NewFilter(middleware, queue.Id, sink, workdir)
+			f, err = common.NewFilter(middleware, workerId, queue.Id, sink, workdir)
 			if err != nil {
 				log.Fatal(err)
 			}

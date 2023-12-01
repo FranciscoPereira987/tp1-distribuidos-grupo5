@@ -83,7 +83,7 @@ func main() {
 	toRestart := make(map[string]*common.Filter)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, id, sink, workdir, stateMan)
+		filter := common.RecoverFromState(middleware, workerId, id, sink, workdir, stateMan)
 		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)
@@ -108,7 +108,7 @@ func main() {
 				defer cancel()
 
 				workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
-				filter, err := common.NewFilter(middleware, id, sink, workdir)
+				filter, err := common.NewFilter(middleware, workerId, id, sink, workdir)
 				if err != nil {
 					log.Fatal(err)
 					return

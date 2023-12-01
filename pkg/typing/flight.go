@@ -71,7 +71,8 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 		err = ErrMissingDistance
 	}
 	if b.Len() == id.Len {
-		HeaderIntoBuffer(b, record[0])
+		h := NewHeader("input", record[0])
+		h.Marshal(b)
 	}
 	b.Write(flightId)
 	WriteString(b, record[indices[1]])

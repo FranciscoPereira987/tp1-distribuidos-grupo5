@@ -2,32 +2,27 @@ package typing
 
 import (
 	"bytes"
-	"encoding/hex"
 )
 
 type BatchHeader struct {
-	ID string
+	WorkerId  string
+	MessageId string
 }
 
-func HeaderMarshal(b *bytes.Buffer, data *Flight) {
-	h := BatchHeader{
-		ID: hex.EncodeToString(data.ID[:]),
+func NewHeader(workerId string, messageId string) BatchHeader {
+	return BatchHeader{workerId, messageId}
+}
+
+func (h *BatchHeader) Unmarshal(r *bytes.Reader) error {
+	id, err := ReadString(r)
+	if err == nil {
+		h.WorkerId = id
+		h.MessageId, err = ReadString(r)
 	}
-	h.Marshal(b)
-}
-
-func HeaderIntoBuffer(b *bytes.Buffer, id string) {
-	h := BatchHeader{
-		ID: id,
-	}
-	h.Marshal(b)
-}
-
-func HeaderUnmarshal(r *bytes.Reader) (h BatchHeader, err error) {
-	h.ID, err = ReadString(r)
-	return
+	return err
 }
 
 func (h BatchHeader) Marshal(b *bytes.Buffer) {
-	WriteString(b, h.ID)
+	WriteString(b, h.WorkerId)
+	WriteString(b, h.MessageId)
 }

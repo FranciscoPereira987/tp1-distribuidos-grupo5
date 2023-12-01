@@ -11,7 +11,7 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -29,14 +29,15 @@ const (
 
 type Filter struct {
 	m        *mid.Middleware
-	id       string
+	workerId string
+	clientId string
 	sinks    []string
 	keyGens  []mid.KeyGenerator
 	filter   *duplicates.DuplicateFilter
 	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, workDir string) *Filter {
+func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, nWorkers []int, workDir string) *Filter {
 
 	kgs := make([]mid.KeyGenerator, 0, len(nWorkers))
 	for _, mod := range nWorkers {
@@ -44,23 +45,24 @@ func NewFilter(m *mid.Middleware, id string, sinks []string, nWorkers []int, wor
 	}
 	return &Filter{
 		m:        m,
-		id:       id,
+		workerId: workerId,
+		clientId: clientId,
 		sinks:    sinks,
 		keyGens:  kgs,
-		filter:   duplicates.NewDuplicateFilter(""),
+		filter:   duplicates.NewDuplicateFilter(),
 		stateMan: state.NewStateManager(workDir),
 	}
 }
 
-func RecoverFromState(m *mid.Middleware, id string, sinks []string, nWorkers []int, stateMan *state.StateManager) *Filter {
+func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, nWorkers []int, stateMan *state.StateManager) *Filter {
 	f := new(Filter)
 	f.m = m
-	f.id = id
+	f.clientId = clientId
 	f.sinks = sinks
 	for _, mod := range nWorkers {
 		f.keyGens = append(f.keyGens, mid.NewKeyGenerator(mod))
 	}
-	f.filter = duplicates.NewDuplicateFilter("")
+	f.filter = duplicates.NewDuplicateFilter()
 	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
 	return f
@@ -70,25 +72,25 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 
 	switch f.stateMan.GetInt("state") {
 	case Recieving:
-		logrus.Infof("action: restarting reciving filter | result: in progress")
-		toRestart[f.id] = f
+		log.Infof("action: restarting reciving filter | result: in progress")
+		toRestart[f.clientId] = f
 	case NotYetSent:
 		ctx, cancel := context.WithCancel(ctx)
 		go func() {
 			defer cancel()
-			logrus.Info("action: restarting sending filter | result: in progress")
+			log.Info("action: restarting sending filter | result: in progress")
 			fareSum, fareCount := f.GetFareInfo()
 			if err := f.sendAverageFare(ctx, fareSum, fareCount); err != nil {
-				logrus.Infof("action: sending average fare | result: failed | reason: %s", err)
+				log.Infof("action: sending average fare | result: failed | reason: %s", err)
 			}
 			if err := f.Close(); err != nil {
-				logrus.Infof("action: removing state files | result: failed | reason: %s", err)
+				log.Infof("action: removing state files | result: failed | reason: %s", err)
 			}
 		}()
 	case Finished:
 		//Already finished, so just go ahead and finished execution
 		if err := f.Close(); err != nil {
-			logrus.Infof("action: restarting finished filter | result: failed | reason: %s", err)
+			log.Infof("action: restarting finished filter | result: failed | reason: %s", err)
 		}
 	}
 }
@@ -117,10 +119,9 @@ func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
 	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
 }
 
-func (f Filter) marshalHeaderInto(bufs ...*bytes.Buffer) {
-	for _, buf := range bufs {
-		typing.HeaderIntoBuffer(buf, f.filter.LastMessage)
-	}
+func (f Filter) marshalHeaderInto(b *bytes.Buffer) {
+	h := typing.NewHeader(f.workerId, f.filter.LastMessage)
+	h.Marshal(b)
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
@@ -134,19 +135,18 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	rr := f.GetRoundRobinGenerator()
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
-		if f.filter.IsDuplicate(msg) {
-			f.m.Ack(tag)
-			continue
-		}
-		r, err := f.filter.ChangeLast(msg)
+		r := bytes.NewReader(msg)
+		dup, err := f.filter.Update(r)
 		if err != nil {
-			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			log.Errorf("action: reading_batch | status: failed | reason: %s", err)
+		}
+		if dup || err != nil {
 			f.m.Ack(tag)
 			continue
 		}
 		var (
-			bDistance = bytes.NewBufferString(f.id)
-			bResult   = bytes.NewBufferString(f.id)
+			bDistance = bytes.NewBufferString(f.clientId)
+			bResult   = bytes.NewBufferString(f.clientId)
 			mAverage  = make(map[string]*bytes.Buffer)
 			mFastest  = make(map[string]*bytes.Buffer)
 		)
@@ -213,7 +213,7 @@ func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, d
 	key := f.keyGens[Average].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
-		b = bytes.NewBufferString(f.id)
+		b = bytes.NewBufferString(f.clientId)
 		f.marshalHeaderInto(b)
 		m[key] = b
 	}
@@ -225,7 +225,7 @@ func (f *Filter) marshalFastestFilter(m map[string]*bytes.Buffer, sink string, d
 	key := f.keyGens[Fastest].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
-		b = bytes.NewBufferString(f.id)
+		b = bytes.NewBufferString(f.clientId)
 		m[key] = b
 	}
 
@@ -251,7 +251,7 @@ func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, m map[string]*byt
 
 func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
 	var bc mid.BasicConfirmer
-	b := bytes.NewBufferString(f.id)
+	b := bytes.NewBufferString(f.clientId)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
 	err := bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
 

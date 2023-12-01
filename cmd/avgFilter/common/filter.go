@@ -21,31 +21,34 @@ import (
 
 type Filter struct {
 	m        *mid.Middleware
-	id       string
+	workerId string
+	clientId string
 	sink     string
 	workdir  string
 	filter   *duplicates.DuplicateFilter
 	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Filter, error) {
 	err := os.MkdirAll(filepath.Join(workdir, "fares"), 0755)
 	return &Filter{
 		m,
-		id,
+		workerId,
+		clientId,
 		sink,
 		workdir,
-		duplicates.NewDuplicateFilter(""),
+		duplicates.NewDuplicateFilter(),
 		state.NewStateManager(workdir),
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, id, sink, workdir string, state *state.StateManager) *Filter {
-	filter := duplicates.NewDuplicateFilter("")
+func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, state *state.StateManager) *Filter {
+	filter := duplicates.NewDuplicateFilter()
 	filter.RecoverFromState(state)
 	return &Filter{
 		m,
-		id,
+		workerId,
+		clientId,
 		sink,
 		workdir,
 		filter,
@@ -57,7 +60,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 	processed := f.stateMan.State["processed"].(bool)
 	if !processed {
 		log.Info("action: re-start filter | status: adding to map")
-		toRestart[f.id] = f
+		toRestart[f.clientId] = f
 	} else {
 		log.Info("action: re-start filter | status: sending results")
 		go func() {
@@ -139,13 +142,12 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
-		if f.filter.IsDuplicate(msg) {
-			f.m.Ack(tag)
-			continue
-		}
-		r, err := f.filter.ChangeLast(msg)
+		r := bytes.NewReader(msg)
+		dup, err := f.filter.Update(r)
 		if err != nil {
-			log.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			log.Errorf("action: reading_batch | status: failed | reason: %s", err)
+		}
+		if dup || err != nil {
 			f.m.Ack(tag)
 			continue
 		}
@@ -201,7 +203,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ4Size
-	b := bytes.NewBufferString(f.id)
+	b := bytes.NewBufferString(f.clientId)
 	for file, fw := range fares {
 		if newResult, err := f.aggregate(ctx, b, file, fw, avg); err != nil {
 			return err
@@ -217,7 +219,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 					log.Errorf("action: dump_state | status: failure | reason: %s", err)
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
-				b = bytes.NewBufferString(f.id)
+				b = bytes.NewBufferString(f.clientId)
 			}
 		}
 	}
@@ -268,8 +270,9 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, fw
 		AverageFare: float32(fareSum / float64(count)),
 		MaxFare:     fareMax,
 	}
-	if b.Len() == len(f.id) {
-		typing.HeaderIntoBuffer(b, file)
+	if b.Len() == len(f.clientId) {
+		h := typing.NewHeader(f.workerId, file)
+		h.Marshal(b)
 	}
 	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)

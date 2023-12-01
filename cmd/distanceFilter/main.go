@@ -110,7 +110,7 @@ func main() {
 		go func() {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
-			filter, _ := common.NewFilter(middleware, id, sink, workdir)
+			filter, _ := common.NewFilter(middleware, workerId, id, sink, workdir)
 			defer filter.Close()
 			select {
 			case <-ctx.Done():
@@ -156,7 +156,7 @@ func main() {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
 			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(id)))
-			filter, err := common.NewFilter(middleware, id, sink, workdir)
+			filter, err := common.NewFilter(middleware, workerId, id, sink, workdir)
 			if err != nil {
 				log.Fatal(err)
 				return

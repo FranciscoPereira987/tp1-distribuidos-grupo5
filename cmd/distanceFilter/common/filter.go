@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/hex"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,17 +19,19 @@ import (
 const distanceFactor = 4
 
 type Filter struct {
-	m       *mid.Middleware
-	id      string
-	sink    string
-	workdir string
+	m        *mid.Middleware
+	workerId string
+	clientId string
+	sink     string
+	workdir  string
 }
 
-func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Filter, error) {
 	err := os.MkdirAll(filepath.Join(workdir, "coordinates"), 0755)
 	return &Filter{
 		m,
-		id,
+		workerId,
+		clientId,
 		sink,
 		workdir,
 	}, err
@@ -74,7 +75,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 
 	for d := range flights {
 		msg, tag := d.Msg, d.Tag
-		b := bytes.NewBufferString(f.id)
+		b := bytes.NewBufferString(f.clientId)
 		for r := bytes.NewReader(msg); r.Len() > 0; {
 			data, err := typing.DistanceFilterUnmarshal(r)
 			if err != nil {
@@ -90,7 +91,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 				f.marshalResult(b, &data)
 			}
 		}
-		if b.Len() > len(f.id) {
+		if b.Len() > len(f.clientId) {
 			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 				return err
 			}
@@ -104,8 +105,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 }
 
 func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.DistanceFilter) {
-	if b.Len() == len(f.id) {
-		typing.HeaderIntoBuffer(b, hex.EncodeToString(data.ID[:]))
+	if b.Len() == len(f.clientId) {
+		h := typing.NewHeader(f.workerId, string(data.ID[:]))
+		h.Marshal(b)
 	}
 	typing.ResultQ2Marshal(b, data)
 

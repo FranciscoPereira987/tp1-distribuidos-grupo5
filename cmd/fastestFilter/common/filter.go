@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"os"
 	"path/filepath"
 
@@ -16,27 +15,30 @@ import (
 
 type Filter struct {
 	m        *mid.Middleware
-	id       string
+	workerId string
+	clientId string
 	sink     string
 	workdir  string
 	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, id, sink, workdir string) (*Filter, error) {
+func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Filter, error) {
 	err := os.MkdirAll(filepath.Join(workdir, "fastest"), 0755)
 	return &Filter{
 		m,
-		id,
+		workerId,
+		clientId,
 		sink,
 		workdir,
 		state.NewStateManager(workdir),
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *state.StateManager) (f *Filter) {
+func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (f *Filter) {
 	f = new(Filter)
 	f.m = m
-	f.id = id
+	f.workerId = workerId
+	f.clientId = clientId
 	f.sink = sink
 	f.workdir = workdir
 	f.stateMan = stateMan
@@ -72,7 +74,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 		}()
 	} else {
 		log.Info("action: re-start worker | result: add to map")
-		toRestart[f.id] = f
+		toRestart[f.clientId] = f
 	}
 }
 
@@ -193,7 +195,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	log.Infof("start publishing results into %q queue", f.sink)
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
-	b := bytes.NewBufferString(f.id)
+	b := bytes.NewBufferString(f.clientId)
 	for key, arr := range fastest {
 		if sent[key] {
 			continue
@@ -212,7 +214,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 				return err
 			}
 			i = mid.MaxMessageSize / typing.ResultQ3Size
-			b = bytes.NewBufferString(f.id)
+			b = bytes.NewBufferString(f.clientId)
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ3Size {
@@ -229,8 +231,9 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 }
 
 func (f *Filter) marshalResult(b *bytes.Buffer, v *typing.FastestFilter) {
-	if b.Len() == len(f.id) {
-		typing.HeaderIntoBuffer(b, hex.EncodeToString(v.ID[:]))
+	if b.Len() == len(f.clientId) {
+		h := typing.NewHeader(f.workerId, string(v.ID[:]))
+		h.Marshal(b)
 	}
 	typing.ResultQ3Marshal(b, v)
 

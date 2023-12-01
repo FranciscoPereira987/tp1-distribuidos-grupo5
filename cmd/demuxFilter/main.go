@@ -100,7 +100,7 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, _, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, id, sinks, nWorkers, stateMan)
+		filter := common.RecoverFromState(middleware, workerId, id, sinks, nWorkers, stateMan)
 		filter.Restart(signalCtx, toRestart)
 	}
 	queues, err := middleware.Consume(signalCtx, source)
@@ -110,36 +110,31 @@ func main() {
 	beaterClient := beater.StartBeaterClient(v)
 	beaterClient.Run()
 	for queue := range queues {
-		if f, ok := toRestart[queue.Id]; ok {
+		filter, ok := toRestart[queue.Id]
+		if ok {
 			delete(toRestart, queue.Id)
-			go func(id string, ch <-chan mid.Delivery, f *common.Filter) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-				f.Run(ctx, ch)
-			}(queue.Id, queue.Ch, f)
 		} else {
-			go func(id string, ch <-chan mid.Delivery) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-
-				filter := common.NewFilter(middleware, id, sinks, nWorkers, workdir)
-
-				if err := filter.Run(ctx, ch); err != nil {
-					log.Fatal(err)
-				}
-
-				select {
-				case <-ctx.Done():
-					return
-				default:
-				}
-
-				// send EOF to sinks
-				if err := middleware.EOF(ctx, eof, workerId, id); err != nil {
-					log.Fatal(err)
-				}
-			}(queue.Id, queue.Ch)
+			filter = common.NewFilter(middleware, workerId, queue.Id, sinks, nWorkers, workdir)
 		}
+		go func(clientId string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+
+			if err := filter.Run(ctx, ch); err != nil {
+				log.Fatal(err)
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			// send EOF to sinks
+			if err := middleware.EOF(ctx, eof, workerId, clientId); err != nil {
+				log.Fatal(err)
+			}
+		}(queue.Id, queue.Ch)
 	}
 	beater.StopBeaterClient(beaterClient)
 }

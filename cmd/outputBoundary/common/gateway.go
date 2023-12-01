@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
@@ -22,7 +23,7 @@ type Gateway struct {
 func NewGateway(m *mid.Middleware) *Gateway {
 	return &Gateway{
 		m:      m,
-		filter: duplicates.NewDuplicateFilter(""),
+		filter: duplicates.NewDuplicateFilter(),
 	}
 }
 
@@ -41,13 +42,12 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
-		if g.filter.IsDuplicate(msg) {
-			g.m.Ack(tag)
-			continue
-		}
-		r, err := g.filter.ChangeLast(msg)
+		r := bytes.NewReader(msg)
+		dup, err := g.filter.Update(r)
 		if err != nil {
 			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+		}
+		if dup || err != nil {
 			g.m.Ack(tag)
 			continue
 		}

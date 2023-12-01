@@ -150,6 +150,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			mAverage  = make(map[string]*bytes.Buffer)
 			mFastest  = make(map[string]*bytes.Buffer)
 		)
+		f.marshalHeaderInto(bDistance)
 		f.marshalHeaderInto(bResult)
 		for r.Len() > 0 {
 			data, err := typing.FlightUnmarshal(r)

@@ -10,6 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
@@ -66,6 +67,9 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 }
 
 func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
+	df := duplicates.NewDuplicateFilter()
+	sm := state.NewStateManager(f.workdir)
+	df.RecoverFromState(sm)
 	var bc mid.BasicConfirmer
 
 	comp, err := f.loadDistanceComputer()
@@ -75,8 +79,18 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 
 	for d := range flights {
 		msg, tag := d.Msg, d.Tag
+		r := bytes.NewReader(msg)
+		dup, err := df.Update(r)
+		if err != nil {
+			log.Errorf("action: reading_batch | status: failed | reason: %s", err)
+		}
+		if dup || err != nil {
+			f.m.Ack(tag)
+			continue
+		}
+		df.AddToState(sm)
 		b := bytes.NewBufferString(f.clientId)
-		for r := bytes.NewReader(msg); r.Len() > 0; {
+		for r.Len() > 0 {
 			data, err := typing.DistanceFilterUnmarshal(r)
 			if err != nil {
 				return err
@@ -95,6 +109,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 				return err
 			}
+		}
+		if err := sm.DumpState(); err != nil {
+			return err
 		}
 		if err := f.m.Ack(tag); err != nil {
 			return err

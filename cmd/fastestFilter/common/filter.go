@@ -43,10 +43,9 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, stateMan *sta
 	return
 }
 
-func (f *Filter) recoverSended() map[string]bool {
+func (f *Filter) recoverSent() map[string]bool {
 	mapped := make(map[string]bool)
-	value, ok := f.stateMan.Get("sent").(map[any]any)
-	if ok {
+	if value, ok := f.stateMan.Get("sent").(map[any]any); ok {
 		for key, val := range value {
 			mapped[key.(string)] = val.(bool)
 		}
@@ -62,7 +61,7 @@ func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
 		go func() {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
-			value := f.recoverSended()
+			value := f.recoverSent()
 			fastest, err := f.loadFastest()
 			if err == nil {
 				err = f.SendResults(ctx, fastest, value)

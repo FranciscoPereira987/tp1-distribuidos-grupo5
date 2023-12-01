@@ -98,36 +98,26 @@ func main() {
 		log.Fatal(err)
 	}
 	for queue := range queues {
-		if f, ok := toRestart[queue.Id]; ok {
-			go func(f *common.Filter, id string, ch <-chan mid.Delivery) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-				defer f.Close()
-				if err := f.Run(ctx, ch); err != nil {
-					log.Fatal(err)
-				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Fatal(err)
-				}
-			}(f, queue.Id, queue.Ch)
+		f, ok := toRestart[queue.Id]
+		if ok {
+			delete(toRestart, queue.Id)
 		} else {
-			go func(id string, ch <-chan mid.Delivery) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-
-				workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
-				filter, err := common.NewFilter(middleware, id, sink, workdir)
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer filter.Close()
-
-				if err := filter.Run(ctx, ch); err != nil {
-					log.Fatal(err)
-				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Fatal(err)
-				}
-			}(queue.Id, queue.Ch)
+			workdir := filepath.Join("clients", hex.EncodeToString([]byte(queue.Id)))
+			f, err = common.NewFilter(middleware, queue.Id, sink, workdir)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+		go func(id string, ch <-chan mid.Delivery) {
+			ctx, cancel := context.WithCancel(signalCtx)
+			defer cancel()
+			defer f.Close()
+			if err := f.Run(ctx, ch); err != nil {
+				log.Fatal(err)
+			} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
+				log.Fatal(err)
+			}
+		}(queue.Id, queue.Ch)
 	}
 	beater.StopBeaterClient(beaterClient)
 }

@@ -23,8 +23,7 @@ func HeaderIntoBuffer(b *bytes.Buffer, id string) {
 	h.Marshal(b)
 }
 
-func HeaderUnmarshal(r *bytes.Reader) (h *BatchHeader, err error) {
-	h = new(BatchHeader)
+func HeaderUnmarshal(r *bytes.Reader) (h BatchHeader, err error) {
 	h.ID, err = ReadString(r)
 	return
 }

@@ -16,7 +16,6 @@ import (
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -55,16 +54,18 @@ func RecoverFromState(m *mid.Middleware, id, sink, workdir string, state *state.
 }
 
 func (f *Filter) Restart(ctx context.Context, toRestart map[string]*Filter) {
-	processed := f.stateMan.Get("processed").(bool)
+	processed := f.stateMan.State["processed"].(bool)
 	if !processed {
-		log.Info("action: re-start fitler | status: adding to map")
+		log.Info("action: re-start filter | status: adding to map")
 		toRestart[f.id] = f
 	} else {
-		log.Info("action: re-start filter | status: re-sending results")
+		log.Info("action: re-start filter | status: sending results")
 		go func() {
-			fares, fareSum, count, _ := f.GetRunVariables()
-			if err := f.sendResults(ctx, fares, float32(fareSum/float64(count))); err != nil {
-				log.Infof("action: re-start filter sending results | status: failed | reason: %s", err)
+			fares, fareSum, count, err := f.GetRunVariables()
+			if err != nil {
+				log.Error(err)
+			} else if err := f.sendResults(ctx, fares, float32(fareSum/float64(count))); err != nil {
+				log.Errorf("action: re-start filter sending results | status: failed | reason: %s", err)
 			}
 		}()
 	}
@@ -80,40 +81,52 @@ func (f *Filter) Close() error {
 	return os.RemoveAll(f.workdir)
 }
 
-func recoverKeysAndFares(stateMan *state.StateManager) (keys []string, fares map[string]fareWriter) {
+func recoverFares(stateMan *state.StateManager, faresDir string) (fares map[string]fareWriter, err error) {
 	fares = make(map[string]fareWriter)
-
-	values, _ := stateMan.Get("keys").([]any)
-
-	for _, value := range values {
-		key := value.(string)
-		keyFares := stateMan.Get(key).(int)
-		writer, _ := newFareWriter(key)
-		writer.Fares = keyFares
-		writer.Truncate()
-		fares[key] = writer
-		keys = append(keys, key)
+	values, ok := stateMan.State["fares"].(map[string]int)
+	if !ok {
+		stateMan.State["fares"] = make(map[string]int)
 	}
 
-	return
+	defer func() {
+		if err != nil {
+			for _, fw := range fares {
+				fw.Close()
+			}
+		}
+	}()
+
+	for file, count := range values {
+		writer, err := recoverFareWriter(filepath.Join(faresDir, file), count)
+		if err != nil {
+			return fares, fmt.Errorf("recovering fares for %s: %w", file, err)
+		} else {
+			fares[file] = writer
+		}
+	}
+
+	return fares, nil
 }
 
-func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, []string) {
+func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, error) {
 
-	fareSum, _ := f.stateMan.Get("fare-sum").(float64)
-	fareCount := f.stateMan.GetInt("fare-count")
-	keys, fares := recoverKeysAndFares(f.stateMan)
+	fareSum, _ := f.stateMan.State["sum"].(float64)
+	fareCount, _ := f.stateMan.State["count"].(int)
+	fares, err := recoverFares(f.stateMan, filepath.Join(f.workdir, "fares"))
 
-	return fares, fareSum, fareCount, keys
+	return fares, fareSum, fareCount, err
 }
 
 func (f *Filter) updateFares(sum float64, count int) {
-	f.stateMan.AddToState("fare-count", count)
-	f.stateMan.AddToState("fare-sum", sum)
+	f.stateMan.State["count"] = count
+	f.stateMan.State["sum"] = sum
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
-	fares, fareSum, count, keys := f.GetRunVariables()
+	fares, fareSum, count, err := f.GetRunVariables()
+	if err != nil {
+		return err
+	}
 	defer func() {
 		var errs []error
 		for _, fw := range fares {
@@ -132,7 +145,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 		}
 		r, err := f.filter.ChangeLast(msg)
 		if err != nil {
-			logrus.Errorf("action: recovering batch | status: failed | reason: %s", err)
+			log.Errorf("action: recovering batch | status: failed | reason: %s", err)
 			f.m.Ack(tag)
 			continue
 		}
@@ -150,10 +163,16 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 				f.updateFares(fareSum, count)
 			case typing.AverageFilterFlight:
 				key := v.Origin + "." + v.Destination
-				if err := f.appendFare(fares, key, v.Fare, &keys); err != nil {
+				if err := f.appendFare(fares, key, v.Fare); err != nil {
 					return err
 				}
 				log.Debugf("new fare for route %s-%s: %f", v.Origin, v.Destination, v.Fare)
+			}
+		}
+
+		for _, fw := range fares {
+			if err := fw.Flush(); err != nil {
+				return err
 			}
 		}
 
@@ -169,14 +188,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
-		var errs []error
-		for _, fw := range fares {
-			errs = append(errs, fw.Flush())
-		}
-		if err := errors.Join(errs...); err != nil {
+		f.stateMan.State["processed"] = true
+		if err := f.StoreState(); err != nil {
 			return err
 		}
-		f.stateMan.AddToState("processed", true)
 	}
 
 	return f.sendResults(ctx, fares, float32(fareSum/float64(count)))
@@ -187,14 +202,19 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ4Size
 	b := bytes.NewBufferString(f.id)
-	for file := range fares {
-		if newResult, err := f.aggregate(ctx, b, file, avg); err != nil {
+	for file, fw := range fares {
+		if newResult, err := f.aggregate(ctx, b, file, fw, avg); err != nil {
 			return err
 		} else if newResult {
+			delete(f.stateMan.State["fares"].(map[string]int), file)
 			if i--; i <= 0 {
-
+				// TODO: split writing state
 				if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 					return err
+				}
+				if err := f.stateMan.DumpState(); err != nil {
+					// This may result in duplicated messages
+					log.Errorf("action: dump_state | status: failure | reason: %s", err)
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
 				b = bytes.NewBufferString(f.id)
@@ -202,8 +222,12 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		}
 	}
 	if i != mid.MaxMessageSize/typing.ResultQ4Size {
+		// TODO: split writing state
 		if err := bc.Publish(ctx, f.m, "", f.sink, b.Bytes()); err != nil {
 			return err
+		}
+		if err := f.stateMan.DumpState(); err != nil {
+			log.Errorf("action: dump_state | status: failure | reason: %s", err)
 		}
 	}
 	log.Infof("finished publishing results into %q queue", f.sink)
@@ -211,15 +235,12 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	return nil
 }
 
-func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, avg float32) (bool, error) {
-	faresFile, err := os.Open(filepath.Join(f.workdir, "fares", file))
+func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, fw fareWriter, avg float32) (bool, error) {
+	fareSum, fareMax, count := 0.0, float32(0), 0
+	r, err := fw.Reader()
 	if err != nil {
 		return false, err
 	}
-	defer faresFile.Close()
-
-	r := newFareReader(faresFile)
-	fareSum, fareMax, count := 0.0, float32(0), 0
 
 	for {
 		v, err := r.ReadFloat()
@@ -248,7 +269,7 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, av
 		MaxFare:     fareMax,
 	}
 	if b.Len() == len(f.id) {
-		typing.HeaderIntoBuffer(b, fmt.Sprintf("%s.%s", origin, destination))
+		typing.HeaderIntoBuffer(b, file)
 	}
 	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)
@@ -262,14 +283,23 @@ type fareWriter struct {
 }
 
 func newFareWriter(path string) (fw fareWriter, err error) {
-	fw.file, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	fw.file, err = os.Create(path)
 	fw.bw = bufio.NewWriter(fw.file)
 
 	return fw, err
 }
 
-func (fw *fareWriter) Truncate() {
-	fw.file.Truncate(int64(fw.Fares) * 4)
+func recoverFareWriter(path string, fares int) (fw fareWriter, err error) {
+	fw.file, err = os.OpenFile(path, os.O_RDWR, 0644)
+	fw.bw = bufio.NewWriter(fw.file)
+	fw.Fares = fares
+	if err == nil {
+		if _, err = fw.file.Seek(int64(fares) * 4, 0); err != nil {
+			fw.file.Close()
+		}
+	}
+
+	return fw, err
 }
 
 func (fw *fareWriter) Write(fare float32) error {
@@ -285,16 +315,14 @@ func (fw *fareWriter) Close() error {
 	return fw.file.Close()
 }
 
-func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32, keys *[]string) (err error) {
+func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32) error {
 	if v, ok := fares[file]; ok {
-		err = v.Write(fare)
+		err := v.Write(fare)
 		if err == nil {
-			f.stateMan.AddToState(file, v.Fares)
+			f.stateMan.State["fares"].(map[string]int)[file] = v.Fares
 		}
-		return
+		return err
 	}
-	*keys = append(*keys, file)
-	f.stateMan.AddToState("keys", *keys)
 	fw, err := newFareWriter(filepath.Join(f.workdir, "fares", file))
 	if err != nil {
 		return err
@@ -303,9 +331,14 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 	fares[file] = fw
 	err = fw.Write(fare)
 	if err == nil {
-		f.stateMan.AddToState(file, fw.Fares)
+		f.stateMan.State["fares"].(map[string]int)[file] = fw.Fares
 	}
-	return
+	return err
+}
+
+func (fw fareWriter) Reader() (fareReader, error) {
+	_, err := fw.file.Seek(0, 0)
+	return newFareReader(fw.file), err
 }
 
 type fareReader struct {

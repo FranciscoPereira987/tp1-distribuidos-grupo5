@@ -196,7 +196,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.id)
 	for key, arr := range fastest {
-		if processed := sent[key]; processed {
+		if sent[key] {
 			continue
 		}
 		for _, v := range arr {

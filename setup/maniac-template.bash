@@ -3,10 +3,13 @@
 interval=${INTERVAL:-%I}
 victims=${VICTIMS:-%V}
 peer_prefix=${PEER_PREFIX:-peer}
+template='{{if not (eq .Names "rabbitmq" "input" "output")}}{{.Names}}{{end}}'
 
 for ((;;)) do
     sleep $interval
-    mapfile -t dying < <(docker ps --format '{{.Names}}' | grep -Fxv rabbitmq)
+    mapfile -t dying < <(docker ps --format "$template")
+    # remove empty values
+    dying=(${dying[@]})
 
     for index in $(shuf -n $((${#dying[@]} - victims)) -i0-$((${#dying[@]}-1)))
     do

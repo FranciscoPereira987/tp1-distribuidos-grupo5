@@ -39,7 +39,7 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 }
 
 func (f *Filter) Close() error {
-	return os.RemoveAll(f.workdir)
+	return state.RemoveWorkdir(f.workdir)
 }
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {

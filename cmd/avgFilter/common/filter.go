@@ -73,7 +73,7 @@ func (f *Filter) Restart(ctx context.Context) error {
 }
 
 func (f *Filter) Close() error {
-	return os.RemoveAll(f.workdir)
+	return state.RemoveWorkdir(f.workdir)
 }
 
 func recoverFares(stateMan *state.StateManager, faresDir string) (fares map[string]fareWriter, err error) {

@@ -65,7 +65,7 @@ func (f *Filter) StoreState() error {
 }
 
 func (f *Filter) Close() error {
-	return os.RemoveAll(f.workdir)
+	return state.RemoveWorkdir(f.workdir)
 }
 
 type FastestFlightsMap map[string][]typing.FastestFilter

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const StateFileName = "state.json"
@@ -155,4 +157,20 @@ func WriteFile(filename string, p []byte) error {
 	}
 
 	return LinkTmp(tmp, filename)
+}
+
+// Atomically removes the working directory and all files in it
+// so as to not leave the system in an inconsistent state.
+func RemoveWorkdir(workdir string) error {
+	dir, file := filepath.Split(workdir)
+	tmpdir := filepath.Join(dir, "tmp")
+	tmpWorkdir := filepath.Join(tmpdir, file)
+	if err := os.Mkdir(tmpdir, 0755); err != nil && !os.IsExist(err) {
+		log.Warn("os.Mkdir failed, removing non-atomically")
+		tmpWorkdir = workdir
+	} else if err := os.Rename(workdir, tmpWorkdir); err != nil {
+		log.Warn("os.Rename failed, removing non-atomically")
+		tmpWorkdir = workdir
+	}
+	return os.RemoveAll(tmpWorkdir)
 }

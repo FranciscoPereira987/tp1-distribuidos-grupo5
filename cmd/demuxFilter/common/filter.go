@@ -93,7 +93,7 @@ func (f *Filter) Restart(ctx context.Context) error {
 }
 
 func (f *Filter) Close() error {
-	return os.RemoveAll(filepath.Base(f.stateMan.Filename))
+	return state.RemoveWorkdir(filepath.Base(f.stateMan.Filename))
 }
 
 func (f *Filter) Prepare(sum float64, count, state int) error {

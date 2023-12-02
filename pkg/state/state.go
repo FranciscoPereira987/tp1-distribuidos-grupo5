@@ -117,11 +117,12 @@ func RecoverStateFiles(workdir string) []recovered {
 // given a /path/to/file, create and return a temporary file
 // in /path/to/tmp/file to be renamed later using LinkTmp()
 func CreateTmp(filename string) (*os.File, error) {
-	tmpDir := filepath.Join(filepath.Dir(filename), "tmp")
+	dir, file := filepath.Split(filename)
+	tmpDir := filepath.Join(dir, "tmp")
 	if err := os.Mkdir(tmpDir, 0755); err != nil && !os.IsExist(err) {
 		return nil, err
 	}
-	return os.Create(filepath.Join(tmpDir, filepath.Base(filename)))
+	return os.Create(filepath.Join(tmpDir, file))
 }
 
 // given a /path/to/file (`filename'), renames the temporary

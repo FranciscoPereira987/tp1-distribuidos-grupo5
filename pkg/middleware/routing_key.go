@@ -56,7 +56,7 @@ func (rr RoundRobinKeysGenerator) AddToState(stateMan *state.StateManager) {
 }
 
 func RoundRobinFromState(stateMan *state.StateManager, kg KeyGenerator) RoundRobinKeysGenerator {
-	index := stateMan.State["rr-index"].(int)
+	index, _ := stateMan.State["rr-index"].(int)
 	return RoundRobinKeysGenerator{
 		mod:   int(kg),
 		index: index,

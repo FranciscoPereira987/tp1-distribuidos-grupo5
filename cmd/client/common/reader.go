@@ -23,7 +23,7 @@ func NewResultsReader(dir string, files []string) (*ResultsReader, error) {
 	if len(files) != 4 {
 		return nil, fmt.Errorf("%w: have %v", ErrResultFiles, files)
 	}
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, err
 	}
 

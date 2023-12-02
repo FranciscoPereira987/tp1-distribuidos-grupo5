@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
@@ -172,7 +173,13 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.clientId)
-	for key, arr := range fastest {
+	keys := make([]string, 0, len(fastest))
+	for key := range fastest {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	for _, key := range keys {
+		arr := fastest[key]
 		for _, s := range sent {
 			if key == s {
 				continue

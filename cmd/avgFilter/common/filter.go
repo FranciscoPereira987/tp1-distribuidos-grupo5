@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
@@ -197,7 +198,13 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ4Size
 	b := bytes.NewBufferString(f.clientId)
-	for file, fw := range fares {
+	keys := make([]string, 0, len(fares))
+	for key := range fares {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	for _, file := range keys {
+		fw := fares[file]
 		if newResult, err := f.aggregate(ctx, b, file, fw, avg); err != nil {
 			return err
 		} else if newResult {

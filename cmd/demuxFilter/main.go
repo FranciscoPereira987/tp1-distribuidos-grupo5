@@ -139,6 +139,7 @@ func main() {
 		go func(clientId string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
+			defer filter.Close()
 
 			if err := filter.Run(ctx, ch); err != nil {
 				log.Fatal(err)

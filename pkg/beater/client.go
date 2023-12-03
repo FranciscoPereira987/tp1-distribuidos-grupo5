@@ -55,13 +55,13 @@ func (st *BeaterClient) run() error {
 }
 
 func (st *BeaterClient) Run() {
+	st.running = true
 	go func() {
 		st.stopChan = make(chan struct{}, 1)
 		select {
 		case st.resultChan <- st.run():
 		case <-st.stopChan:
 			st.resultChan <- nil
-			st.Stop()
 		}
 	}()
 }

@@ -5,7 +5,6 @@ import (
 
 	"net"
 	"os"
-	"os/signal"
 	"sync"
 	"syscall"
 	"time"
@@ -74,6 +73,7 @@ type BeaterServer struct {
 	port string
 
 	shutdown chan os.Signal
+	running  bool
 
 	dood *dood.DooD
 }
@@ -111,7 +111,7 @@ func NewTimer(at string, name string, restart chan string) *timer {
 	t.OutboundChan = make(chan *net.UDPAddr, 1)
 	t.clientAddr = at
 	t.name = name
-	t.maxTime = time.Millisecond * 20
+	t.maxTime = time.Millisecond * 100
 	t.restartChan = restart
 
 	return t
@@ -196,6 +196,7 @@ func NewBeaterServer(clients []string, clientAddrs []string, at string) *BeaterS
 		make(chan error, 1),
 		at,
 		nil,
+		false,
 		doodServer,
 	}
 }
@@ -278,15 +279,16 @@ func (b *BeaterServer) run(port string) (err error) {
 	shutdown := make(chan os.Signal, 1)
 	b.shutdown = shutdown
 	defer close(shutdown)
-	signal.Notify(shutdown, syscall.SIGTERM)
-
+	b.running = true
 loop:
 	for {
 		select {
 		case beat := <-readerChan:
 			b.parseBeat(beat)
 		case <-shutdown:
+			b.running = false
 			break loop
+
 		}
 	}
 
@@ -315,11 +317,14 @@ func (b *BeaterServer) Run() {
 	}()
 }
 
-func (b *BeaterServer) Stop() error {
-	err := b.sckt.Close()
-	b.dood.Shutdown()
-	b.shutdown <- syscall.SIGTERM
-	err = errors.Join(err, <-b.resultsChan)
+func (b *BeaterServer) Stop() (err error) {
+	if b.running {
+		err = b.sckt.Close()
+		b.dood.Shutdown()
+		b.shutdown <- syscall.SIGTERM
+		err = errors.Join(err, <-b.resultsChan)
+		b.running = false
+	}
 
 	return err
 }

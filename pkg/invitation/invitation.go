@@ -65,7 +65,6 @@ type Status struct {
 
 func Invitation(config *Config) *Status {
 	control, _ := beater.NewBeaterClient(config.Name, "0.0.0.0:"+config.Heartbeat)
-	//TODO: Add FatalF here
 	control.Run()
 	return &Status{
 		peers:    utils.NewPeers(config.Peers, config.Mapping),
@@ -94,6 +93,7 @@ func (st *Status) Run() (err error) {
 		resultChan <- st.run()
 	}()
 	defer close(stopChan)
+	defer st.dial.Close()
 	select {
 	case err = <-resultChan:
 		return

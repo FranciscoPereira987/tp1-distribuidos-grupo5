@@ -173,6 +173,8 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.clientId)
+	messageId, _ := f.stateMan.State["message-id"].(uint64)
+
 	keys := make([]string, 0, len(fastest))
 	for key := range fastest {
 		keys = append(keys, key)
@@ -188,10 +190,12 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 		sent = append(sent, key)
 		f.stateMan.State["sent"] = sent
 		for _, v := range arr {
-			f.marshalResult(b, &v)
+			f.marshalResult(b, messageId, &v)
 			i--
 		}
 		if i <= 0 {
+			messageId++
+			f.stateMan.State["message-id"] = messageId
 			if err := f.stateMan.Prepare(); err != nil {
 				return err
 			}
@@ -220,9 +224,9 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	return nil
 }
 
-func (f *Filter) marshalResult(b *bytes.Buffer, v *typing.FastestFilter) {
+func (f *Filter) marshalResult(b *bytes.Buffer, messageId uint64, v *typing.FastestFilter) {
 	if b.Len() == len(f.clientId) {
-		h := typing.NewHeader(f.workerId, string(v.ID[:]))
+		h := typing.NewHeader(f.workerId, messageId)
 		h.Marshal(b)
 	}
 	typing.ResultQ3Marshal(b, v)

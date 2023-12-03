@@ -194,6 +194,11 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ4Size
 	b := bytes.NewBufferString(f.clientId)
+
+	messageId, _ := f.stateMan.State["message-id"].(uint64)
+	h := typing.NewHeader(f.workerId, messageId)
+	h.Marshal(b)
+
 	keys := make([]string, 0, len(fares))
 	for key := range fares {
 		keys = append(keys, key)
@@ -206,6 +211,8 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		} else if newResult {
 			delete(f.stateMan.State["fares"].(map[string]int), file)
 			if i--; i <= 0 {
+				messageId++
+				f.stateMan.State["message-id"] = messageId
 				if err := f.stateMan.Prepare(); err != nil {
 					return err
 				}
@@ -218,6 +225,8 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
 				b = bytes.NewBufferString(f.clientId)
+				h := typing.NewHeader(f.workerId, messageId)
+				h.Marshal(b)
 			}
 		}
 	}
@@ -269,10 +278,6 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, fw
 		Destination: destination,
 		AverageFare: float32(fareSum / float64(count)),
 		MaxFare:     fareMax,
-	}
-	if b.Len() == len(f.clientId) {
-		h := typing.NewHeader(f.workerId, file)
-		h.Marshal(b)
 	}
 	typing.ResultQ4Marshal(b, &v)
 	log.Debugf("route: %s-%s | average: %f | max: %f", origin, destination, v.AverageFare, fareMax)

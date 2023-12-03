@@ -104,11 +104,11 @@ type timer struct {
 	maxTime time.Duration
 }
 
-func NewTimer(at string, name string, restart chan string) *timer {
+func NewTimer(at string, name string, restart chan string, outbound chan *net.UDPAddr) *timer {
 	t := new(timer)
 
 	t.InboundChan = make(chan bool, 1)
-	t.OutboundChan = make(chan *net.UDPAddr, 1)
+	t.OutboundChan = outbound
 	t.clientAddr = at
 	t.name = name
 	t.maxTime = time.Millisecond * 100
@@ -137,7 +137,6 @@ func (t *timer) resolveAddr() (addr *net.UDPAddr, running bool) {
 }
 
 func (t *timer) executeTimer(group *sync.WaitGroup) {
-	defer close(t.OutboundChan)
 	clientAddr, running := t.resolveAddr()
 	retriesLeft := 3
 
@@ -205,18 +204,17 @@ func NewBeaterServer(clients []string, clientAddrs []string, at string) *BeaterS
 Initiates timers and merge channels
 */
 func (b *BeaterServer) initiateTimers(port string, dockerChan chan string) chan *net.UDPAddr {
-	mergedChans := make([](<-chan *net.UDPAddr), 0)
+	timersChan := make(chan *net.UDPAddr, 1)
 	for _, value := range b.clientInfo {
 
-		timer := NewTimer(value.Addr+":"+port, value.Name, dockerChan)
+		timer := NewTimer(value.Addr+":"+port, value.Name, dockerChan, timersChan)
 
 		b.clients[value.Name] = timer
-		mergedChans = append(mergedChans, timer.OutboundChan)
 		go timer.executeTimer(b.wg)
 
 	}
-	b.wg.Add(len(mergedChans))
-	return utils.Merge(mergedChans...)
+	b.wg.Add(len(b.clientInfo))
+	return timersChan
 }
 
 /*

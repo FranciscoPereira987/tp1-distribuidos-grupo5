@@ -2,7 +2,6 @@ package beater
 
 import (
 	"errors"
-	"os"
 
 	"net"
 
@@ -18,6 +17,9 @@ type BeaterClient struct {
 	resultChan chan error
 
 	name string
+
+	stopChan chan struct{}
+	running  bool
 }
 
 func NewBeaterClient(name string, addr string) (*BeaterClient, error) {
@@ -33,6 +35,8 @@ func NewBeaterClient(name string, addr string) (*BeaterClient, error) {
 		conn,
 		make(chan error, 1),
 		name,
+		nil,
+		false,
 	}, err
 }
 
@@ -52,20 +56,24 @@ func (st *BeaterClient) run() error {
 
 func (st *BeaterClient) Run() {
 	go func() {
-		termination := make(chan os.Signal, 1)
-		defer close(termination)
+		st.stopChan = make(chan struct{}, 1)
 		select {
 		case st.resultChan <- st.run():
-		case <-termination:
+		case <-st.stopChan:
 			st.resultChan <- nil
 			st.Stop()
 		}
 	}()
 }
 
-func (st *BeaterClient) Stop() error {
-	defer close(st.resultChan)
-	err := st.conn.Close()
-	err = errors.Join(err, <-st.resultChan)
+func (st *BeaterClient) Stop() (err error) {
+	if st.running {
+		defer close(st.resultChan)
+		defer close(st.stopChan)
+		st.stopChan <- struct{}{}
+		err = st.conn.Close()
+		err = errors.Join(err, <-st.resultChan)
+		st.running = false
+	}
 	return err
 }

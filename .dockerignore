@@ -1,7 +1,7 @@
 .git
 cmd/**/config.yaml
 cmd/*/Dockerfile
-client
+clients
 test
 docs
 img

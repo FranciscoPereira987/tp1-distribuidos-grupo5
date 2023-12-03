@@ -31,7 +31,7 @@ then
 fi
 
 test_query() {
-    if diff < "$dataset/$1.csv" <(sort "$client_dir"/results/$1.csv) >test/diff/$1.diff
+    if diff "$dataset/$1.csv" <(sort "$client_dir"/results/$1.csv) >test/diff/$1.diff
         then printf '\x1b[32;1m%s:\x1b[m %s\n' PASSED "$1 query"
     else
         printf '\x1b[31;1m%s:\x1b[m %s\n' FAILED "$1 query"

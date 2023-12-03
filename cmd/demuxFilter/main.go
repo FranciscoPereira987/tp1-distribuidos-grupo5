@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -99,8 +101,8 @@ func main() {
 	toRestart := make(map[string]*common.Filter)
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
-		id, _, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, workerId, id, sinks, nWorkers, stateMan)
+		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
+		filter := common.RecoverFromState(middleware, workerId, id, sinks, workdir, nWorkers, stateMan)
 		if filter.ShouldRestart() {
 			go func() {
 				ctx, cancel := context.WithCancel(signalCtx)
@@ -134,7 +136,8 @@ func main() {
 		if ok {
 			delete(toRestart, queue.Id)
 		} else {
-			filter = common.NewFilter(middleware, workerId, queue.Id, sinks, nWorkers, workdir)
+			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(queue.Id)))
+			filter = common.NewFilter(middleware, workerId, queue.Id, sinks, workdir, nWorkers)
 		}
 		go func(clientId string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)

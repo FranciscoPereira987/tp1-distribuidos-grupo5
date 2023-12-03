@@ -167,10 +167,10 @@ func RemoveWorkdir(workdir string) error {
 	tmpdir := filepath.Join(dir, "tmp")
 	tmpWorkdir := filepath.Join(tmpdir, file)
 	if err := os.Mkdir(tmpdir, 0755); err != nil && !os.IsExist(err) {
-		log.Warn("os.Mkdir failed, removing non-atomically")
+		log.Warnf("os.Mkdir(%q) failed, removing non-atomically", tmpdir)
 		tmpWorkdir = workdir
 	} else if err := os.Rename(workdir, tmpWorkdir); err != nil {
-		log.Warn("os.Rename failed, removing non-atomically")
+		log.Warnf("os.Rename(%q, %q) failed, removing non-atomically", workdir, tmpWorkdir)
 		tmpWorkdir = workdir
 	}
 	return os.RemoveAll(tmpWorkdir)

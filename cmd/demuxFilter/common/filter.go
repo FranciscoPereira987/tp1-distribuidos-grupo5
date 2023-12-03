@@ -37,11 +37,12 @@ type Filter struct {
 	clientId string
 	sinks    []string
 	keyGens  []mid.KeyGenerator
+	workdir  string
 	filter   *duplicates.DuplicateFilter
 	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, nWorkers []int, workDir string) *Filter {
+func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int) *Filter {
 
 	kgs := make([]mid.KeyGenerator, 0, len(nWorkers))
 	for _, mod := range nWorkers {
@@ -52,13 +53,14 @@ func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, nWo
 		workerId: workerId,
 		clientId: clientId,
 		sinks:    sinks,
+		workdir:  workdir,
 		keyGens:  kgs,
 		filter:   duplicates.NewDuplicateFilter(),
-		stateMan: state.NewStateManager(workDir),
+		stateMan: state.NewStateManager(workdir),
 	}
 }
 
-func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, nWorkers []int, stateMan *state.StateManager) *Filter {
+func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int, stateMan *state.StateManager) *Filter {
 	f := new(Filter)
 	f.m = m
 	f.clientId = clientId
@@ -66,6 +68,7 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []stri
 	for _, mod := range nWorkers {
 		f.keyGens = append(f.keyGens, mid.NewKeyGenerator(mod))
 	}
+	f.workdir = workdir
 	f.filter = duplicates.NewDuplicateFilter()
 	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
@@ -87,13 +90,13 @@ func (f *Filter) Restart(ctx context.Context) error {
 		fareSum, fareCount := f.GetFareInfo()
 		return f.sendAverageFare(ctx, fareSum, fareCount)
 	case Finished:
-		// Already finished, so just go ahead and finished execution
+		// Already finished, so just go ahead and finish execution
 		return nil
 	}
 }
 
 func (f *Filter) Close() error {
-	return state.RemoveWorkdir(filepath.Base(f.stateMan.Filename))
+	return state.RemoveWorkdir(f.workdir)
 }
 
 func (f *Filter) Prepare(sum float64, count, state int) error {
@@ -116,7 +119,7 @@ func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
 	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
 }
 
-func (f Filter) marshalHeaderInto(b *bytes.Buffer) {
+func (f *Filter) marshalHeaderInto(b *bytes.Buffer) {
 	h := typing.NewHeader(f.workerId, f.filter.LastMessage)
 	h.Marshal(b)
 }
@@ -258,6 +261,8 @@ func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, m map[string]*byt
 func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
 	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.clientId)
+	h := typing.NewHeader(f.workerId, "average")
+	h.Marshal(b)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
 	delete(f.stateMan.State, "sum")
 	delete(f.stateMan.State, "count")

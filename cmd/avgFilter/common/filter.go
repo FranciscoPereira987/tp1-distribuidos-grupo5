@@ -112,11 +112,6 @@ func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, error) 
 	return fares, fareSum, fareCount, err
 }
 
-func (f *Filter) updateFares(sum float64, count int) {
-	f.stateMan.State["count"] = count
-	f.stateMan.State["sum"] = sum
-}
-
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 	fares, fareSum, count, err := f.GetRunVariables()
 	if err != nil {
@@ -155,7 +150,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) (err error) {
 				fareSum += v.Sum
 				count += int(v.Count)
 				log.Infof("updated average fare: %f", fareSum/float64(count))
-				f.updateFares(fareSum, count)
+				f.stateMan.State["count"] = count
+				f.stateMan.State["sum"] = fareSum
 			case typing.AverageFilterFlight:
 				key := v.Origin + "." + v.Destination
 				if err := f.appendFare(fares, key, v.Fare); err != nil {
@@ -218,7 +214,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 				}
 				if err := f.stateMan.Commit(); err != nil {
 					// This may result in duplicated messages
-					log.Errorf("action: dump_state | status: failure | reason: %s", err)
+					log.Errorf("action: commit | status: failure | reason: %s", err)
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
 				b = bytes.NewBufferString(f.clientId)
@@ -233,7 +229,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 			return err
 		}
 		if err := f.stateMan.Commit(); err != nil {
-			log.Errorf("action: dump_state | status: failure | reason: %s", err)
+			log.Errorf("action: commit | status: failure | reason: %s", err)
 		}
 	}
 	log.Infof("finished publishing results into %q queue", f.sink)

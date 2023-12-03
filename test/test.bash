@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+client_dir=${1-clients/c1}
 mkdir -p test/diff test/expected
 
-dataset=test/expected/$(stat -c'%s' client/data/test.csv)
+dataset=test/expected/$(stat -c'%s' "$client_dir"/data/test.csv)
 
 yesno () {
   printf '%s ' "$*" '[Y/n]'
@@ -21,16 +22,16 @@ then
     if yesno 'New dataset. Store test data to compare against later runs?'
     then
         mkdir "$dataset"
-        mv client/results/* "$dataset"
+        mv "$client_dir"/results/* "$dataset"
     fi
     exit
 fi
 
 test_query() {
-    if diff <(sort $dataset/$1.csv) <(sort client/results/$1.csv) >test/diff/$1.diff
-        then echo $1 query succeeded
+    if diff <(sort $dataset/$1.csv) <(sort "$client_dir"/results/$1.csv) >test/diff/$1.diff
+        then printf '\x1b[32;1m%s:\x1b[m %s\n' PASSED "$1 query"
     else
-        echo $1 query failed
+        printf '\x1b[31;1m%s:\x1b[m %s\n' FAILED "$1 query"
     fi
 }
 

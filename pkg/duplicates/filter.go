@@ -8,14 +8,13 @@ import (
 )
 
 type DuplicateFilter struct {
-	lastMessages map[string]string
-	LastMessage string
+	lastMessages map[string]uint64
 }
 
 func NewDuplicateFilter() *DuplicateFilter {
 
 	return &DuplicateFilter{
-		lastMessages: make(map[string]string),
+		lastMessages: make(map[string]uint64),
 	}
 }
 
@@ -28,7 +27,7 @@ func (df DuplicateFilter) AddToState(stateMan *state.StateManager) {
 }
 
 func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
-	value, ok := stateMan.State["last-received"].(map[string]string)
+	value, ok := stateMan.State["last-received"].(map[string]uint64)
 	if ok {
 		df.lastMessages = value
 	}
@@ -37,9 +36,10 @@ func (df *DuplicateFilter) RecoverFromState(stateMan *state.StateManager) {
 func (df *DuplicateFilter) Update(r *bytes.Reader) (dup bool, err error) {
 	var h typing.BatchHeader
 	if err = h.Unmarshal(r); err == nil {
-		dup = df.lastMessages[h.WorkerId] == h.MessageId
+		if lastId, ok := df.lastMessages[h.WorkerId]; ok {
+			dup = lastId == h.MessageId
+		}
 		df.lastMessages[h.WorkerId] = h.MessageId
-		df.LastMessage = h.MessageId
 	}
 	return dup, err
 }

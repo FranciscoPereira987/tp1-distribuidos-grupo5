@@ -78,6 +78,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	df.RecoverFromState(sm)
 	var bc mid.BasicConfirmer
 
+	messageId, _ := sm.State["message-id"].(uint64)
 	comp, err := f.loadDistanceComputer()
 	if err != nil {
 		return err
@@ -94,6 +95,8 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			f.m.Ack(tag)
 			continue
 		}
+		messageId++
+		sm.State["message-id"] = messageId
 		df.AddToState(sm)
 		if err := sm.Prepare(); err != nil {
 			return err
@@ -111,7 +114,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 			}
 			if float64(data.Distance) > distanceFactor*distanceMi {
 				log.Debugf("long flight: %x", data.ID)
-				f.marshalResult(b, &data)
+				f.marshalResult(b, messageId, &data)
 			}
 		}
 		if b.Len() > len(f.clientId) {
@@ -130,9 +133,9 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	return context.Cause(ctx)
 }
 
-func (f *Filter) marshalResult(b *bytes.Buffer, data *typing.DistanceFilter) {
+func (f *Filter) marshalResult(b *bytes.Buffer, messageId uint64, data *typing.DistanceFilter) {
 	if b.Len() == len(f.clientId) {
-		h := typing.NewHeader(f.workerId, string(data.ID[:]))
+		h := typing.NewHeader(f.workerId, messageId)
 		h.Marshal(b)
 	}
 	typing.ResultQ2Marshal(b, data)

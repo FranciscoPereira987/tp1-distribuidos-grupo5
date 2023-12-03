@@ -119,8 +119,8 @@ func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
 	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
 }
 
-func (f *Filter) marshalHeaderInto(b *bytes.Buffer) {
-	h := typing.NewHeader(f.workerId, f.filter.LastMessage)
+func (f *Filter) marshalHeaderInto(b *bytes.Buffer, messageId uint64) {
+	h := typing.NewHeader(f.workerId, messageId)
 	h.Marshal(b)
 }
 
@@ -131,6 +131,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	}
 	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
+	messageId, _ := f.stateMan.State["message-id"].(uint64)
 
 	rr := f.GetRoundRobinGenerator()
 	for d := range ch {
@@ -150,8 +151,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			mAverage  = make(map[string]*bytes.Buffer)
 			mFastest  = make(map[string]*bytes.Buffer)
 		)
-		f.marshalHeaderInto(bDistance)
-		f.marshalHeaderInto(bResult)
+		f.marshalHeaderInto(bDistance, messageId)
+		f.marshalHeaderInto(bResult, messageId)
 		for r.Len() > 0 {
 			data, err := typing.FlightUnmarshal(r)
 			if err != nil {
@@ -161,12 +162,14 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			fareCount++
 
 			f.marshalDistanceFilter(bDistance, &data)
-			f.marshalAverageFilter(mAverage, f.sinks[Average], &data)
+			f.marshalAverageFilter(mAverage, f.sinks[Average], messageId, &data)
 			if strings.Count(data.Stops, "||") >= 3 {
 				f.marshalFastestFilter(mFastest, f.sinks[Fastest], &data)
 				f.marshalResult(bResult, &data)
 			}
 		}
+		messageId++
+		f.stateMan.State["message-id"] = messageId
 		rr.AddToState(f.stateMan)
 		if err := f.Prepare(fareSum, fareCount, Receiving); err != nil {
 			return err
@@ -218,12 +221,12 @@ func (f *Filter) marshalDistanceFilter(b *bytes.Buffer, data *typing.Flight) {
 	}
 }
 
-func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, data *typing.Flight) {
+func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, messageId uint64, data *typing.Flight) {
 	key := f.keyGens[Average].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
 		b = bytes.NewBufferString(f.clientId)
-		f.marshalHeaderInto(b)
+		f.marshalHeaderInto(b, messageId)
 		m[key] = b
 	}
 
@@ -261,7 +264,8 @@ func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, m map[string]*byt
 func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
 	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.clientId)
-	h := typing.NewHeader(f.workerId, "average")
+	messageId := f.stateMan.State["message-id"].(uint64)
+	h := typing.NewHeader(f.workerId, messageId)
 	h.Marshal(b)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
 	delete(f.stateMan.State, "sum")

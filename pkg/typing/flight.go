@@ -9,8 +9,6 @@ import (
 	"io"
 	"regexp"
 	"strconv"
-
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 )
 
 const FlightSize = IdSize + OriginSize + DestinationSize + DurationSize + FareSize + DistanceSize + StopsSize
@@ -69,10 +67,6 @@ func FlightMarshal(b *bytes.Buffer, record []string, indices []int) error {
 	distance, err := strconv.Atoi(record[indices[5]])
 	if err != nil && record[indices[5]] == "" {
 		err = ErrMissingDistance
-	}
-	if b.Len() == id.Len {
-		h := NewHeader("input", record[0])
-		h.Marshal(b)
 	}
 	b.Write(flightId)
 	WriteString(b, record[indices[1]])

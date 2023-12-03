@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 GIT_REMOTE := github.com/franciscopereira987/tp1-distribuidos.git
-CLIENT_DIR := ./clients/c1
+CLIENT_ID ?= c1
 
 CMD := client inputBoundary outputBoundary demuxFilter distanceFilter fastestFilter avgFilter heartbeater
 BIN := $(addprefix bin/,$(CMD))
@@ -41,9 +41,9 @@ setup: docker-compose-dev.yaml
 .PHONY: setup
 
 run-client:
-	docker run --rm -v $(CLIENT_DIR):/client  --network tp1_testing_net --entrypoint /cliente client
+	docker run --rm -v ./clients/$(CLIENT_ID):/client  --network tp1_testing_net --entrypoint /cliente client
 	@printf '%s\n' ====================================== tests:
-	@test/test.bash $(CLIENT_DIR)
+	@test/test.bash clients/$(CLIENT_ID)
 .PHONY: run-client
 
 run-maniac:

@@ -81,7 +81,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gateway := common.NewGateway(middleware)
 	resultsChs := make(map[string]chan (<-chan mid.Delivery))
 	var mtx sync.Mutex
 
@@ -107,6 +106,7 @@ func main() {
 
 			defer conn.Close()
 			id, err := connection.ReceiveId(conn)
+			gateway := common.NewGateway(middleware)
 			if err != nil {
 				log.Error(err)
 				return

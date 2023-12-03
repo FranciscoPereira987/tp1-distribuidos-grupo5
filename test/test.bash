@@ -22,13 +22,16 @@ then
     if yesno 'New dataset. Store test data to compare against later runs?'
     then
         mkdir "$dataset"
-        mv "$client_dir"/results/* "$dataset"
+        for f in "$client_dir"/results/*
+        do
+            sort "$f" > "$dataset/${f##*/}"
+        done
     fi
     exit
 fi
 
 test_query() {
-    if diff <(sort $dataset/$1.csv) <(sort "$client_dir"/results/$1.csv) >test/diff/$1.diff
+    if diff < "$dataset/$1.csv" <(sort "$client_dir"/results/$1.csv) >test/diff/$1.diff
         then printf '\x1b[32;1m%s:\x1b[m %s\n' PASSED "$1 query"
     else
         printf '\x1b[31;1m%s:\x1b[m %s\n' FAILED "$1 query"

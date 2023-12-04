@@ -10,8 +10,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/distance"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
@@ -25,6 +25,7 @@ type Filter struct {
 	clientId string
 	sink     string
 	workdir  string
+	stateMan *state.StateManager
 }
 
 func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Filter, error) {
@@ -35,6 +36,7 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 		clientId,
 		sink,
 		workdir,
+		state.NewStateManager(workdir),
 	}, err
 }
 
@@ -43,9 +45,9 @@ func (f *Filter) Close() error {
 }
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
-	sm := state.NewStateManager(f.workdir)
-	sm.State["coordinates-load"] = true
-	if err := sm.Prepare(); err != nil {
+
+	f.stateMan.State["coordinates-load"] = true
+	if err := f.stateMan.Prepare(); err != nil {
 		return err
 	}
 	for d := range coords {
@@ -68,13 +70,13 @@ func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) erro
 	case <-ctx.Done():
 		return context.Cause(ctx)
 	default:
-		return sm.Commit()
+		return f.stateMan.Commit()
 	}
 }
 
 func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	df := duplicates.NewDuplicateFilter()
-	sm := state.NewStateManager(f.workdir)
+	sm := f.stateMan
 	df.RecoverFromState(sm)
 	var bc mid.BasicConfirmer
 

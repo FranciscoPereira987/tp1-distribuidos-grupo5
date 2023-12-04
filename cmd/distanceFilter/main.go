@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -102,30 +103,7 @@ func main() {
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
 		if onFlights, _ := stateMan.State["coordinates-load"].(bool); !onFlights {
-			ch := make(chan (<-chan mid.Delivery))
-			flightsChs[id] = ch
-			go func(m *mid.Middleware, workdir, id string, ch chan (<-chan mid.Delivery)) {
-				ctx, cancel := context.WithCancel(signalCtx)
-				defer cancel()
-				filter, err := common.NewFilter(m, id, workerId, sink, workdir)
-				if err != nil {
-					log.Fatalf("action: recovering worker | status: failed | reason: %s", err)
-				}
-				var channel <-chan mid.Delivery
-				select {
-				case <-ctx.Done():
-					return
-				case channel = <-ch:
-					mtx.Lock()
-					delete(flightsChs, id)
-					mtx.Unlock()
-				}
-				if err := filter.Run(ctx, channel); err != nil {
-					log.Fatal(err)
-				} else if err := middleware.EOF(ctx, sink, workerId, id); err != nil {
-					log.Fatal(err)
-				}
-			}(middleware, workdir, id, ch)
+			logrus.Infof("Going out through here: %s", stateMan.State)
 			continue
 		}
 		ch := make(chan (<-chan mid.Delivery))

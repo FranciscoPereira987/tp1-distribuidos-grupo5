@@ -32,7 +32,7 @@ for ((;;)) do
             fi
         done
     fi
-    unset survivor
+    unset survivor last
 
     docker kill "${dying[@]}"
 done

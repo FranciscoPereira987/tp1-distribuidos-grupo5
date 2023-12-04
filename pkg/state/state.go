@@ -70,7 +70,7 @@ func getJsonMap(m map[string]any, keys ...string) (map[string]any, error) {
 			return nil, fmt.Errorf("%w: state[%s]", ErrNotFound, key)
 		} else if m, ok = v.(map[string]any); !ok {
 			key = strings.Join(keys[:i+1], ".")
-			return nil, fmt.Errorf("%w: state[%s]=%#v", ErrNotMap, key, v)
+			return nil, fmt.Errorf("%w: state[%s]=%v", ErrNotMap, key, v)
 		}
 	}
 	return m, nil
@@ -90,7 +90,7 @@ func (sw *StateManager) getNumber(keys ...string) (json.Number, error) {
 	num, ok := v.(json.Number)
 	if !ok {
 		key := strings.Join(keys, ".")
-		return "", fmt.Errorf("%w: state[%s]=%#v", ErrNaN, key, v)
+		return "", fmt.Errorf("%w: state[%s]=%v", ErrNaN, key, v)
 	}
 	return num, nil
 }
@@ -127,7 +127,7 @@ func (sw *StateManager) GetMapStringInt64(keys ...string) (map[string]int64, err
 		v, ok := value.(json.Number)
 		if !ok {
 			key := strings.Join(keys, ".")
-			return nil, fmt.Errorf("%w: state[%s]=%#v", ErrNaN, key, v)
+			return nil, fmt.Errorf("%w: state[%s]=%v", ErrNaN, key, v)
 		}
 		ret[key], err = v.Int64()
 		if err != nil {
@@ -171,7 +171,7 @@ func (sw *StateManager) RecoverState() (err error) {
 		dec := json.NewDecoder(file)
 		dec.UseNumber()
 		if err = dec.Decode(&sw.State); err == nil {
-			log.Infof("recovered state: %#v", sw.State)
+			log.Infof("recovered state: %v", sw.State)
 		}
 	}
 

@@ -302,7 +302,7 @@ func recoverFareWriter(path string, fares int) (fw fareWriter, err error) {
 	fw.bw = bufio.NewWriter(fw.file)
 	fw.Fares = fares
 	if err == nil {
-		if _, err = fw.file.Seek(int64(fares) * 4, 0); err != nil {
+		if _, err = fw.file.Seek(int64(fares)*4, 0); err != nil {
 			fw.file.Close()
 		}
 	}

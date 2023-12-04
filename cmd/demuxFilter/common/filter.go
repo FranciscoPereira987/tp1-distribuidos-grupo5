@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/duplicates"
@@ -42,7 +41,8 @@ type Filter struct {
 	stateMan *state.StateManager
 }
 
-func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int) *Filter {
+func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int) (*Filter, error) {
+	err := os.MkdirAll(workdir, 0755)
 
 	kgs := make([]mid.KeyGenerator, 0, len(nWorkers))
 	for _, mod := range nWorkers {
@@ -57,7 +57,7 @@ func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, wor
 		keyGens:  kgs,
 		filter:   duplicates.NewDuplicateFilter(),
 		stateMan: state.NewStateManager(workdir),
-	}
+	}, err
 }
 
 func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int, stateMan *state.StateManager) *Filter {
@@ -125,10 +125,6 @@ func (f *Filter) marshalHeaderInto(b *bytes.Buffer, messageId uint64) {
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
-	err := os.MkdirAll(filepath.Dir(f.stateMan.Filename), 0755)
-	if err != nil {
-		return err
-	}
 	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
 	messageId, _ := f.stateMan.State["message-id"].(uint64)

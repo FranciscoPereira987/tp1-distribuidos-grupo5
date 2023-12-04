@@ -137,7 +137,11 @@ func main() {
 			delete(toRestart, queue.Id)
 		} else {
 			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(queue.Id)))
-			filter = common.NewFilter(middleware, workerId, queue.Id, sinks, workdir, nWorkers)
+			filter, err = common.NewFilter(middleware, workerId, queue.Id, sinks, workdir, nWorkers)
+			if err != nil {
+				log.Errorf("initializing worker: %s", err)
+				continue
+			}
 		}
 		go func(clientId string, ch <-chan mid.Delivery) {
 			ctx, cancel := context.WithCancel(signalCtx)

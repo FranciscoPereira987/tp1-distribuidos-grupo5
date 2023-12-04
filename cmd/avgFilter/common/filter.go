@@ -320,23 +320,20 @@ func (fw *fareWriter) Close() error {
 }
 
 func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float32) error {
-	if v, ok := fares[file]; ok {
-		err := v.Write(fare)
-		if err == nil {
-			f.stateMan.Add(v.Fares, "fares", file)
+	fw, ok := fares[file]
+	if !ok {
+		v, err := newFareWriter(filepath.Join(f.workdir, "fares", file))
+		if err != nil {
+			return err
 		}
-		return err
-	}
-	fw, err := newFareWriter(filepath.Join(f.workdir, "fares", file))
-	if err != nil {
-		return err
+		fw = v
 	}
 
-	fares[file] = fw
-	err = fw.Write(fare)
+	err := fw.Write(fare)
 	if err == nil {
 		f.stateMan.Add(fw.Fares, "fares", file)
 	}
+	fares[file] = fw
 	return err
 }
 

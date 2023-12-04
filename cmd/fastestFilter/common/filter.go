@@ -34,15 +34,10 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (f *Filter) {
-	f = new(Filter)
-	f.m = m
-	f.workerId = workerId
-	f.clientId = clientId
-	f.sink = sink
-	f.workdir = workdir
+func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (*Filter) {
+	f, _ := NewFilter(m, workerId, clientId, sink, workdir)
 	f.stateMan = stateMan
-	return
+	return f
 }
 
 func (f *Filter) ShouldRestart() bool {
@@ -173,7 +168,10 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.clientId)
-	messageId, _ := f.stateMan.State["message-id"].(uint64)
+	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	if err != nil {
+		return err
+	}
 
 	keys := make([]string, 0, len(fastest))
 	for key := range fastest {
@@ -190,12 +188,12 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 		sent = append(sent, key)
 		f.stateMan.State["sent"] = sent
 		for _, v := range arr {
-			f.marshalResult(b, messageId, &v)
+			f.marshalResult(b, &h, &v)
 			i--
 		}
 		if i <= 0 {
-			messageId++
-			f.stateMan.State["message-id"] = messageId
+			h.MessageId++
+			h.AddToState(f.stateMan.State)
 			if err := f.stateMan.Prepare(); err != nil {
 				return err
 			}
@@ -224,9 +222,8 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	return nil
 }
 
-func (f *Filter) marshalResult(b *bytes.Buffer, messageId uint64, v *typing.FastestFilter) {
+func (f *Filter) marshalResult(b *bytes.Buffer, h *typing.BatchHeader, v *typing.FastestFilter) {
 	if b.Len() == len(f.clientId) {
-		h := typing.NewHeader(f.workerId, messageId)
 		h.Marshal(b)
 	}
 	typing.ResultQ3Marshal(b, v)

@@ -90,7 +90,11 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		filter := common.RecoverFromState(middleware, workerId, id, sink, workdir, stateMan)
+		filter, err := common.RecoverFromState(middleware, workerId, id, sink, workdir, stateMan)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
 		if filter.ShouldRestart() {
 			go func() {
 				ctx, cancel := context.WithCancel(signalCtx)

@@ -43,18 +43,13 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, state *state.StateManager) *Filter {
-	filter := duplicates.NewDuplicateFilter()
-	filter.RecoverFromState(state)
-	return &Filter{
-		m,
-		workerId,
-		clientId,
-		sink,
-		workdir,
-		filter,
-		state,
+func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (*Filter, error) {
+	f, err := NewFilter(m, workerId, clientId, sink, workdir)
+	if err == nil {
+		err = f.filter.RecoverFromState(stateMan)
 	}
+	f.stateMan = stateMan
+	return f, err
 }
 
 func (f *Filter) ShouldRestart() bool {
@@ -195,8 +190,10 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	i := mid.MaxMessageSize / typing.ResultQ4Size
 	b := bytes.NewBufferString(f.clientId)
 
-	messageId, _ := f.stateMan.State["message-id"].(uint64)
-	h := typing.NewHeader(f.workerId, messageId)
+	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	if err != nil {
+		return err
+	}
 	h.Marshal(b)
 
 	keys := make([]string, 0, len(fares))
@@ -211,8 +208,8 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		} else if newResult {
 			delete(f.stateMan.State["fares"].(map[string]int), file)
 			if i--; i <= 0 {
-				messageId++
-				f.stateMan.State["message-id"] = messageId
+				h.MessageId++
+				h.AddToState(f.stateMan.State)
 				if err := f.stateMan.Prepare(); err != nil {
 					return err
 				}
@@ -225,7 +222,6 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 				}
 				i = mid.MaxMessageSize / typing.ResultQ4Size
 				b = bytes.NewBufferString(f.clientId)
-				h := typing.NewHeader(f.workerId, messageId)
 				h.Marshal(b)
 			}
 		}

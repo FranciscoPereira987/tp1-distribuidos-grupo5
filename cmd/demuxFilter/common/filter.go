@@ -60,19 +60,13 @@ func NewFilter(m *mid.Middleware, workerId, clientId string, sinks []string, wor
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int, stateMan *state.StateManager) *Filter {
-	f := new(Filter)
-	f.m = m
-	f.clientId = clientId
-	f.sinks = sinks
-	for _, mod := range nWorkers {
-		f.keyGens = append(f.keyGens, mid.NewKeyGenerator(mod))
+func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []string, workdir string, nWorkers []int, stateMan *state.StateManager) (*Filter, error) {
+	f, err := NewFilter(m, workerId, clientId, sinks, workdir, nWorkers)
+	if err == nil {
+		err = f.filter.RecoverFromState(stateMan)
 	}
-	f.workdir = workdir
-	f.filter = duplicates.NewDuplicateFilter()
-	f.filter.RecoverFromState(stateMan)
 	f.stateMan = stateMan
-	return f
+	return f, err
 }
 
 func (f *Filter) ShouldRestart() bool {
@@ -88,7 +82,11 @@ func (f *Filter) Restart(ctx context.Context) error {
 	case NotYetSent:
 		log.Info("action: restarting sending filter | result: in progress")
 		fareSum, fareCount := f.GetFareInfo()
-		return f.sendAverageFare(ctx, fareSum, fareCount)
+		h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+		if err == nil {
+			err = f.sendAverageFare(ctx, &h, fareSum, fareCount)
+		}
+		return err
 	case Finished:
 		// Already finished, so just go ahead and finish execution
 		return nil
@@ -119,15 +117,17 @@ func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
 	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
 }
 
-func (f *Filter) marshalHeaderInto(b *bytes.Buffer, messageId uint64) {
-	h := typing.NewHeader(f.workerId, messageId)
+func (f *Filter) marshalHeaderInto(b *bytes.Buffer, h *typing.BatchHeader) {
 	h.Marshal(b)
 }
 
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
-	messageId, _ := f.stateMan.State["message-id"].(uint64)
+	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	if err != nil {
+		return err
+	}
 
 	rr := f.GetRoundRobinGenerator()
 	for d := range ch {
@@ -147,8 +147,8 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			mAverage  = make(map[string]*bytes.Buffer)
 			mFastest  = make(map[string]*bytes.Buffer)
 		)
-		f.marshalHeaderInto(bDistance, messageId)
-		f.marshalHeaderInto(bResult, messageId)
+		f.marshalHeaderInto(bDistance, &h)
+		f.marshalHeaderInto(bResult, &h)
 		for r.Len() > 0 {
 			data, err := typing.FlightUnmarshal(r)
 			if err != nil {
@@ -158,14 +158,14 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 			fareCount++
 
 			f.marshalDistanceFilter(bDistance, &data)
-			f.marshalAverageFilter(mAverage, f.sinks[Average], messageId, &data)
+			f.marshalAverageFilter(mAverage, f.sinks[Average], &h, &data)
 			if strings.Count(data.Stops, "||") >= 3 {
 				f.marshalFastestFilter(mFastest, f.sinks[Fastest], &data)
 				f.marshalResult(bResult, &data)
 			}
 		}
-		messageId++
-		f.stateMan.State["message-id"] = messageId
+		h.MessageId++
+		h.AddToState(f.stateMan.State)
 		rr.AddToState(f.stateMan)
 		if err := f.Prepare(fareSum, fareCount, Receiving); err != nil {
 			return err
@@ -207,7 +207,7 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 	}
 
-	return f.sendAverageFare(ctx, fareSum, fareCount)
+	return f.sendAverageFare(ctx, &h, fareSum, fareCount)
 }
 
 func (f *Filter) marshalDistanceFilter(b *bytes.Buffer, data *typing.Flight) {
@@ -217,12 +217,12 @@ func (f *Filter) marshalDistanceFilter(b *bytes.Buffer, data *typing.Flight) {
 	}
 }
 
-func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, messageId uint64, data *typing.Flight) {
+func (f *Filter) marshalAverageFilter(m map[string]*bytes.Buffer, sink string, h *typing.BatchHeader, data *typing.Flight) {
 	key := f.keyGens[Average].KeyFrom(sink, data.Origin, data.Destination)
 	b, ok := m[key]
 	if !ok {
 		b = bytes.NewBufferString(f.clientId)
-		f.marshalHeaderInto(b, messageId)
+		f.marshalHeaderInto(b, h)
 		m[key] = b
 	}
 
@@ -257,11 +257,9 @@ func (f *Filter) sendMap(ctx context.Context, c mid.Confirmer, m map[string]*byt
 	return nil
 }
 
-func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount int) error {
+func (f *Filter) sendAverageFare(ctx context.Context, h *typing.BatchHeader, fareSum float64, fareCount int) error {
 	var bc mid.BasicConfirmer
 	b := bytes.NewBufferString(f.clientId)
-	messageId := f.stateMan.State["message-id"].(uint64)
-	h := typing.NewHeader(f.workerId, messageId)
 	h.Marshal(b)
 	typing.AverageFareMarshal(b, fareSum, fareCount)
 	delete(f.stateMan.State, "sum")
@@ -270,8 +268,8 @@ func (f *Filter) sendAverageFare(ctx context.Context, fareSum float64, fareCount
 	if err := f.stateMan.Prepare(); err != nil {
 		return err
 	}
-	err := bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
 
+	err := bc.Publish(ctx, f.m, f.sinks[Average], "average", b.Bytes())
 	if err == nil {
 		f.stateMan.Commit()
 	}

@@ -66,6 +66,7 @@ func (sw *StateManager) RecoverState() (err error) {
 	if err == nil {
 		defer file.Close()
 		dec := json.NewDecoder(file)
+		dec.UseNumber()
 		err = dec.Decode(&sw.State)
 	}
 

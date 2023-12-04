@@ -97,12 +97,11 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		return err
 	}
 
-	messageId := uint64(0)
 	rr := mid.KeyGenerator(demuxers).NewRoundRobinKeysGenerator()
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.FlightSize
 	b := bytes.NewBufferString(g.id)
-	h := typing.NewHeader("input", messageId)
+	h := typing.NewHeader("input", 0)
 	h.Marshal(b)
 	for {
 		record, err := r.Read()
@@ -131,8 +130,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			}
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
 			b = bytes.NewBufferString(g.id)
-			messageId++
-			h := typing.NewHeader("input", messageId)
+			h.MessageId++
 			h.Marshal(b)
 		}
 	}

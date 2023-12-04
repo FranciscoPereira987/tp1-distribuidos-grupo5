@@ -3,7 +3,7 @@
 interval=${INTERVAL:-%I}
 victims=${VICTIMS:-%V}
 peer_prefix=${PEER_PREFIX:-peer}
-template='{{if not (eq .Names "rabbitmq" "input" "output")}}{{.Names}}{{end}}'
+template='{{if not (or (eq .Names "rabbitmq" "input" "output") (eq .Image "client"))}}{{.Names}}{{end}}'
 
 for ((;;)) do
     sleep $interval

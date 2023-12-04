@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
@@ -102,17 +101,13 @@ func main() {
 	recovered := state.RecoverStateFiles(workdir)
 	for _, rec := range recovered {
 		id, workdir, stateMan := rec.Id, rec.Workdir, rec.State
-		if onFlights, _ := stateMan.State["coordinates-load"].(bool); !onFlights {
-			logrus.Infof("Going out through here: %s", stateMan.State)
-			continue
-		}
 		ch := make(chan (<-chan mid.Delivery))
 		flightsChs[id] = ch
 
-		go func() {
+		go func(stateMan *state.StateManager) {
 			ctx, cancel := context.WithCancel(signalCtx)
 			defer cancel()
-			filter, err := common.NewFilter(middleware, workerId, id, sink, workdir)
+			filter, err := common.NewWithState(middleware, workerId, id, sink, workdir, stateMan)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -131,7 +126,7 @@ func main() {
 					log.Fatal(err)
 				}
 			}
-		}()
+		}(stateMan)
 	}
 	coordsQueues, err := middleware.Consume(signalCtx, coordsSource)
 	if err != nil {

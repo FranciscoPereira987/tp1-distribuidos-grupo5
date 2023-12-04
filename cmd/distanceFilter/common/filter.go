@@ -40,13 +40,21 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 	}, err
 }
 
+func NewWithState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (*Filter, error) {
+	filter, err := NewFilter(m, workerId, clientId, sink, workdir)
+	if err != nil {
+		return nil, err
+	}
+	filter.stateMan = stateMan
+	return filter, err
+}
+
 func (f *Filter) Close() error {
 	return state.RemoveWorkdir(f.workdir)
 }
 
 func (f *Filter) AddCoords(ctx context.Context, coords <-chan mid.Delivery) error {
 
-	f.stateMan.State["coordinates-load"] = true
 	if err := f.stateMan.Prepare(); err != nil {
 		return err
 	}

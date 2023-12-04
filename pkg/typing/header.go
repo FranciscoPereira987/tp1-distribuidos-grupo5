@@ -3,12 +3,10 @@ package typing
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
-	"fmt"
-)
 
-var ErrUnsupported = errors.New("unsupported value")
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
+)
 
 type BatchHeader struct {
 	WorkerId  string
@@ -19,17 +17,12 @@ func NewHeader(workerId string, messageId int64) BatchHeader {
 	return BatchHeader{workerId, messageId}
 }
 
-func RecoverHeader(state map[string]any, workerId string) (h BatchHeader, err error) {
-	h.WorkerId = workerId
-	v, ok := state["message-id"]
-	if !ok {
-		return h, nil
+func RecoverHeader(stateMan *state.StateManager, workerId string) (BatchHeader, error) {
+	messageId, err := stateMan.GetInt64("message-id")
+	h := NewHeader(workerId, messageId)
+	if err != nil && errors.Is(err, state.ErrNotFound) {
+		err = nil
 	}
-	num, ok := v.(json.Number)
-	if !ok {
-		return h, fmt.Errorf("%w: %#v", ErrUnsupported, v)
-	}
-	h.MessageId, err = num.Int64()
 	return h, err
 }
 

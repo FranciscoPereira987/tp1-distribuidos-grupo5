@@ -119,7 +119,7 @@ func main() {
 		if ok {
 			delete(toRestart, queue.Id)
 		} else {
-			workdir := filepath.Join("clients", hex.EncodeToString([]byte(queue.Id)))
+			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(queue.Id)))
 			f, err = common.NewFilter(middleware, workerId, queue.Id, sink, workdir)
 			if err != nil {
 				log.Fatal(err)

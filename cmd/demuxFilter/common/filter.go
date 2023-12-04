@@ -70,19 +70,19 @@ func RecoverFromState(m *mid.Middleware, workerId, clientId string, sinks []stri
 }
 
 func (f *Filter) ShouldRestart() bool {
-	v, _ := f.stateMan.State["state"].(int)
+	v, _ := f.stateMan.GetInt("state")
 	return v != Receiving
 }
 
 func (f *Filter) Restart(ctx context.Context) error {
 
-	switch v, _ := f.stateMan.State["state"].(int); v {
+	switch v, _ := f.stateMan.GetInt("state"); v {
 	default:
 		return fmt.Errorf("action: restarting | result: failure | reason: %w", ErrUnsupported)
 	case NotYetSent:
 		log.Info("action: restarting sending filter | result: in progress")
 		fareSum, fareCount := f.GetFareInfo()
-		h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+		h, err := typing.RecoverHeader(f.stateMan, f.workerId)
 		if err == nil {
 			err = f.sendAverageFare(ctx, &h, fareSum, fareCount)
 		}
@@ -107,8 +107,8 @@ func (f *Filter) Prepare(sum float64, count, state int) error {
 }
 
 func (f *Filter) GetFareInfo() (float64, int) {
-	sum, _ := f.stateMan.State["sum"].(float64)
-	count, _ := f.stateMan.State["count"].(int)
+	sum, _ := f.stateMan.GetFloat("sum")
+	count, _ := f.stateMan.GetInt("count")
 	return sum, count
 }
 
@@ -124,7 +124,7 @@ func (f *Filter) marshalHeaderInto(b *bytes.Buffer, h *typing.BatchHeader) {
 func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 	fareSum, fareCount := f.GetFareInfo()
 	dc := f.m.NewDeferredConfirmer(ctx)
-	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	h, err := typing.RecoverHeader(f.stateMan, f.workerId)
 	if err != nil {
 		return err
 	}

@@ -87,7 +87,7 @@ func (f *Filter) Run(ctx context.Context, flights <-chan mid.Delivery) error {
 	}
 	var bc mid.BasicConfirmer
 
-	h, err := typing.RecoverHeader(sm.State, f.workerId)
+	h, err := typing.RecoverHeader(sm, f.workerId)
 	if err != nil {
 		return err
 	}

@@ -3,13 +3,22 @@ package state
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
 const StateFileName = "state.json"
+
+var (
+	ErrNotFound = errors.New("key not found")
+	ErrNotMap   = errors.New("object is not a map")
+	ErrNaN      = errors.New("object is not a number")
+)
 
 /*
 It should only be stored in state, objects that implement either:
@@ -30,8 +39,102 @@ func NewStateManager(workdir string) *StateManager {
 	}
 }
 
-func (sw *StateManager) AddToState(key string, value any) {
-	sw.State[key] = value
+func (sw *StateManager) NewMap(keys ...string) {
+	m := sw.State
+	for _, key := range keys[:len(keys)-1] {
+		m = m[key].(map[string]any)
+	}
+	m[keys[len(keys)-1]] = make(map[string]any)
+}
+
+func (sw *StateManager) Add(value any, keys ...string) {
+	m := sw.State
+	for _, key := range keys[:len(keys)-1] {
+		m = m[key].(map[string]any)
+	}
+	m[keys[len(keys)-1]] = value
+}
+
+func (sw *StateManager) Remove(keys ...string) {
+	m := sw.State
+	for _, key := range keys[:len(keys)-1] {
+		m = m[key].(map[string]any)
+	}
+	delete(m, keys[len(keys)-1])
+}
+
+func getJsonMap(m map[string]any, keys ...string) (map[string]any, error) {
+	for i, key := range keys {
+		if v, ok := m[key]; !ok {
+			key = strings.Join(keys[:i+1], ".")
+			return nil, fmt.Errorf("%w: state[%s]", ErrNotFound, key)
+		} else if m, ok = v.(map[string]any); !ok {
+			key = strings.Join(keys[:i+1], ".")
+			return nil, fmt.Errorf("%w: state[%s]=%#v", ErrNotMap, key, v)
+		}
+	}
+	return m, nil
+}
+
+func (sw *StateManager) getNumber(keys ...string) (json.Number, error) {
+	m, err := getJsonMap(sw.State, keys[:len(keys)-1]...)
+	if err != nil {
+		return "", err
+	}
+
+	v, ok := m[keys[len(keys)-1]]
+	if !ok {
+		key := strings.Join(keys, ".")
+		return "", fmt.Errorf("%w: state[%s]", ErrNotFound, key)
+	}
+	num, ok := v.(json.Number)
+	if !ok {
+		key := strings.Join(keys, ".")
+		return "", fmt.Errorf("%w: state[%s]=%#v", ErrNaN, key, v)
+	}
+	return num, nil
+}
+
+func (sw *StateManager) GetInt64(keys ...string) (int64, error) {
+	num, err := sw.getNumber(keys...)
+	if err != nil {
+		return 0, err
+	}
+	return num.Int64()
+}
+
+func (sw *StateManager) GetInt(keys ...string) (int, error) {
+	n, err := sw.GetInt64(keys...)
+	return int(n), err
+}
+
+func (sw *StateManager) GetFloat(keys ...string) (float64, error) {
+	num, err := sw.getNumber(keys...)
+	if err != nil {
+		return 0, err
+	}
+	return num.Float64()
+}
+
+func (sw *StateManager) GetMapStringInt64(keys ...string) (map[string]int64, error) {
+	m, err := getJsonMap(sw.State, keys...)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make(map[string]int64)
+	for key, value := range m {
+		v, ok := value.(json.Number)
+		if !ok {
+			key := strings.Join(keys, ".")
+			return nil, fmt.Errorf("%w: state[%s]=%#v", ErrNaN, key, v)
+		}
+		ret[key], err = v.Int64()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
 }
 
 func (sw *StateManager) Prepare() error {
@@ -67,7 +170,9 @@ func (sw *StateManager) RecoverState() (err error) {
 		defer file.Close()
 		dec := json.NewDecoder(file)
 		dec.UseNumber()
-		err = dec.Decode(&sw.State)
+		if err = dec.Decode(&sw.State); err == nil {
+			log.Infof("recovered state: %#v", sw.State)
+		}
 	}
 
 	return

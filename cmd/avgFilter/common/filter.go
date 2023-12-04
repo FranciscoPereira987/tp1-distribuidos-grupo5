@@ -73,9 +73,9 @@ func (f *Filter) Close() error {
 
 func recoverFares(stateMan *state.StateManager, faresDir string) (fares map[string]fareWriter, err error) {
 	fares = make(map[string]fareWriter)
-	values, ok := stateMan.State["fares"].(map[string]int)
-	if !ok {
-		stateMan.State["fares"] = make(map[string]int)
+	values, err := stateMan.GetMapStringInt64("fares")
+	if err != nil && errors.Is(err, state.ErrNotFound) {
+		stateMan.NewMap("fares")
 	}
 
 	defer func() {
@@ -100,8 +100,8 @@ func recoverFares(stateMan *state.StateManager, faresDir string) (fares map[stri
 
 func (f *Filter) GetRunVariables() (map[string]fareWriter, float64, int, error) {
 
-	fareSum, _ := f.stateMan.State["sum"].(float64)
-	fareCount, _ := f.stateMan.State["count"].(int)
+	fareSum, _ := f.stateMan.GetFloat("sum")
+	fareCount, _ := f.stateMan.GetInt("count")
 	fares, err := recoverFares(f.stateMan, filepath.Join(f.workdir, "fares"))
 
 	return fares, fareSum, fareCount, err
@@ -190,7 +190,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 	i := mid.MaxMessageSize / typing.ResultQ4Size
 	b := bytes.NewBufferString(f.clientId)
 
-	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	h, err := typing.RecoverHeader(f.stateMan, f.workerId)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (f *Filter) sendResults(ctx context.Context, fares map[string]fareWriter, a
 		if newResult, err := f.aggregate(ctx, b, file, fw, avg); err != nil {
 			return err
 		} else if newResult {
-			delete(f.stateMan.State["fares"].(map[string]int), file)
+			f.stateMan.Remove("fares", file)
 			if i--; i <= 0 {
 				h.MessageId++
 				h.AddToState(f.stateMan.State)
@@ -283,7 +283,7 @@ func (f *Filter) aggregate(ctx context.Context, b *bytes.Buffer, file string, fw
 type fareWriter struct {
 	bw    *bufio.Writer
 	file  *os.File
-	Fares int
+	Fares int64
 }
 
 func newFareWriter(path string) (fw fareWriter, err error) {
@@ -293,12 +293,12 @@ func newFareWriter(path string) (fw fareWriter, err error) {
 	return fw, err
 }
 
-func recoverFareWriter(path string, fares int) (fw fareWriter, err error) {
+func recoverFareWriter(path string, fares int64) (fw fareWriter, err error) {
 	fw.file, err = os.OpenFile(path, os.O_RDWR, 0644)
 	fw.bw = bufio.NewWriter(fw.file)
 	fw.Fares = fares
 	if err == nil {
-		if _, err = fw.file.Seek(int64(fares)*4, 0); err != nil {
+		if _, err = fw.file.Seek(fares*4, 0); err != nil {
 			fw.file.Close()
 		}
 	}
@@ -323,7 +323,7 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 	if v, ok := fares[file]; ok {
 		err := v.Write(fare)
 		if err == nil {
-			f.stateMan.State["fares"].(map[string]int)[file] = v.Fares
+			f.stateMan.Add(v.Fares, "fares", file)
 		}
 		return err
 	}
@@ -335,7 +335,7 @@ func (f *Filter) appendFare(fares map[string]fareWriter, file string, fare float
 	fares[file] = fw
 	err = fw.Write(fare)
 	if err == nil {
-		f.stateMan.State["fares"].(map[string]int)[file] = fw.Fares
+		f.stateMan.Add(fw.Fares, "fares", file)
 	}
 	return err
 }

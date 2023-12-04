@@ -34,7 +34,7 @@ func NewFilter(m *mid.Middleware, workerId, clientId, sink, workdir string) (*Fi
 	}, err
 }
 
-func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) (*Filter) {
+func RecoverFromState(m *mid.Middleware, workerId, clientId, sink, workdir string, stateMan *state.StateManager) *Filter {
 	f, _ := NewFilter(m, workerId, clientId, sink, workdir)
 	f.stateMan = stateMan
 	return f
@@ -168,7 +168,7 @@ func (f *Filter) SendResults(ctx context.Context, fastest FastestFlightsMap, sen
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.ResultQ3Size
 	b := bytes.NewBufferString(f.clientId)
-	h, err := typing.RecoverHeader(f.stateMan.State, f.workerId)
+	h, err := typing.RecoverHeader(f.stateMan, f.workerId)
 	if err != nil {
 		return err
 	}

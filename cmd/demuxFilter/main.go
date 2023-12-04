@@ -139,8 +139,7 @@ func main() {
 			workdir := filepath.Join(workdir, hex.EncodeToString([]byte(queue.Id)))
 			filter, err = common.NewFilter(middleware, workerId, queue.Id, sinks, workdir, nWorkers)
 			if err != nil {
-				log.Errorf("initializing worker: %s", err)
-				continue
+				log.Fatalf("action worker_init | status: failure | reason: %s", err)
 			}
 		}
 		go func(clientId string, ch <-chan mid.Delivery) {

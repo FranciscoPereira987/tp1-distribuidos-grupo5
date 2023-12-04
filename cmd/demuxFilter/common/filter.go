@@ -112,11 +112,6 @@ func (f *Filter) GetFareInfo() (float64, int) {
 	return sum, count
 }
 
-func (f *Filter) GetRoundRobinGenerator() (gen mid.RoundRobinKeysGenerator) {
-
-	return mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
-}
-
 func (f *Filter) marshalHeaderInto(b *bytes.Buffer, h *typing.BatchHeader) {
 	h.Marshal(b)
 }
@@ -129,7 +124,10 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		return err
 	}
 
-	rr := f.GetRoundRobinGenerator()
+	rr, err := mid.RoundRobinFromState(f.stateMan, f.keyGens[Distance])
+	if err != nil {
+		return err
+	}
 	for d := range ch {
 		msg, tag := d.Msg, d.Tag
 		r := bytes.NewReader(msg)

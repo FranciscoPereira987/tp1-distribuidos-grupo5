@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"hash/fnv"
 
@@ -48,17 +49,20 @@ func (rr *RoundRobinKeysGenerator) NextKey(sink string) string {
 }
 
 func (rr RoundRobinKeysGenerator) RemoveFromState(stateMan *state.StateManager) {
-	delete(stateMan.State, "rr-index")
+	stateMan.Remove("rr-index")
 }
 
 func (rr RoundRobinKeysGenerator) AddToState(stateMan *state.StateManager) {
 	stateMan.State["rr-index"] = rr.index
 }
 
-func RoundRobinFromState(stateMan *state.StateManager, kg KeyGenerator) RoundRobinKeysGenerator {
-	index, _ := stateMan.State["rr-index"].(int)
+func RoundRobinFromState(stateMan *state.StateManager, kg KeyGenerator) (RoundRobinKeysGenerator, error) {
+	index, err := stateMan.GetInt("rr-index")
+	if err != nil && errors.Is(err, state.ErrNotFound) {
+		err = nil
+	}
 	return RoundRobinKeysGenerator{
 		mod:   int(kg),
 		index: index,
-	}
+	}, err
 }

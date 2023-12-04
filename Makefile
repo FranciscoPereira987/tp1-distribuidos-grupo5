@@ -41,7 +41,7 @@ setup: docker-compose-dev.yaml
 .PHONY: setup
 
 run-client:
-	docker run --rm -v ./clients/$(CLIENT_ID):/client  --name client_$(CLIENT_ID) --network tp1_testing_net --entrypoint /cliente client
+	docker run --rm -v ./clients/$(CLIENT_ID):/client  --network tp1_testing_net --entrypoint /cliente client
 	@printf '%s\n' ====================================== tests:
 	@test/test.bash clients/$(CLIENT_ID)
 .PHONY: run-client

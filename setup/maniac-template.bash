@@ -10,15 +10,7 @@ for ((;;)) do
     mapfile -t dying < <(docker ps --format "$template")
     # remove empty values
     dying=(${dying[@]})
-    dying=(${dying[@]})
-    for ((i=0; i<${#dying[@]}; i++)) 
-    do
-        if [[ ${dying[i]} =~ "client_" ]]
-        then
-            unset dying[i]
-        fi
-    done
-    echo $dying
+
     for index in $(shuf -n $((${#dying[@]} - victims)) -i0-$((${#dying[@]}-1)))
     do
         if [[ ${dying[index]} =~ $peer_prefix ]]
@@ -40,7 +32,7 @@ for ((;;)) do
             fi
         done
     fi
-    unset survivor
+    unset survivor last
 
     docker kill "${dying[@]}"
 done

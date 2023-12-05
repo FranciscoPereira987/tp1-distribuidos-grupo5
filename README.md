@@ -27,28 +27,30 @@ con los datos de vuelos), y las tuplas indican que información proveen.
 ### Sistema
 
 Lo que sigue es el diagrama de robustez. Comenzando desde arriba tenemos al
-**cliente**, quien establece dos conexiones, una con el **parser**, a quien le envía
-los datos de vuelos, y otra con el **agregador de resultados**, quien le envía
-los resultados.  
+**cliente**, quien establece dos conexiones, una con el **parser**
+(_inputBoundary_), a quien le envía los datos de vuelos y coordenadas de
+aeropuertos, y otra con el **agregador de resultados** (_outputBoundary_),
+quien le envía los resultados.  
 El **parser**, primero espera a que todos los _workers_ esten listos (quienes
-le avisan con un mensaje _Ready_), toma las coordenadas de los aeropuertos y
-las envía a el **filtro por distancia**, quien las guarda para luego calcular
-la distancia entre aeropuertos, luego toma los datos de vuelos y los envía a
-los _workers_, proyectandolos sobre las columnas que necesite cada uno, además
-los filtra por 3 o más escalas para enviarlos al **filtro por duración** [^1] y
-publicarlos como resultados, y calcula la media general de precios para
-enviarsela a el **filtro por promedio** [^2].  
-En el caso de los _workers_ (los flitros por distancia, duración y promedio),
-estos utilizan un esquema de _sharding_ en el despliegue que nos permite
-procesar los vuelos según el trayecto recorrido (origen-destino), sin necesidad
-de sincronizarlos entre ellos.
+le avisan con un mensaje _Ready_ en la cola _status_), toma las coordenadas de
+los aeropuertos y las envía a el **filtro por distancia** (_distanceFilter_),
+quien las guarda para luego calcular la distancia entre aeropuertos, luego toma
+los datos de vuelos los proyecta sobre las columnas que necesita el sistema y
+los envía al **demux** (_demuxFilter_).  
+Por su parte el **demux** toma los datos de vuelos y los proyecta sobre las
+columnas que necesita cada _worker_, filtra los vuelos con 3 o más escalas para
+enviarlos al **filtro por duración** (_distanceFilter_) y publicarlos como
+resultados, y calcula la media general de precios para enviarsela a el **filtro
+por promedio**[^1] (_avgFilter_).  
+En el caso de los _workers_ que responden a las consultas 3 y 4 (los filtros
+por duración y promedio), estos utilizan un esquema de _sharding_ en el
+despliegue con afinidad a los trayectos que nos permite procesar los vuelos
+según el trayecto recorrido (origen-destino), sin necesidad de sincronización
+entre ellos.
 
 ![fotoSistema](img/DiagramaRobustez.png)
 
-[^1]: Estimamos que el costo de serializar y enviar todos los datos es mayor al
-    costo de determinar si estos vuelos tienen 3 o más escalas, en especial
-    cuanto menos sean los vuelos que cumplan esta condición.
-[^2]: Es fácil ver que el costo de calcular la media general de precios es
+[^1]: Es fácil ver que el costo de calcular la media general de precios es
     despreciable comparado con el costo de enviar un valor para que se calcule
     la media en otros nodos.
 

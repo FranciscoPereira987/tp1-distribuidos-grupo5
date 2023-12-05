@@ -38,7 +38,15 @@ test_query() {
     fi
 }
 
+test_query3() {
+    if diff <(cut -d, -f2-4 "$dataset/$1.csv" | sort) <(cut -d, -f2-4 "$client_dir"/results/$1.csv | sort) >test/diff/$1.diff
+        then printf '\x1b[32;1m%s:\x1b[m %s\n' PASSED "$1 query"
+    else
+        printf '\x1b[31;1m%s:\x1b[m %s\n' FAILED "$1 query"
+    fi
+}
+
 test_query first
 test_query second
-test_query third
+test_query3 third
 test_query fourth

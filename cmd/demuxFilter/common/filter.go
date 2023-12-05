@@ -164,11 +164,12 @@ func (f *Filter) Run(ctx context.Context, ch <-chan mid.Delivery) error {
 		}
 		h.MessageId++
 		h.AddToState(f.stateMan.State)
+		distanceKey := rr.NextKey(f.sinks[Distance])
 		rr.AddToState(f.stateMan)
 		if err := f.Prepare(fareSum, fareCount, Receiving); err != nil {
 			return err
 		}
-		if err := f.sendBuffer(ctx, dc, rr.NextKey(f.sinks[Distance]), bDistance); err != nil {
+		if err := f.sendBuffer(ctx, dc, distanceKey, bDistance); err != nil {
 			return err
 		}
 		if err := f.sendMap(ctx, dc, mAverage); err != nil {

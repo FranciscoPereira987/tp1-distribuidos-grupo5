@@ -10,6 +10,10 @@ for ((;;)) do
     mapfile -t dying < <(docker ps --format "$template")
     # remove empty values
     dying=(${dying[@]})
+    if [[ ${#dying[@]} -le $victims ]]
+    then
+        continue
+    fi
 
     for index in $(shuf -n $((${#dying[@]} - victims)) -i0-$((${#dying[@]}-1)))
     do

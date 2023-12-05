@@ -4,7 +4,7 @@ El diagrama de actividades muestra la logica general implementada para el filtro
 
 ### Diagrama de actividades
 
-![actividades](../../img/ActividadesFiltroDistancia.png)
+![actividades](../../img/DiagramaActividadesQ2.png)
 
 El filtro de distancia comienza haciendo setups tanto de middleware como del propio worker. Luego instancia una goroutine en la cual se ejecuta el filtro en si, la goroutine principal se encarga de esperar por *SIGINT/SIGTERM* y a que termine de ejecutarse el filtro.
 El filtro espera por datos, en base a si los mismos corresponden a coordenadas o datos de vuelos realiza una operacion u otra.

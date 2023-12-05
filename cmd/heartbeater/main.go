@@ -53,10 +53,14 @@ func invMain() {
 	if err != nil {
 		logrus.Errorf("Error parsing config file: %s", err)
 	}
-	invitation := invitation.Invitation(config)
-	if err := invitation.Run(); err != nil {
-		logrus.Fatalf("Invitation process ended with error: %s", err)
+	for {
+		invitation := invitation.Invitation(config)
+		if err := invitation.Run(); err != nil {
+			logrus.Errorf("Invitation process ended with error: %s", err)
+			logrus.Info("action: re-starting beater | status: in-progress")
+		}
 	}
+
 }
 
 func main() {

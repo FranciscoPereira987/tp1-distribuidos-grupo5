@@ -39,7 +39,7 @@ func (st *Status) runElection() (nextStage uint, err error) {
 	if st.leaderId == st.id && err == nil {
 		nextStage = Coordinator
 	}
-	logrus.Infof("action: election | status: peer invitation | result group: %s", st.peers.Members)
+	logrus.Infof("action: election | status: peer invitation | result group: %d", st.peers.Members)
 
 	return
 }

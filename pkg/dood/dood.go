@@ -18,7 +18,6 @@ func NewDockerClient(host string) (*DooD, error) {
 	dood := new(DooD)
 	cli, err := client.NewClientWithOpts(client.WithHost(host))
 	if err == nil {
-		//TODO: Try to put everything under the same context
 		ctx, cancel := context.WithCancel(context.Background())
 		dood.cli = cli
 		dood.ctx = ctx

@@ -4,9 +4,7 @@ import (
 	"errors"
 
 	"net"
-	"os"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/dood"
@@ -72,7 +70,7 @@ type BeaterServer struct {
 
 	port string
 
-	shutdown chan os.Signal
+	shutdown chan struct{}
 	running  bool
 
 	dood *dood.DooD
@@ -274,7 +272,7 @@ func (b *BeaterServer) run(port string) (err error) {
 	defer close(readerChan)
 	go b.writeRoutine(timersChan)
 
-	shutdown := make(chan os.Signal, 1)
+	shutdown := make(chan struct{}, 1)
 	b.shutdown = shutdown
 	defer close(shutdown)
 	b.running = true
@@ -319,7 +317,7 @@ func (b *BeaterServer) Stop() (err error) {
 	if b.running {
 		err = b.sckt.Close()
 		b.dood.Shutdown()
-		b.shutdown <- syscall.SIGTERM
+		b.shutdown <- struct{}{}
 		err = errors.Join(err, <-b.resultsChan)
 		b.running = false
 	}

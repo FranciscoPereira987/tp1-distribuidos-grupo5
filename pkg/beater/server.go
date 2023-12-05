@@ -62,6 +62,7 @@ type BeaterServer struct {
 
 	clientInfo []client
 
+	addr *net.UDPAddr
 	sckt *net.UDPConn
 
 	wg *sync.WaitGroup
@@ -81,84 +82,111 @@ Timer runs a routine to keep clients
 in check, ensuring that they are alive
 */
 type timer struct {
-	//Allows for the timer to reset
-	//if Inbound is false, then the routine shutsdown
-	InboundChan chan bool
-	//Outputs a message to be delivered to the client
-	OutboundChan chan *net.UDPAddr
-
-	//Outputs the name to restart the service
-	restartChan chan string
-
 	clientAddr string
 
 	/*
 		Service name that's going to be used to
 		recreate the client
 	*/
-	name string
+	Name string
 
 	//Heartbeat timer
 	maxTime time.Duration
 }
 
-func NewTimer(at string, name string, restart chan string, outbound chan *net.UDPAddr) *timer {
-	t := new(timer)
+type clientChecker struct {
+	clients  chan *timer
+	outbound chan *net.UDPAddr
+	Inbound  chan bool
+	revive   chan string
+	Shutdown chan struct{}
+}
 
-	t.InboundChan = make(chan bool, 1)
-	t.OutboundChan = outbound
+func NewClientChecker(outbound chan *net.UDPAddr, revive chan string, toCheck ...*timer) *clientChecker {
+	clients := make(chan *timer, len(toCheck))
+	for _, client := range toCheck {
+		clients <- client
+	}
+	return &clientChecker{
+		clients,
+		outbound,
+		make(chan bool, 1),
+		revive,
+		make(chan struct{}, 1),
+	}
+}
+
+func (cc *clientChecker) RunChecker(group *sync.WaitGroup) {
+	go func() {
+		group.Add(1)
+	loop:
+		for {
+			select {
+			case client := <-cc.clients:
+				alive := client.executeTimer(cc.outbound, cc.Inbound, cc.Shutdown)
+				if !alive {
+					logrus.Infof("action: reviving %s", client.Name)
+					select {
+					case cc.revive <- client.Name:
+						logrus.Infof("action: reviving %s | status: request sent", client.Name)
+					case <-cc.Shutdown:
+						break loop
+					}
+				}
+				cc.clients <- client
+			case <-cc.Shutdown:
+				logrus.Info("Recieved shutdown")
+				break loop
+			}
+		}
+		logrus.Info("action: checker | status: finishing")
+		group.Done()
+	}()
+
+}
+
+func NewTimer(at string, name string) *timer {
+	t := new(timer)
 	t.clientAddr = at
-	t.name = name
-	t.maxTime = time.Millisecond * 100
-	t.restartChan = restart
+	t.Name = name
+	t.maxTime = time.Millisecond * 20
 
 	return t
 }
 
-func (t *timer) resolveAddr() (addr *net.UDPAddr, running bool) {
+func (t *timer) resolveAddr() (addr *net.UDPAddr, resolved bool) {
 	addr, err := net.ResolveUDPAddr("udp", t.clientAddr)
-	running = true
 	if err != nil {
-		logrus.Errorf("action: resolving client address | result: failed | action: re-instantiating client")
-		t.restartChan <- t.name
-	}
-	for err != nil && running {
-		<-time.After(t.maxTime * 5)
-		addr, err = net.ResolveUDPAddr("udp", t.clientAddr)
-		select {
-		case <-t.InboundChan:
-			running = false
-		default:
-		}
+		resolved = false
 	}
 	return
 }
 
-func (t *timer) executeTimer(group *sync.WaitGroup) {
-	clientAddr, running := t.resolveAddr()
-	retriesLeft := 3
-
-	for running {
-		timeout := time.After(t.maxTime)
-		t.OutboundChan <- clientAddr
+func (t *timer) executeTimer(outbound chan<- *net.UDPAddr, inbound <-chan bool, shutdown chan struct{}) (ok bool) {
+	clientAddr, resolved := t.resolveAddr()
+	if !resolved {
+		return resolved
+	}
+	select {
+	case outbound <- clientAddr:
+	case <-shutdown:
+		shutdown <- struct{}{}
+		return true
+	}
+	retries := 3
+	for retries > 0 {
+		time := time.After(t.maxTime)
 		select {
-		case <-timeout:
-			retriesLeft--
-			if retriesLeft <= 0 {
-				clientAddr, running = t.resolveAddr()
-			} else {
-				logrus.Infof("action: client %s timer | status: client unresponsive | remaining attempts: %d", t.name, retriesLeft)
-			}
-		case running = <-t.InboundChan:
-			if !running {
-				logrus.Infof("action: Client %s timer | status: ending", t.name)
-			}
-			retriesLeft = 3
-			<-time.After(t.maxTime / 2)
+		case <-inbound:
+			return true
+		case <-time:
+			retries--
+		case <-shutdown:
+			shutdown <- struct{}{}
+			return true
 		}
 	}
-	group.Done()
-
+	return false
 }
 
 func NewBeaterServer(clients []string, clientAddrs []string, at string) *BeaterServer {
@@ -188,6 +216,7 @@ func NewBeaterServer(clients []string, clientAddrs []string, at string) *BeaterS
 	return &BeaterServer{
 		client_map,
 		clientInfo,
+		addr,
 		conn,
 		new(sync.WaitGroup),
 		make(chan error, 1),
@@ -201,41 +230,48 @@ func NewBeaterServer(clients []string, clientAddrs []string, at string) *BeaterS
 /*
 Initiates timers and merge channels
 */
-func (b *BeaterServer) initiateTimers(port string, dockerChan chan string) chan *net.UDPAddr {
+func (b *BeaterServer) initiateTimers(port string, dockerChan chan string) (*clientChecker, chan *net.UDPAddr) {
+	timers := []*timer{}
 	timersChan := make(chan *net.UDPAddr, 1)
 	for _, value := range b.clientInfo {
 
-		timer := NewTimer(value.Addr+":"+port, value.Name, dockerChan, timersChan)
+		timer := NewTimer(value.Addr+":"+port, value.Name)
 
 		b.clients[value.Name] = timer
-		go timer.executeTimer(b.wg)
-
+		timers = append(timers, timer)
 	}
-	b.wg.Add(len(b.clientInfo))
-	return timersChan
+	return NewClientChecker(timersChan, dockerChan, timers...), timersChan
 }
 
 /*
 Initiates socket reading routine
 */
-func (b *BeaterServer) initiateReader() chan []byte {
+func (b *BeaterServer) initiateReader(close <-chan struct{}) chan []byte {
 	readerChan := make(chan []byte, 1)
+	b.wg.Add(1)
 	go func() {
 		var err error
 		for err == nil {
 			beat, _, err_read := utils.SafeReadFrom(b.sckt)
 			err = err_read
 			if err == nil {
-				readerChan <- beat
+				select {
+				case <-close:
+					logrus.Info("action: reader | status: ending")
+					b.wg.Done()
+					return
+				case readerChan <- beat:
+				}
 			}
 		}
+		logrus.Info("action: reader | status: ending")
+		b.wg.Done()
 	}()
 	return readerChan
 }
 
-func (b *BeaterServer) parseBeat(beat []byte) {
-	if beat[0] != Ok {
-		logrus.Errorf("recieved invalid beat response")
+func (b *BeaterServer) parseBeat(beat []byte, timerChan chan bool) {
+	if len(beat) == 0 || beat[0] != Ok {
 		return
 	}
 	ok := &ok{}
@@ -244,8 +280,8 @@ func (b *BeaterServer) parseBeat(beat []byte) {
 		logrus.Errorf("error while deserializing beat response: %s", err)
 		return
 	}
-	if timer, ok := b.clients[ok.whom]; ok {
-		timer.InboundChan <- true
+	if _, ok := b.clients[ok.whom]; ok {
+		timerChan <- true
 	}
 }
 
@@ -253,47 +289,66 @@ func (b *BeaterServer) parseBeat(beat []byte) {
 Runs a routine that is in charge of writing to the socket
 heartbeats
 */
-func (b *BeaterServer) writeRoutine(channel <-chan *net.UDPAddr) {
-	for addr := range channel {
-		err := utils.SafeWriteTo(heartbeat{}.serialize(), b.sckt, addr)
-		if err != nil {
-			logrus.Errorf("action: heartbeat to services | status: %s", err)
+func (b *BeaterServer) writeRoutine(channel <-chan *net.UDPAddr, closeChan <-chan struct{}) {
+	b.wg.Add(1)
+loop:
+	for {
+		select {
+		case <-closeChan:
+			break loop
+		case addr, more := <-channel:
+			if !more {
+				break loop
+			}
+			err := utils.SafeWriteTo(heartbeat{}.serialize(), b.sckt, addr)
+			if err != nil {
+				logrus.Errorf("action: heartbeat to services | status: %s", err)
+				break loop
+			}
 		}
 	}
 	logrus.Info("action: write routine | status: finishing")
+	b.wg.Done()
 }
 
 func (b *BeaterServer) run(port string) (err error) {
-	dockerChan := b.dood.StartIncoming()
-	defer close(dockerChan)
-	timersChan := b.initiateTimers(port, dockerChan)
-	defer close(timersChan)
-	readerChan := b.initiateReader()
-	defer close(readerChan)
-	go b.writeRoutine(timersChan)
-
+	dockerChan, closeDockerChan := b.dood.StartIncoming()
+	checker, timersChan := b.initiateTimers(port, dockerChan)
+	checker.RunChecker(b.wg)
+	readerCloseChan := make(chan struct{}, 1)
+	readerChan := b.initiateReader(readerCloseChan)
+	writerCloseChan := make(chan struct{}, 1)
+	go b.writeRoutine(timersChan, writerCloseChan)
 	shutdown := make(chan struct{}, 1)
-	b.shutdown = shutdown
 	defer close(shutdown)
+	defer close(dockerChan)
+	defer close(readerChan)
+	defer close(timersChan)
+	b.shutdown = shutdown
 	b.running = true
 loop:
 	for {
 		select {
 		case beat := <-readerChan:
-			b.parseBeat(beat)
+			b.parseBeat(beat, checker.Inbound)
 		case <-shutdown:
 			b.running = false
 			break loop
 
 		}
 	}
-
-	for _, t := range b.clients {
-		t.InboundChan <- false
-	}
-
+	logrus.Info("action: stopping beater server | status: stopping workers, dockerChan")
+	closeDockerChan <- struct{}{}
+	logrus.Info("action: stopping beater server | status: stopping workers, checker")
+	checker.Shutdown <- struct{}{}
+	logrus.Info("action: stopping beater server | status: stopping workers, reader")
+	readerCloseChan <- struct{}{}
+	logrus.Info("action: stopping beater server | status: stopping workers, writer")
+	writerCloseChan <- struct{}{}
+	logrus.Info("action: stopping beater server | status: stopping workers | info: reader and writer told to stop")
+	logrus.Info("action: stopping beater server | status: waiting workers")
 	b.wg.Wait()
-
+	logrus.Info("action: stopping beater server | status: workers stoped")
 	return
 }
 
@@ -315,11 +370,14 @@ func (b *BeaterServer) Run() {
 
 func (b *BeaterServer) Stop() (err error) {
 	if b.running {
-		err = b.sckt.Close()
-		b.dood.Shutdown()
+		logrus.Info("action: stoping beater server")
 		b.shutdown <- struct{}{}
+		err = b.sckt.Close()
+		logrus.Info("action: stoping beater server | status: waiting on results chan")
 		err = errors.Join(err, <-b.resultsChan)
+		b.dood.Shutdown()
 		b.running = false
+		logrus.Info("action: stoping beater server | status: stopped")
 	}
 
 	return err

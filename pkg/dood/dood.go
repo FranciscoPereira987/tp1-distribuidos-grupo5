@@ -40,17 +40,25 @@ func NewDockerClientDefault() (*DooD, error) {
 Returns a channel throught which container names can be sent to restart them
 Once the channel is closed, the context for the DooD is canceled and resources freed
 */
-func (dood *DooD) StartIncoming() chan string {
+func (dood *DooD) StartIncoming() (chan string, chan struct{}) {
 	channel := make(chan string, 1)
+	closeChan := make(chan struct{})
 	go func() {
-		for name := range channel {
-			if err := dood.StartContainer(name); err != nil {
-				logrus.Errorf("action: starting container %s | status: failed | reason: %s", name, err)
+	loop:
+		for {
+			select {
+			case name := <-channel:
+				if err := dood.StartContainer(name); err != nil {
+					logrus.Errorf("action: starting container %s | status: failed | reason: %s", name, err)
+				}
+			case <-closeChan:
+				break loop
 			}
 		}
+		logrus.Info("action: docker server | status: ending")
 		dood.cancel()
 	}()
-	return channel
+	return channel, closeChan
 }
 
 /*

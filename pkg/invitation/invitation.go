@@ -4,9 +4,6 @@ import (
 	"errors"
 
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
@@ -61,6 +58,10 @@ type Status struct {
 	leaderId uint
 	config   *Config
 	control  beater.Runable
+
+	resultChan   chan error
+	shutdownChan chan struct{}
+	stopChan     chan struct{}
 }
 
 func Invitation(config *Config) *Status {
@@ -83,22 +84,34 @@ func stopBeater(beat beater.Runable) (err error) {
 	return
 }
 
+func (st *Status) Shutdown() {
+	defer close(st.stopChan)
+	st.stopChan <- struct{}{}
+	<-st.resultChan
+	st.dial.Close()
+}
+
+func (st *Status) shutdown() {
+	defer close(st.shutdownChan)
+	st.shutdownChan <- struct{}{}
+}
+
 func (st *Status) Run() (err error) {
 
-	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, syscall.SIGTERM)
 	resultChan := make(chan error, 1)
+	st.resultChan = resultChan
+	st.shutdownChan = make(chan struct{}, 1)
+	st.stopChan = make(chan struct{})
 	go func() {
 		defer close(resultChan)
 		resultChan <- st.run()
 	}()
-	defer close(stopChan)
-	defer st.dial.Close()
 	select {
 	case err = <-resultChan:
 		return
-	case <-stopChan:
-		stopBeater(st.control)
+	case <-st.stopChan:
+		logrus.Info("action: stopping invitation worker")
+		st.shutdown()
 		return
 	}
 }
@@ -106,6 +119,7 @@ func (st *Status) Run() (err error) {
 func (st *Status) run() (err error) {
 	state := Electing
 	lastState := Electing
+loop:
 	for err == nil {
 		if lastState != state {
 			err := stopBeater(st.control)
@@ -136,6 +150,11 @@ func (st *Status) run() (err error) {
 			//Member of a group
 			//logrus.Infof("Action: peer %d acting as member | leader: peer %d ", st.id, st.leaderId)
 			state, err = st.ActAsMember()
+		}
+		select {
+		case <-st.shutdownChan:
+			break loop
+		default:
 		}
 	}
 

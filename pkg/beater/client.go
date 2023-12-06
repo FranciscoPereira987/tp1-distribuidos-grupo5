@@ -40,15 +40,30 @@ func NewBeaterClient(name string, addr string) (*BeaterClient, error) {
 	}, err
 }
 
+func (st *BeaterClient) read() (err error) {
+	recovered, server, err_read := utils.SafeReadFrom(st.conn)
+	err = err_read
+	if err == nil {
+		if recovered[0] == Heartbeat {
+			err = utils.SafeWriteTo(ok{st.name}.serialize(), st.conn, server)
+		}
+	}
+	return
+}
+
 func (st *BeaterClient) run() error {
 	var err error
+	ch := make(chan error, 1)
+	defer close(ch)
 	for err == nil {
-		recovered, server, err_read := utils.SafeReadFrom(st.conn)
-		err = err_read
-		if err == nil {
-			if recovered[0] == Heartbeat {
-				err = utils.SafeWriteTo(ok{st.name}.serialize(), st.conn, server)
-			}
+		go func() {
+			ch <- st.read()
+		}()
+		select {
+		case <-st.stopChan:
+			<-ch
+			return nil
+		case err = <-ch:
 		}
 	}
 	return err
@@ -58,11 +73,7 @@ func (st *BeaterClient) Run() {
 	st.running = true
 	go func() {
 		st.stopChan = make(chan struct{}, 1)
-		select {
-		case st.resultChan <- st.run():
-		case <-st.stopChan:
-			st.resultChan <- nil
-		}
+		st.resultChan <- st.run()
 	}()
 }
 

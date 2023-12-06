@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/invitation"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
@@ -53,11 +56,23 @@ func invMain() {
 	if err != nil {
 		logrus.Errorf("Error parsing config file: %s", err)
 	}
+	close := make(chan os.Signal, 1)
+	signal.Notify(close, syscall.SIGTERM)
+	result := make(chan error, 1)
 	for {
 		invitation := invitation.Invitation(config)
-		if err := invitation.Run(); err != nil {
+		go func() {
+			result <- invitation.Run()
+		}()
+		select {
+		case err := <-result:
 			logrus.Errorf("Invitation process ended with error: %s", err)
 			logrus.Info("action: re-starting beater | status: in-progress")
+		case <-close:
+			logrus.Info("Action: recieved SIGTERM")
+			invitation.Shutdown()
+			logrus.Info("action: recieved SIGTERM | status: finished")
+			return
 		}
 	}
 

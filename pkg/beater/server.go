@@ -72,7 +72,8 @@ type BeaterServer struct {
 	port string
 
 	shutdown chan struct{}
-	running  bool
+
+	running bool
 
 	dood *dood.DooD
 }
@@ -155,6 +156,7 @@ func NewTimer(at string, name string) *timer {
 }
 
 func (t *timer) resolveAddr() (addr *net.UDPAddr, resolved bool) {
+	resolved = true
 	addr, err := net.ResolveUDPAddr("udp", t.clientAddr)
 	if err != nil {
 		resolved = false
@@ -165,6 +167,7 @@ func (t *timer) resolveAddr() (addr *net.UDPAddr, resolved bool) {
 func (t *timer) executeTimer(outbound chan<- *net.UDPAddr, inbound <-chan bool, shutdown chan struct{}) (ok bool) {
 	clientAddr, resolved := t.resolveAddr()
 	if !resolved {
+		logrus.Info("Getting out through here")
 		return resolved
 	}
 	select {
@@ -175,11 +178,10 @@ func (t *timer) executeTimer(outbound chan<- *net.UDPAddr, inbound <-chan bool, 
 	}
 	retries := 3
 	for retries > 0 {
-		time := time.After(t.maxTime)
 		select {
 		case <-inbound:
 			return true
-		case <-time:
+		case <-time.After(t.maxTime):
 			retries--
 		case <-shutdown:
 			shutdown <- struct{}{}
@@ -372,9 +374,9 @@ func (b *BeaterServer) Stop() (err error) {
 	if b.running {
 		logrus.Info("action: stoping beater server")
 		b.shutdown <- struct{}{}
-		err = b.sckt.Close()
 		logrus.Info("action: stoping beater server | status: waiting on results chan")
-		err = errors.Join(err, <-b.resultsChan)
+		err = <-b.resultsChan
+		err = errors.Join(err, b.sckt.Close())
 		b.dood.Shutdown()
 		b.running = false
 		logrus.Info("action: stoping beater server | status: stopped")

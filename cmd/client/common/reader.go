@@ -55,6 +55,13 @@ func (rr *ResultsReader) Close() error {
 func (rr *ResultsReader) ReadResults(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 
+	// Create a custom split function by wrapping the existing ScanLines
+	// function. Lines must contain a terminating newline.
+	split := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		return bufio.ScanLines(data, false)
+	}
+	scanner.Split(split)
+
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		index, record, err := protocol.SplitRecord(line)

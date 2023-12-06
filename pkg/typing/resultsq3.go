@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"io"
-	"strconv"
+	"strings"
 )
 
 const resultQ3Field = "3"
@@ -49,7 +50,7 @@ func ResultQ3Unmarshal(r *bytes.Reader) ([]string, error) {
 	if err == nil {
 		var duration uint32
 		err = binary.Read(r, binary.LittleEndian, &duration)
-		record[4] = strconv.Itoa(int(duration))
+		record[4] = StringIso8601(duration)
 	}
 
 	if err == nil {
@@ -57,4 +58,26 @@ func ResultQ3Unmarshal(r *bytes.Reader) ([]string, error) {
 	}
 
 	return record, err
+}
+
+func StringIso8601(minutes uint32) string {
+	hours := minutes / 60
+	minutes -= hours * 60
+	days := hours / 24
+	hours -= days * 24
+
+	var b strings.Builder
+	b.WriteByte('P')
+	if days > 0 {
+		fmt.Fprintf(&b, "%dD", days)
+	}
+	b.WriteByte('T')
+	if hours > 0 {
+		fmt.Fprintf(&b, "%dH", hours)
+	}
+	if minutes > 0 {
+		fmt.Fprintf(&b, "%dM", minutes)
+	}
+
+	return b.String()
 }

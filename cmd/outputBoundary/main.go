@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"path/filepath"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -107,7 +108,10 @@ func main() {
 
 			defer conn.Close()
 			id, progress, err := connection.ReceiveState(conn)
-			workdir := hex.EncodeToString([]byte(id))
+			if err != nil {
+				log.Fatal(err)
+			}
+			workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
 			gateway, err := common.NewGateway(middleware, workdir)
 			if err != nil {
 				log.Error(err)

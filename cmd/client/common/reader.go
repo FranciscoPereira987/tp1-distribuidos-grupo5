@@ -52,7 +52,7 @@ func (rr *ResultsReader) Close() error {
 	return errors.Join(errs...)
 }
 
-func (rr *ResultsReader) ReadResults(r io.Reader) error {
+func (rr *ResultsReader) ReadResults(r io.Reader) (progress int, err error) {
 	scanner := bufio.NewScanner(r)
 
 	// Create a custom split function by wrapping the existing ScanLines
@@ -67,20 +67,21 @@ func (rr *ResultsReader) ReadResults(r io.Reader) error {
 		index, record, err := protocol.SplitRecord(line)
 		if err != nil {
 			if err == io.EOF {
-				return nil
+				err = nil
 			}
-			return err
+			return progress, err
 		}
 		log.Infof("query: %d | value: %s", index, record)
 		// Add back the newline removed by the scanner
 		record = append(record, '\n')
 		if _, err := rr.bws[index-1].Write(record); err != nil {
-			return err
+			return progress, err
 		}
+		progress++
 	}
 
 	if err := scanner.Err(); err != nil {
-		return err
+		return progress, err
 	}
-	return fmt.Errorf("%w reading results", io.ErrUnexpectedEOF)
+	return progress, fmt.Errorf("%w reading results", io.ErrUnexpectedEOF)
 }

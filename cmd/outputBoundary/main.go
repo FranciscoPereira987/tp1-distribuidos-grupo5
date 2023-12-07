@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"sync"
@@ -105,8 +106,9 @@ func main() {
 			defer cancel()
 
 			defer conn.Close()
-			id, err := connection.ReceiveId(conn)
-			gateway := common.NewGateway(middleware)
+			id, progress, err := connection.ReceiveState(conn)
+			workdir := hex.EncodeToString([]byte(id))
+			gateway, err := common.NewGateway(middleware, workdir)
 			if err != nil {
 				log.Error(err)
 				return
@@ -127,7 +129,7 @@ func main() {
 				delete(resultsChs, id)
 				mtx.Unlock()
 			}
-			if err := gateway.Run(ctx, conn, ch); err != nil {
+			if err := gateway.Run(ctx, conn, ch, progress); err != nil {
 				log.Error(err)
 			}
 		}(conn)

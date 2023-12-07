@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"encoding/hex"
 	"net"
 
 	log "github.com/sirupsen/logrus"
@@ -11,6 +13,7 @@ import (
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/beater"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/connection"
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/utils"
 )
 
@@ -79,15 +82,37 @@ func main() {
 			defer cancel()
 
 			defer conn.Close()
-			id, err := connection.Accept(conn)
+			reconnecting, id, err := connection.Accept(conn)
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			gateway := common.NewGateway(middleware, id, coords, flights)
-			if err := gateway.Run(ctx, conn, demuxers); err != nil {
-				log.Error(err)
+			workdir := hex.EncodeToString([]byte(id))
+			sm := state.NewStateManager(workdir)
+			if reconnecting {
+				sm.RecoverState()
+				offset, err := sm.GetInt64("offset")
+				switch {
+				case err == nil:
+				case errors.Is(err, state.ErrNotFound):
+					offset = -2
+				default:
+					log.Fatal(err)
+				}
+				if err := connection.SendState(conn, offset); err != nil {
+					log.Error(err)
+					return
+				}
 			}
+			gateway, err := common.NewGateway(middleware, id, coords, flights, workdir, sm)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer gateway.Close()
+			if err := gateway.Run(ctx, conn, demuxers); err != nil {
+				log.Fatal(err)
+			}
+			connection.Done(conn)
 		}(conn)
 	}
 

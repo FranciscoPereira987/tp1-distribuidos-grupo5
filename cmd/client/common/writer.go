@@ -19,13 +19,18 @@ func NewDataWriter(coords, flights *os.File) DataWriter {
 	}
 }
 
-func (dw DataWriter) WriteData(data io.Writer) error {
+func (dw DataWriter) WriteData(data io.Writer, offset int64) error {
 	bw := bufio.NewWriter(data)
+	if offset >= -1 {
+		goto writeFlights
+	}
 
-	if err := protocol.WriteFile(bw, dw.coords); err != nil {
+	if err := protocol.WriteFile(bw, dw.coords, -1); err != nil {
 		return err
 	}
-	if err := protocol.WriteFile(bw, dw.flights); err != nil {
+
+writeFlights:
+	if err := protocol.WriteFile(bw, dw.flights, offset); err != nil {
 		return err
 	}
 

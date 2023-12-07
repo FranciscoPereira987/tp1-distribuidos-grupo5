@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"net"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -37,17 +39,8 @@ func main() {
 
 	ctx := utils.WithSignal(parentCtx)
 
-	data, err := connection.Dial(ctx, v.GetString("server.input"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer data.Close()
-
-	results, err := connection.Dial(ctx, v.GetString("server.output"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer results.Close()
+	input := v.GetString("server.input")
+	output := v.GetString("server.output")
 
 	writer := common.NewDataWriter(coords, flights)
 	reader, err := common.NewResultsReader(v.GetString("results.dir"), v.GetStringSlice("results.files"))
@@ -55,34 +48,122 @@ func main() {
 		log.Fatal(err)
 	}
 
-	id, err := connection.ConnectInput(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := connection.ConnectOutput(results, id); err != nil {
-		log.Fatal(err)
-	}
-
+	idChan := make(chan string, 1)
 	go func() {
-		if err := writer.WriteData(data); err != nil {
+		var (
+			data net.Conn
+			id string
+		)
+
+		for {
 			select {
 			case <-ctx.Done():
+				return
 			default:
+			}
+			conn, err := connection.Dial(ctx, input)
+			if err != nil {
 				log.Error(err)
+				continue
+			}
+
+			id, err = connection.ConnectInput(conn)
+			if err == nil {
+				data = conn
+				idChan <- id
+				break
+			}
+			log.Error(err)
+			conn.Close()
+		}
+
+		offset := int64(-1)
+		for {
+			err := writer.WriteData(data, offset)
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			if err == nil {
+				err = connection.WaitDone(data)
+			}
+			switch {
+			case err == nil:
+				return
+			case errors.Is(err, net.ErrClosed):
+				log.Error(err)
+			default:
+				log.Fatal(err)
+			}
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				conn, err := connection.Dial(ctx, input)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
+
+				offset, err = connection.ReconnectInput(conn, id)
+				if err == nil {
+					data = conn
+					break
+				}
+				log.Error(err)
+				conn.Close()
 			}
 		}
+		data.Close()
 	}()
 
-	if err := reader.ReadResults(results); err != nil {
+	id := <- idChan
+	var (
+		results net.Conn
+		progress int
+	)
+
+resultLoop:
+	for {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			conn, err := connection.Dial(ctx, output)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			if err = connection.ConnectOutput(conn, id, progress); err == nil {
+				results = conn
+				break
+			}
+			log.Error(err)
+			conn.Close()
+		}
+		progress, err = reader.ReadResults(results)
 		select {
 		case <-ctx.Done():
+			return
 		default:
-			log.Error(err)
 		}
-	} else {
-		log.Info("finished reading results")
+		switch {
+		case err == nil:
+			log.Infof("finished reading results: %d records", progress)
+			break resultLoop
+		case errors.Is(err, net.ErrClosed):
+			log.Error(err)
+		default:
+			log.Fatal(err)
+		}
 	}
+
 	if err := reader.Close(); err != nil {
 		log.Error(err)
 	}

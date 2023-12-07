@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -45,18 +46,7 @@ func Listen(ctx context.Context, addr string) (<-chan net.Conn, error) {
 
 func Dial(ctx context.Context, addr string) (net.Conn, error) {
 	var d net.Dialer
-	conn, err := d.DialContext(ctx, "tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		<-ctx.Done()
-		log.Infof("closing connection to %s", addr)
-		conn.Close()
-	}()
-
-	return conn, nil
+	return d.DialContext(ctx, "tcp", addr)
 }
 
 const (
@@ -64,26 +54,46 @@ const (
 	reconnect
 )
 
-func Accept(conn net.Conn) (string, error) {
+func Accept(conn net.Conn) (bool, string, error) {
 	var buf [1]byte
-	if _, err := conn.Read(buf[:]); err != nil {
-		return "", err
+	_, err := conn.Read(buf[:])
+	if err != nil {
+		return false, "", err
 	}
 
+	var clientId []byte
 	switch v := buf[0]; v {
 	case hello:
+		clientId = id.Generate()
+		_, err = conn.Write(clientId)
 	case reconnect:
-		panic("Not implemented")
+		clientId = make([]byte, id.Len)
+		_, err = io.ReadFull(conn, clientId)
 	default:
-		return "", fmt.Errorf("%w: %q", ErrNotProto, v)
+		err = fmt.Errorf("%w: %q", ErrNotProto, v)
 	}
 
-	clientId := id.Generate()
-	if _, err := conn.Write(clientId); err != nil {
-		return "", err
+	return buf[0] == reconnect, string(clientId), err
+}
+
+func ReconnectInput(conn net.Conn, clientId string) (int64, error) {
+	send := [1+id.Len]byte{reconnect}
+	copy(send[1:], clientId)
+	if _, err := conn.Write(send[:]); err != nil {
+		return 0, err
 	}
 
-	return string(clientId), nil
+	var receive [8]byte
+	_, err := io.ReadFull(conn, receive[:])
+
+	return int64(binary.LittleEndian.Uint64(receive[:])), err
+}
+
+func SendState(conn net.Conn, offset int64) error {
+	var buf [8]byte
+	binary.LittleEndian.PutUint64(buf[:], uint64(offset))
+	_, err := conn.Write(buf[:])
+	return err
 }
 
 func ConnectInput(conn net.Conn) (string, error) {
@@ -91,17 +101,36 @@ func ConnectInput(conn net.Conn) (string, error) {
 		return "", err
 	}
 
-	return ReceiveId(conn)
-}
-
-func ConnectOutput(conn net.Conn, clientId string) error {
-	_, err := conn.Write([]byte(clientId))
-	return err
-}
-
-func ReceiveId(conn net.Conn) (string, error) {
 	var buf [id.Len]byte
 	_, err := io.ReadFull(conn, buf[:])
 
 	return string(buf[:]), err
+}
+
+func ConnectOutput(conn net.Conn, clientId string, progress int) error {
+	var buf [id.Len+8]byte
+	copy(buf[:], clientId)
+	binary.LittleEndian.PutUint64(buf[id.Len:], uint64(progress))
+	_, err := conn.Write(buf[:])
+	return err
+}
+
+func ReceiveState(conn net.Conn) (string, int, error) {
+	var buf [id.Len+8]byte
+	_, err := io.ReadFull(conn, buf[:])
+	progress := binary.LittleEndian.Uint64(buf[id.Len:])
+
+	return string(buf[:id.Len]), int(progress), err
+}
+
+func Done(conn net.Conn) error {
+	var ok [1]byte
+	_, err := conn.Write(ok[:])
+	return err
+}
+
+func WaitDone(conn net.Conn) error {
+	var ok [1]byte
+	_, err := conn.Read(ok[:])
+	return err
 }

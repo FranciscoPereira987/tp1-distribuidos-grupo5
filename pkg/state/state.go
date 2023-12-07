@@ -17,6 +17,7 @@ const StateFileName = "state.json"
 var (
 	ErrNotFound = errors.New("key not found")
 	ErrNotMap   = errors.New("object is not a map")
+	ErrNotSlice = errors.New("object is not a slice")
 	ErrNaN      = errors.New("object is not a number")
 )
 
@@ -137,6 +138,38 @@ func (sw *StateManager) GetMapStringInt64(keys ...string) (map[string]int64, err
 	return ret, nil
 }
 
+func (sw *StateManager) GetIntSlice(keys ...string) ([]int, error) {
+	m, err := getJsonMap(sw.State, keys[:len(keys)-1]...)
+	if err != nil {
+		return nil, err
+	}
+
+	v, ok := m[keys[len(keys)-1]]
+	if !ok {
+		key := strings.Join(keys, ".")
+		return nil, fmt.Errorf("%w: state[%s]", ErrNotFound, key)
+	}
+	slice, ok := v.([]any)
+	if !ok {
+		key := strings.Join(keys, ".")
+		return nil, fmt.Errorf("%w: state[%s]=%v", ErrNotSlice, key, v)
+	}
+	ret := make([]int, 0, len(slice))
+	for i, value := range slice {
+		v, ok := value.(json.Number)
+		if !ok {
+			key := strings.Join(keys, ".")
+			return nil, fmt.Errorf("%w: state[%s][%d]=%v", ErrNaN, key, i, v)
+		}
+		num, err := v.Int64()
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, int(num))
+	}
+	return ret, nil
+}
+
 func (sw *StateManager) Prepare() error {
 	buf, err := json.Marshal(sw.State)
 	if err != nil {
@@ -154,28 +187,27 @@ func (sw StateManager) Commit() error {
 }
 
 func (sw *StateManager) DumpState() error {
-	err := sw.Prepare()
-	if err == nil {
-		err = sw.Commit()
+	if err := sw.Prepare(); err != nil {
+		return err
+	}
+
+	return sw.Commit()
+}
+
+func (sw *StateManager) RecoverState() error {
+	file, err := os.Open(sw.Filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	dec := json.NewDecoder(file)
+	dec.UseNumber()
+	if err = dec.Decode(&sw.State); err == nil {
+		log.Infof("recovered state: %v", sw.State)
 	}
 
 	return err
-}
-
-func (sw *StateManager) RecoverState() (err error) {
-	var file *os.File
-	file, err = os.Open(sw.Filename)
-
-	if err == nil {
-		defer file.Close()
-		dec := json.NewDecoder(file)
-		dec.UseNumber()
-		if err = dec.Decode(&sw.State); err == nil {
-			log.Infof("recovered state: %v", sw.State)
-		}
-	}
-
-	return
 }
 
 type recovered struct {

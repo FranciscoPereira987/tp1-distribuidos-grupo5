@@ -251,6 +251,8 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			continue
 		}
 		if i--; i <= 0 {
+			h.MessageId++
+			h.AddToState(g.stateMan.State)
 			key := rr.NextKey(g.flights)
 			if err = g.Prepare(r, rr, lastOffset); err != nil {
 				return err
@@ -263,7 +265,6 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			}
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
 			b = bytes.NewBufferString(g.id)
-			h.MessageId++
 			h.Marshal(b)
 		}
 	}

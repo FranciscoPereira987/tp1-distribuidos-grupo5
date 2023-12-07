@@ -61,7 +61,7 @@ func (t *Backoff) Backoff() {
 	if *t == 0 {
 		*t = Backoff(time.Second)
 	} else {
-		*t = Backoff(time.Duration(*t) * 2)
+		*t = Backoff(max(time.Duration(*t) * 2, time.Second * 15))
 	}
 }
 

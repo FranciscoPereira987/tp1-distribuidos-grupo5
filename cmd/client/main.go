@@ -116,7 +116,7 @@ func main() {
 			case errors.Is(err, syscall.ECONNRESET):
 			case errors.Is(err, syscall.EPIPE):
 			default:
-				log.Fatal(err)
+				log.Fatal("writing data", err)
 			}
 			log.Error(err)
 		}
@@ -147,7 +147,8 @@ resultLoop:
 			log.Error(err)
 			conn.Close()
 		}
-		progress, err = reader.ReadResults(*results)
+		recordsRead, err := reader.ReadResults(*results)
+		progress += recordsRead
 		select {
 		case <-ctx.Done():
 			return
@@ -159,7 +160,7 @@ resultLoop:
 			break resultLoop
 		case errors.Is(err, io.ErrUnexpectedEOF):
 		default:
-			log.Fatal(err)
+			log.Fatal("reading results", err)
 		}
 		log.Error(err)
 	}

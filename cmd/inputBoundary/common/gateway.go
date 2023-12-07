@@ -78,7 +78,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 		if offset > 0 {
 			lastOffset = offset
 		}
-		flightsReader = protocol.ExactReader{R: r, N: size}
+		flightsReader = protocol.ExactReader{R: r, N: size - offset}
 		goto sendFlights
 	case SendFlightsEof:
 		goto sendFlightsEof

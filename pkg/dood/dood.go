@@ -16,7 +16,7 @@ type DooD struct {
 
 func NewDockerClient(host string) (*DooD, error) {
 	dood := new(DooD)
-	cli, err := client.NewClientWithOpts(client.WithHost(host))
+	cli, err := client.NewClientWithOpts(client.WithHost(host), client.WithAPIVersionNegotiation())
 	if err == nil {
 		ctx, cancel := context.WithCancel(context.Background())
 		dood.cli = cli

@@ -118,8 +118,8 @@ func NewClientChecker(outbound chan *net.UDPAddr, revive chan string, toCheck ..
 }
 
 func (cc *clientChecker) RunChecker(group *sync.WaitGroup) {
+	group.Add(1)
 	go func() {
-		group.Add(1)
 	loop:
 		for {
 			select {
@@ -167,7 +167,6 @@ func (t *timer) resolveAddr() (addr *net.UDPAddr, resolved bool) {
 func (t *timer) executeTimer(outbound chan<- *net.UDPAddr, inbound <-chan bool, shutdown chan struct{}) (ok bool) {
 	clientAddr, resolved := t.resolveAddr()
 	if !resolved {
-		logrus.Info("Getting out through here")
 		return resolved
 	}
 	select {

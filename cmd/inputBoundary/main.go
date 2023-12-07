@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -87,7 +88,7 @@ func main() {
 				log.Error(err)
 				return
 			}
-			workdir := hex.EncodeToString([]byte(id))
+			workdir := filepath.Join("clients", hex.EncodeToString([]byte(id)))
 			sm := state.NewStateManager(workdir)
 			if reconnecting {
 				sm.RecoverState()

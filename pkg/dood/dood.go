@@ -2,6 +2,7 @@ package dood
 
 import (
 	"context"
+	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -40,9 +41,10 @@ func NewDockerClientDefault() (*DooD, error) {
 Returns a channel throught which container names can be sent to restart them
 Once the channel is closed, the context for the DooD is canceled and resources freed
 */
-func (dood *DooD) StartIncoming() (chan string, chan struct{}) {
+func (dood *DooD) StartIncoming(group *sync.WaitGroup) (chan string, chan struct{}) {
 	channel := make(chan string, 1)
 	closeChan := make(chan struct{})
+	group.Add(1)
 	go func() {
 	loop:
 		for {
@@ -57,6 +59,7 @@ func (dood *DooD) StartIncoming() (chan string, chan struct{}) {
 		}
 		logrus.Info("action: docker server | status: ending")
 		dood.cancel()
+		group.Done()
 	}()
 	return channel, closeChan
 }

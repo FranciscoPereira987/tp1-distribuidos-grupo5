@@ -12,6 +12,6 @@ server:
   url: "amqp://guest:guest@rabbitmq:5672/"
 
 log:
-  level: "error"
+  level: "info"
 
 beater_port: 9000

@@ -323,7 +323,7 @@ loop:
 }
 
 func (b *BeaterServer) run(port string) (err error) {
-	dockerChan, closeDockerChan := b.dood.StartIncoming()
+	dockerChan, closeDockerChan := b.dood.StartIncoming(b.wg)
 	checker, timersChan := b.initiateTimers(port, dockerChan)
 	checker.RunChecker(b.wg)
 	readerCloseChan := make(chan struct{}, 1)
@@ -331,10 +331,6 @@ func (b *BeaterServer) run(port string) (err error) {
 	writerCloseChan := make(chan struct{}, 1)
 	go b.writeRoutine(timersChan, writerCloseChan)
 	shutdown := make(chan struct{}, 1)
-	defer close(shutdown)
-	defer close(dockerChan)
-	defer close(readerChan)
-	defer close(timersChan)
 	b.shutdown = shutdown
 	b.running = true
 loop:

@@ -159,6 +159,7 @@ func (t *timer) resolveAddr() (addr *net.UDPAddr, resolved bool) {
 	resolved = true
 	addr, err := net.ResolveUDPAddr("udp", t.clientAddr)
 	if err != nil {
+		logrus.Errorf("could not resolve: %s, %s", t.Name, t.clientAddr)
 		resolved = false
 	}
 	return
@@ -247,23 +248,32 @@ func (b *BeaterServer) initiateTimers(port string, dockerChan chan string) (*cli
 /*
 Initiates socket reading routine
 */
-func (b *BeaterServer) initiateReader(close <-chan struct{}) chan []byte {
+func (b *BeaterServer) initiateReader(closeChan <-chan struct{}) chan []byte {
 	readerChan := make(chan []byte, 1)
 	b.wg.Add(1)
 	go func() {
-		var err error
-		for err == nil {
-			beat, _, err_read := utils.SafeReadFrom(b.sckt)
-			err = err_read
-			if err == nil {
-				select {
-				case <-close:
-					logrus.Info("action: reader | status: ending")
-					b.wg.Done()
-					return
-				case readerChan <- beat:
+		errChan := make(chan error, 1)
+
+		go func() {
+			var err error
+			defer close(errChan)
+			defer close(readerChan)
+			for err == nil {
+				beat, _, err_read := utils.SafeReadFrom(b.sckt)
+				err = err_read
+				if err == nil {
+					readerChan <- beat
 				}
 			}
+			errChan <- err
+		}()
+
+		select {
+		case <-closeChan:
+			logrus.Info("action: reader | status: ending")
+		case err := <-errChan:
+			logrus.Errorf("action: reader | status: failed | reason: %s", err)
+
 		}
 		logrus.Info("action: reader | status: ending")
 		b.wg.Done()

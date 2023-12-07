@@ -54,18 +54,21 @@ func (st *BeaterClient) read() (err error) {
 func (st *BeaterClient) run() error {
 	var err error
 	ch := make(chan error, 1)
-	defer close(ch)
-	for err == nil {
-		go func() {
-			ch <- st.read()
-		}()
-		select {
-		case <-st.stopChan:
-			<-ch
-			return nil
-		case err = <-ch:
+
+	go func() {
+		defer close(ch)
+		var err error
+		for err == nil {
+			err = st.read()
 		}
+		ch <- err
+	}()
+	select {
+	case <-st.stopChan:
+		return nil
+	case err = <-ch:
 	}
+
 	return err
 }
 

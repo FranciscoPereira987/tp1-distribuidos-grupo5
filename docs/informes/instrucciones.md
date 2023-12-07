@@ -42,3 +42,9 @@ Para ejecutar el sistema es necesario correr los siguientes comandos:
         make run-client
     ```
     - Este comando ejecuta el cliente
+
+5. En caso de querer probar la tolerancia a fallos del sistema, se debe ejecutar el siguiente comando con la terminal sobre el root del proyecto:
+
+```bash
+    ./bin/maniac.bash
+```

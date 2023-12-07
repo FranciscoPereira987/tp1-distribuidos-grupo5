@@ -113,6 +113,7 @@ func main() {
 				log.Error(err)
 				return
 			}
+			defer gateway.Close()
 			mtx.Lock()
 			resultsCh, ok := resultsChs[id]
 			if !ok {

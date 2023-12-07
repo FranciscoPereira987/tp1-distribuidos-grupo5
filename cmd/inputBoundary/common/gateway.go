@@ -14,14 +14,14 @@ import (
 
 	mid "github.com/franciscopereira987/tp1-distribuidos/pkg/middleware"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/protocol"
-	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/state"
+	"github.com/franciscopereira987/tp1-distribuidos/pkg/typing"
 )
 
 const workerId = "input"
 
 const (
-	_ = iota
+	_              = iota
 	SentCoords     // No EOF yet
 	SentCoordsEof  // after coords EOF
 	SendFlights    // after reading file size
@@ -57,8 +57,8 @@ func (g *Gateway) Close() error {
 func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 	var (
 		flightsReader protocol.ExactReader
-		lastOffset int64
-		err error
+		lastOffset    int64
+		err           error
 	)
 	r := bufio.NewReader(in)
 	switch step, _ := g.stateMan.GetInt("step"); step {

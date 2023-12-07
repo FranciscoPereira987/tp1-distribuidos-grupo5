@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/franciscopereira987/tp1-distribuidos/pkg/middleware/id"
 	log "github.com/sirupsen/logrus"
@@ -46,7 +47,26 @@ func Listen(ctx context.Context, addr string) (<-chan net.Conn, error) {
 
 func Dial(ctx context.Context, addr string) (net.Conn, error) {
 	var d net.Dialer
+	d.Timeout = 10 * time.Second
 	return d.DialContext(ctx, "tcp", addr)
+}
+
+type Backoff time.Duration
+
+func NewBackoff() Backoff {
+	return Backoff(0)
+}
+
+func (t *Backoff) Backoff() {
+	if *t == 0 {
+		*t = Backoff(time.Second)
+	} else {
+		*t = Backoff(time.Duration(*t) * 2)
+	}
+}
+
+func (t Backoff) Wait() <-chan time.Time {
+	return time.After(time.Duration(t))
 }
 
 const (
@@ -77,7 +97,7 @@ func Accept(conn net.Conn) (bool, string, error) {
 }
 
 func ReconnectInput(conn net.Conn, clientId string) (int64, error) {
-	send := [1+id.Len]byte{reconnect}
+	send := [1 + id.Len]byte{reconnect}
 	copy(send[1:], clientId)
 	if _, err := conn.Write(send[:]); err != nil {
 		return 0, err
@@ -108,7 +128,7 @@ func ConnectInput(conn net.Conn) (string, error) {
 }
 
 func ConnectOutput(conn net.Conn, clientId string, progress int) error {
-	var buf [id.Len+8]byte
+	var buf [id.Len + 8]byte
 	copy(buf[:], clientId)
 	binary.LittleEndian.PutUint64(buf[id.Len:], uint64(progress))
 	_, err := conn.Write(buf[:])
@@ -116,7 +136,7 @@ func ConnectOutput(conn net.Conn, clientId string, progress int) error {
 }
 
 func ReceiveState(conn net.Conn) (string, int, error) {
-	var buf [id.Len+8]byte
+	var buf [id.Len + 8]byte
 	_, err := io.ReadFull(conn, buf[:])
 	progress := binary.LittleEndian.Uint64(buf[id.Len:])
 

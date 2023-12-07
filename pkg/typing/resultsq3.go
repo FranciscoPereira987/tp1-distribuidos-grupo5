@@ -73,10 +73,10 @@ func StringIso8601(minutes uint32) string {
 	}
 	b.WriteByte('T')
 	if hours > 0 {
-		fmt.Fprintf(&b, "%dH", days)
+		fmt.Fprintf(&b, "%dH", hours)
 	}
 	if minutes > 0 {
-		fmt.Fprintf(&b, "%dM", days)
+		fmt.Fprintf(&b, "%dM", minutes)
 	}
 
 	return b.String()

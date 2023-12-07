@@ -80,8 +80,5 @@ func (rr *ResultsReader) ReadResults(r io.Reader) (progress int, err error) {
 		progress++
 	}
 
-	if err := scanner.Err(); err != nil {
-		return progress, err
-	}
 	return progress, fmt.Errorf("%w reading results", io.ErrUnexpectedEOF)
 }

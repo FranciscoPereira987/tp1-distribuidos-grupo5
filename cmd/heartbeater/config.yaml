@@ -7,19 +7,23 @@ heartbeat_port: 9000
 #All peers, including self
 peers:
   prefix: peer
-  count: 3
+  # count: 3
 
 #All containers to be monitored
 containers:
+  input:
+    prefix: input
+  output:
+    prefix: output
   demux:
     prefix: demux_filter
-    count: 1
+    # count: x
   distance:
     prefix: distance_filter
-    count: 1
+    # count: y
   fastest:
     prefix: fastest_filter
-    count: 1
+    # count: z
   average:
     prefix: avg_filter
-    count: 1
+    # count: w

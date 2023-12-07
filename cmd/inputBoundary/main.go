@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"encoding/hex"
+	"errors"
 	"net"
 
 	log "github.com/sirupsen/logrus"

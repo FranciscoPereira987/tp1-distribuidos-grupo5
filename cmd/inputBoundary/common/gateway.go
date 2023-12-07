@@ -262,7 +262,7 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			if err = g.stateMan.Commit(); err != nil {
 				return err
 			}
-			i = mid.MaxMessageSize / typing.AirportCoordsSize
+			i = mid.MaxMessageSize / typing.FlightSize
 			b = bytes.NewBufferString(g.id)
 			h.Marshal(b)
 		}

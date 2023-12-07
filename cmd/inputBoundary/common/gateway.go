@@ -189,10 +189,9 @@ func (g *Gateway) SendCoordsEof(ctx context.Context) error {
 func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int, lastOffset int64) error {
 	var r *csv.Reader
 	indices, err := g.stateMan.GetIntSlice("indices")
-	switch {
-	case err == nil:
+	if err == nil {
 		r = csv.NewReader(in)
-	case errors.Is(err, state.ErrNotFound):
+	} else if errors.Is(err, state.ErrNotFound) {
 		r, indices, err = protocol.NewCsvReader(in, ',', typing.FlightFields)
 	}
 	if err != nil {

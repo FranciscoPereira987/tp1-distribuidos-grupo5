@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"net"
 	"os"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 
@@ -52,20 +54,21 @@ func main() {
 	go func() {
 		var (
 			data net.Conn
-			id string
+			id   string
 		)
 
-		for {
+		for timer := connection.NewBackoff(); ; timer.Backoff() {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-timer.Wait():
 			}
 			conn, err := connection.Dial(ctx, input)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
+			input = conn.RemoteAddr().String()
 
 			id, err = connection.ConnectInput(conn)
 			if err == nil {
@@ -91,16 +94,16 @@ func main() {
 			switch {
 			case err == nil:
 				return
-			case errors.Is(err, net.ErrClosed):
-				log.Error(err)
+			case errors.Is(err, syscall.ECONNRESET):
 			default:
 				log.Fatal(err)
 			}
-			for {
+			log.Error(err)
+			for timer := connection.NewBackoff(); ; timer.Backoff() {
 				select {
 				case <-ctx.Done():
 					return
-				default:
+				case <-timer.Wait():
 				}
 				conn, err := connection.Dial(ctx, input)
 				if err != nil {
@@ -120,25 +123,26 @@ func main() {
 		data.Close()
 	}()
 
-	id := <- idChan
+	id := <-idChan
 	var (
-		results net.Conn
+		results  net.Conn
 		progress int
 	)
 
 resultLoop:
 	for {
-		for {
+		for timer := connection.NewBackoff(); ; timer.Backoff() {
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-timer.Wait():
 			}
 			conn, err := connection.Dial(ctx, output)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
+			output = conn.RemoteAddr().String()
 
 			if err = connection.ConnectOutput(conn, id, progress); err == nil {
 				results = conn
@@ -157,11 +161,11 @@ resultLoop:
 		case err == nil:
 			log.Infof("finished reading results: %d records", progress)
 			break resultLoop
-		case errors.Is(err, net.ErrClosed):
-			log.Error(err)
+		case errors.Is(err, io.ErrUnexpectedEOF):
 		default:
 			log.Fatal(err)
 		}
+		log.Error(err)
 	}
 
 	if err := reader.Close(); err != nil {

@@ -32,10 +32,14 @@ func parseConfig(v *viper.Viper) (config *invitation.Config, err error) {
 	}
 
 	vContainers := v.Sub("containers")
-	for _, worker := range []string{"demux", "distance", "fastest", "average"} {
+	for _, worker := range []string{"input", "output", "demux", "distance", "fastest", "average"} {
 		vWorker := vContainers.Sub(worker)
 		workerPrefix := vWorker.GetString("prefix")
-		for suffix := vWorker.GetUint("count"); suffix > 0; suffix-- {
+		suffix := vWorker.GetUint("count")
+		if suffix == 0 {
+			config.Names = append(config.Names, workerPrefix)
+		}
+		for ; suffix > 0; suffix-- {
 			containerName := fmt.Sprintf("%s%d", workerPrefix, suffix)
 			config.Names = append(config.Names, containerName)
 		}

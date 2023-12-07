@@ -60,12 +60,10 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 		}
 	}
 	w := csv.NewWriter(out)
-	recordsWritten, err := g.stateMan.GetInt("records")
 	records := make([][]string, 0, 64)
-	if err != nil {
-		if !errors.Is(err, state.ErrNotFound) {
-			return err
-		}
+	recordsWritten, err := g.stateMan.GetInt("records")
+	if err != nil && !errors.Is(err, state.ErrNotFound) {
+		return err
 	}
 
 	switch step, _ := g.stateMan.GetInt("step"); step {
@@ -88,6 +86,7 @@ func (g *Gateway) Run(ctx context.Context, out io.Writer, ch <-chan mid.Delivery
 		return fmt.Errorf("failed to commit state to write results: %w", err)
 	}
 
+	progress = recordsWritten
 writingResults:
 	progress -= recordsWritten
 	for d := range ch {

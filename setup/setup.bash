@@ -171,6 +171,7 @@ networks:
       config:
         - subnet: 172.25.125.0/24'
 
+mkdir -p bin
 sed "
 s/%I/${INTERVAL:-10s}/
 s/%V/${VICTIMS:-$(((HB+Q1+Q2+Q3+Q4)/2))}/

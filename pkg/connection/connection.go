@@ -46,8 +46,9 @@ func Listen(ctx context.Context, addr string) (<-chan net.Conn, error) {
 }
 
 func Dial(ctx context.Context, addr string) (net.Conn, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
 	var d net.Dialer
-	d.Timeout = 10 * time.Second
 	return d.DialContext(ctx, "tcp", addr)
 }
 
@@ -61,7 +62,7 @@ func (t *Backoff) Backoff() {
 	if *t == 0 {
 		*t = Backoff(time.Second)
 	} else {
-		*t = Backoff(min(time.Duration(*t) * 2, time.Second * 15))
+		*t = Backoff(min(time.Duration(*t)*2, time.Second*15))
 	}
 }
 

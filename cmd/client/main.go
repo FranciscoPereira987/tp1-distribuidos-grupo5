@@ -77,7 +77,7 @@ func main() {
 			conn.Close()
 		}
 
-		offset := int64(-1)
+		offset := int64(-2)
 		for {
 			err := writer.WriteData(data, offset)
 			select {

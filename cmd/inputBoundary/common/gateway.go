@@ -24,7 +24,8 @@ const (
 	_ = iota
 	SentCoords     // No EOF yet
 	SentCoordsEof  // after coords EOF
-	SendingFlights // after reading file size
+	SendFlights    // after reading file size
+	SendFlightsEof // after sending flights
 )
 
 type Gateway struct {
@@ -65,7 +66,7 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 		goto coordsEof
 	case SentCoordsEof:
 		goto sentCoordsEof
-	case SendingFlights:
+	case SendFlights:
 		offset, err := g.stateMan.GetInt64("offset")
 		if err != nil {
 			return err
@@ -78,7 +79,9 @@ func (g *Gateway) Run(ctx context.Context, in io.Reader, demuxers int) error {
 			lastOffset = offset
 		}
 		flightsReader = protocol.ExactReader{R: r, N: size}
-		goto sendingFlights
+		goto sendFlights
+	case SendFlightsEof:
+		goto sendFlightsEof
 	}
 
 	if err := g.SendCoords(ctx, r); err != nil {
@@ -94,16 +97,18 @@ sentCoordsEof:
 	if flightsReader, err = protocol.NewFileReader(r); err != nil {
 		return err
 	}
-	g.stateMan.State["step"] = SendingFlights
+	g.stateMan.State["step"] = SendFlights
 	g.stateMan.State["flights-size"] = flightsReader.N
 	g.stateMan.State["offset"] = -1
 	if err := g.stateMan.DumpState(); err != nil {
 		return fmt.Errorf("failed to dump state for sending flights", err)
 	}
-sendingFlights:
+sendFlights:
 	if err := g.ForwardFlights(ctx, &flightsReader, demuxers, lastOffset); err != nil {
 		return err
 	}
+
+sendFlightsEof:
 	return g.m.EOF(ctx, g.flights, workerId, g.id)
 }
 
@@ -194,27 +199,44 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 		return err
 	}
 	g.stateMan.State["indices"] = indices
-	if err = g.Prepare(r, lastOffset); err != nil {
-		return err
-	}
-
 	rr, err := mid.RoundRobinFromState(g.stateMan, mid.KeyGenerator(demuxers))
 	if err != nil {
 		return err
 	}
+	if err = g.Prepare(r, rr, lastOffset); err != nil {
+		return err
+	}
+	if err = g.stateMan.Commit(); err != nil {
+		return err
+	}
+
 	var bc mid.BasicConfirmer
 	i := mid.MaxMessageSize / typing.FlightSize
 	b := bytes.NewBufferString(g.id)
-	h := typing.NewHeader("input", 0)
+	h, err := typing.RecoverHeader(g.stateMan, workerId)
+	if err != nil {
+		return err
+	}
 	h.Marshal(b)
 	for {
 		record, err := r.Read()
 		if err != nil {
 			if err == io.EOF {
+				rr.RemoveFromState(g.stateMan)
+				g.stateMan.Remove("indices")
+				g.stateMan.Remove("offset")
+				g.stateMan.Remove("flights-size")
+				g.stateMan.State["step"] = SendFlightsEof
+				if err := g.stateMan.Prepare(); err != nil {
+					return err
+				}
 				if i != mid.MaxMessageSize/typing.FlightSize {
 					err = bc.Publish(ctx, g.m, "", rr.NextKey(g.flights), b.Bytes())
 				} else {
 					err = nil
+				}
+				if err := g.stateMan.Commit(); err != nil {
+					return err
 				}
 			}
 			return err
@@ -229,7 +251,14 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 			continue
 		}
 		if i--; i <= 0 {
-			if err := bc.Publish(ctx, g.m, "", rr.NextKey(g.flights), b.Bytes()); err != nil {
+			key := rr.NextKey(g.flights)
+			if err = g.Prepare(r, rr, lastOffset); err != nil {
+				return err
+			}
+			if err := bc.Publish(ctx, g.m, "", key, b.Bytes()); err != nil {
+				return err
+			}
+			if err = g.stateMan.Commit(); err != nil {
 				return err
 			}
 			i = mid.MaxMessageSize / typing.AirportCoordsSize
@@ -240,7 +269,8 @@ func (g *Gateway) ForwardFlights(ctx context.Context, in io.Reader, demuxers int
 	}
 }
 
-func (g *Gateway) Prepare(r *csv.Reader, lastOffset int64) error {
+func (g *Gateway) Prepare(r *csv.Reader, rr mid.RoundRobinKeysGenerator, lastOffset int64) error {
+	rr.AddToState(g.stateMan)
 	g.stateMan.State["offset"] = r.InputOffset() + lastOffset
 	return g.stateMan.Prepare()
 }

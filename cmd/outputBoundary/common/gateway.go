@@ -109,6 +109,7 @@ writingResults:
 		}
 		recordsWritten += len(records)
 		g.stateMan.State["records"] = recordsWritten
+		g.filter.AddToState(g.stateMan)
 		if err := g.stateMan.Prepare(); err != nil {
 			return err
 		}

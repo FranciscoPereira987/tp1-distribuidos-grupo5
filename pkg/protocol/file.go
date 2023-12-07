@@ -56,20 +56,24 @@ func (bs *BomSkipper) Seek(offset int64, whence int) (ret int64, err error) {
 func WriteFile(w io.Writer, f *os.File, offset int64) error {
 	bs, err := NewBomSkipper(f)
 	if err != nil {
-		return err
+		return fmt.Errorf("WriteFile - bom skipper: %w", err)
 	}
 
 	switch {
 	case offset < 0:
 		if err := binary.Write(w, binary.LittleEndian, bs.Size); err != nil {
-			return err
+			return fmt.Errorf("WriteFile - binary.Write: %w", err)
 		}
 	case offset > 0:
-		bs.Seek(offset, 0)
+		if _, err := bs.Seek(offset, 0); err != nil {
+			return fmt.Errorf("WriteFile - Seek: %w", err)
+		}
 	}
 
-	_, err = io.Copy(w, bs)
-	return err
+	if _, err = io.Copy(w, bs); err != nil {
+		return fmt.Errorf("WriteFile - Copy: %w", err)
+	}
+	return nil
 }
 
 type ExactReader struct {

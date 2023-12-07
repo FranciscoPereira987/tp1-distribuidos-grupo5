@@ -46,9 +46,10 @@ func Listen(ctx context.Context, addr string) (<-chan net.Conn, error) {
 }
 
 func Dial(ctx context.Context, addr string) (net.Conn, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
-	defer cancel()
 	var d net.Dialer
+	d.Timeout = time.Second * 5
+	ctx, cancel := context.WithTimeout(ctx, d.Timeout)
+	defer cancel()
 	return d.DialContext(ctx, "tcp", addr)
 }
 

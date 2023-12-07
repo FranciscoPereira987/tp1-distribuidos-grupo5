@@ -310,6 +310,9 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 		return err
 	}
 
+	if _, err := os.Stat(filepath.Join(Workdir, "ready")); err == nil {
+		return nil
+	}
 	workersReady := make(map[string]bool)
 	for d := range msgs {
 		if workersReady != nil {
@@ -322,6 +325,9 @@ func (m *Middleware) WaitReady(ctx context.Context, name string, workers int) er
 			workersReady = nil
 		}
 		if workersReady == nil {
+			if err := os.WriteFile(filepath.Join(Workdir, "ready"), nil, 0640); err != nil {
+				return err
+			}
 			if err := d.Ack(true); err != nil {
 				return err
 			}
@@ -363,8 +369,7 @@ func (bc *BasicConfirmer) Publish(ctx context.Context, m *Middleware, exchange, 
 // which it consumes messages.
 func (m *Middleware) Ready(ctx context.Context, key, workerId string) error {
 	var bc BasicConfirmer
-	if f, err := os.Open(filepath.Join(Workdir, "ready")); err == nil {
-		f.Close()
+	if _, err := os.Stat(filepath.Join(Workdir, "ready")); err == nil {
 		return nil
 	}
 	if err := bc.Publish(ctx, m, "", key, []byte(workerId)); err != nil {

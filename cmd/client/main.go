@@ -113,10 +113,11 @@ func main() {
 			switch {
 			case err == nil:
 				return
+			case err == io.EOF:
 			case errors.Is(err, syscall.ECONNRESET):
 			case errors.Is(err, syscall.EPIPE):
 			default:
-				log.Fatal("writing data", err)
+				log.Fatal("writing data: ", err)
 			}
 			log.Error(err)
 		}
@@ -160,7 +161,7 @@ resultLoop:
 			break resultLoop
 		case errors.Is(err, io.ErrUnexpectedEOF):
 		default:
-			log.Fatal("reading results", err)
+			log.Fatal("reading results: ", err)
 		}
 		log.Error(err)
 	}

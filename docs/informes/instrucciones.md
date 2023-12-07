@@ -34,6 +34,39 @@ Para ejecutar el sistema es necesario correr los siguientes comandos:
         - Q4 $\longrightarrow$ Setea la cantidad de workers de filtro por promedio que tendra el sistema
         - HB $\longrightarrow$ Setea la cantidad de workers que ejecutan el control y el re-instanciamiento de contenedores caidos que tendra el sistema
     - Se debe asegurar que no existe un documento *docker-compose-dev.yaml* para que este comando pueda ejecutarse correctamente.
+3. Luego, asegurarse de que, en cmd/heartbeater/config.yaml esten configuradas las siguientes variables con los valores que se asignaron a *Q1, Q2, Q3, Q4 y HB*
+```yaml
+#Port to be used by the service
+net_port: 10000
+
+#Port used by the beater protocol
+heartbeat_port: 9000
+
+#All peers, including self
+peers:
+  prefix: peer
+  count: HB
+
+#All containers to be monitored
+containers:
+  input:
+    prefix: input
+  output:
+    prefix: output
+  demux:
+    prefix: demux_filter
+    count: Q1
+  distance:
+    prefix: distance_filter
+    count: Q2
+  fastest:
+    prefix: fastest_filter
+    count: Q3
+  average:
+    prefix: avg_filter
+    count: Q4
+```
+
 3. ```bash
         make docker-compose-up
     ```

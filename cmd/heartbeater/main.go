@@ -72,7 +72,6 @@ func invMain() {
 		case err := <-result:
 			logrus.Errorf("Invitation process ended with error: %s", err)
 			logrus.Info("action: re-starting beater | status: in-progress")
-			invitation.Shutdown()
 		case <-close:
 			logrus.Info("Action: recieved SIGTERM")
 			invitation.Shutdown()

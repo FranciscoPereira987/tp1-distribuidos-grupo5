@@ -108,6 +108,8 @@ func (st *Status) Run() (err error) {
 	}()
 	select {
 	case err = <-resultChan:
+		stopBeater(st.control)
+		st.dial.Close()
 		return
 	case <-st.stopChan:
 		logrus.Info("action: stopping invitation worker")

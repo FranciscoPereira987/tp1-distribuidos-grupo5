@@ -324,7 +324,11 @@ El diagrama muestra de forma general el funcionamiento logico del heartbeater, t
 
 ## Algoritmo de invitacion
 
-Para la eleccion de lider en los heartbeaters se utilizo el algoritmo de invitacion. Este algoritmo se elegio debido a que, en caso de crash de un peer, al ser este reinstanciado por el lider del grupo, no se tendra que volver a ejecutar una eleccion y simplemente el peer reinstanciado pasara a formar parte del grupo existente.
+Para la eleccion de lider en los heartbeaters se utilizo el algoritmo de
+invitacion. Este algoritmo se eligió debido a que, en caso de crash de un peer,
+al ser este reinstanciado por el lider del grupo, no se tendra que volver a
+ejecutar una eleccion y simplemente el peer reinstanciado pasara a formar parte
+del grupo existente.
 
 ### Pseudocodigo
 

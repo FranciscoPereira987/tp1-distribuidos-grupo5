@@ -1,3 +1,13 @@
+# Tolerancia a fallos
+
+Este documento, tiene los mismos contenidos que se pueden encontrar por separado en los siguientes archivos:
+
+- [Recuperacion de estado](docs/informes/stateRecovery.md)
+- [Filtrado de mensajes duplicados](docs/informes/duplicateFilter.md)
+- [Control de estado de workers](docs/informes/heartbeater.md)
+- [Eleccion de lider](docs/informes/leaderElection.md)
+
+
 ## Persistencia del estado 
 
 Para persistir el estado en los diferentes workers, se utiliza el metodo siguiente:
@@ -259,3 +269,154 @@ for MoreClients() {
 
 Este funcionamiento es similar al del demuxFilter, con la excepcion de que no tiene un finished state. En caso de reiniciarse el filtro luego de haber completado el envio de los resultados pero sin haber eliminado del archivo de estado, simplemente va a terminar su ejecucion
 
+## Filtrado de mensajes duplicados
+
+Una garantia que RabbitMQ provee que el sistema utiliza a su favor es que RabbitMQ se asegura que los mensajes se reencolan en orden.
+Esto permite que el algoritmo utilizado para filtrar duplicados sea el siguiente:
+
+```go
+
+func IsDuplicate(msg) bool {
+    return lastPeerSender[msg.SenderId] == msg.Id
+}
+
+func FilterDuplicate(msg) bool {
+    duplicate := IsDuplicate(msg)
+    lastPeerSender[msg.SenderId] = msg.Id
+    return duplicate
+}
+
+```
+
+Gracias a la garantia de Rabbit mencionada anteriormente, se puede determinar si un mensaje es o no duplicado si el mensaje es el mismo que el procesado anteriormente para ese sender en particular.
+
+El hecho de que se utilize la identidad del sender se debe a que cada filtro genera un Id incremental antes de enviar un mensaje a traves de Rabbit. Por esta razon, si no diferenciamos segun quien envio el mensaje, podriamos filtrar un mensaje que tenga igual Id a otro pero que sin embargo provenga de una fuente diferente al mensaje original.
+
+Es importante aclarar que el resto de los filtros deben persistir el estado del Filtro de duplicados, para que en caso de soportar un crash, no vuelvan a procesar un lote de datos que ya haya sido procesado por filtro y cuyo resultado pudo haber sido incluso persistido por el mismo.
+
+### Caso especial: FastestFilter
+
+El filtro por mas rapidos es un caso especial al momento de filtrar mensajes duplicados. Esto se debe a que este filtro en particular no tiene la necesidad de filtrar los mensajes debido a su propio proposito.
+El FastestFilter es un filtro idempotente frente a mensajes duplicados, por que a lo sumo reemplazara el valor de un vuelo mas rapido por su mismo valor. 
+
+## Control de estado de los workers (Heartbeater)
+
+
+### Diagrama C4 de capa 3
+
+![capa3Heartbeater](img/C4-Capa3-Heartbeater.png)
+
+El proceso de heartbeater se encarga, por un lado, de asegurarse que todos los workers se encuentren *vivos* y por otro de reiniciar a aquellos workers que se encuentren *muertos*. 
+Para llevar a cabo esta tarea, el heartbeater envia *Heartbeats* a los diferentes workers, recibiendo un *Ok* de parte de aquellos workers que se encuentren *vivos*.
+Al mismo, como coexisten multiples heartbeaters en el sistema, los mismos deben decidir cual de ellos es el *leader*. El lider cumple el rol antes descripto y los *members* se aseguran de que el lider continue vivo. 
+En caso de que los *members* consideren que el *leader* no se encuentra disponible, se eligira un nuevo lider.
+Los request que el heartbeater realiza para reinstanciar a otros contenedores, los realiza a traves de la API de docker.
+
+### Diagrama de actividades
+
+![ActividadesHeartbeater](img/ActividadesHeartbeat.png)
+
+El diagrama muestra de forma general el funcionamiento logico del heartbeater, tanto como ejecuta la eleccion de lider como su comportamiento segun sea o bien un lider o bien un cliente.
+
+- En caso de comportarse como cliente, el heartbeater se encarga de controlar el estado del lider y responder a sus controles.
+- En caso de comportase como lider, el heartbeater se encarga de responder los controles de los peers y controlar el estado de todos los contenedores del sistema, reinstanciandolos de ser necesario.
+
+
+## Algoritmo de invitacion
+
+Para la eleccion de lider en los heartbeaters se utilizo el algoritmo de invitacion. Este algoritmo se elegio debido a que, en caso de crash de un peer, al ser este reinstanciado por el lider del grupo, no se tendra que volver a ejecutar una eleccion y simplemente el peer reinstanciado pasara a formar parte del grupo existente.
+
+### Pseudocodigo
+
+```go
+    state := ELECTING
+    group := []
+    for {
+        switch state {
+            case ELECTING:
+                switch message {
+                    case INVITE:
+                        if message.groupSize >= len(group){
+                            send(ACCEPT to message.ID)
+                            state = MEMBER
+                            send(CHANGE to group members)
+                        }else{
+                            send(REJECT to message.ID)
+                        }
+                    case ACCEPT:
+                        addToGroup(message.members)
+                    case REJECT:
+                        if message.ID == IDPeerLastSend {
+                            send(ACCEPT to message.ID)
+                            state = MEMBER
+                        }else{
+                            send(INVITE to message.ID)
+                        }
+                    case NULL:
+                        invite(peer not in group)
+                        if group contains all responding peers{
+                            state = COORDINATOR
+                        }
+                }
+            case MEMBER:
+                switch message {
+                    case INVITE:
+                        send(REJECT to message.ID)
+                    case CHANGE:
+                        changeCoordinator(message.ID)
+                    case NULL:
+                        send(HEARTBEAT to Coordinator)
+                        if Coordinator not responding {
+                            state = ELECTING
+                        }
+                }
+            case COORDINATOR:
+                respond(HEARTBEAT from Peers)
+                switch message {
+                    case INVITE:
+                        if message.groupSize >= len(group){
+                            send(ACCEPT to message.ID)
+                            state = MEMBER
+                            send(CHANGE to group members)
+                        }else{
+                            send(REJECT to message.ID)
+                        }
+                    case ACCEPT:
+                        addToGroup(message.members)
+                    case REJECT:
+                        if message.ID == IDPeerLastSend {
+                            send(ACCEPT to message.ID)
+                            state = MEMBER
+                            send(CHANGE to group members)
+                        }else{
+                            send(INVITE to message.ID)
+                        }
+                    case HEARTBEAT:
+                        send(OK to message.ID)
+                    case NULL:
+                        send(invite to non-responding peers)
+                }
+        } 
+    }
+``` 
+El pseudocodigo muestra la logica seguida en cada uno de sus estados posibles. Un nodo puede o bien estar ejecutando una eleccion, siendo miembro de un grupo, o siendo coordinador de un grupo.
+Durante una eleccion, un nodo que no tiene mensajes que responder va a intentar invitar a otro nodo a que forme parte del grupo que el coordina (INVITE). 
+En caso de aceptar (ACCEPT), el otro nodo le envia a todos los peers que forman parte de su grupo quien es el nuevo coordinador (CHANGE) y comienza a ser coordinado por el nuevo lider del grupo.
+En caso de que el primer nodo reciba un (REJECT) existen dos posibilidades:
+
+    1. Que quien envia el reject sea lider de grupo
+    2. Que quien envia el reject no sea lider de grupo
+
+En el primer caso, el nodo asume que el grupo del otro peer es mas grande que el propio, por lo que responde con ACCEPT y posteriormente avisando a los peers que forman parte de su propio grupo mediante el envio de CHANGE quien es el nuevo coordinador. En el segundo caso, el nodo debe enviar la invitacion a quien es el lider del otro grupo.
+
+Cuando un nodo actua como member de un grupo, tiene la responsabilidad de asegurarse que el lider se encuentra vivo. Para esto, le envia al lider mensajes de HEARTBEAT, que el lider tiene la responsabilidad de contestar con OK.
+Un member, frente a mensajes de INVITE responde con REJECT, junto con el ID de su lider. A su vez, frente a un CHANGE, el member cambia la identidad del lider de su grupo.
+
+Cuando un nodo actua como lider de un grupo, tiene la responsabilidad de contestar con OK a todos los HEARTBEATs que reciba de parte de los miembros de su grupo. Frente a mensajes de INVITE, el lider puede responder con ACCEPT o REJECT (segun el tamaño del grupo de quien lo invita). Tambien 
+se tiene que encargar de procesar mensajes ACCEPT o REJECT de peers que previamente no hayan estado disponibles y de enviar invitaciones a estos peers segun corresponda.
+
+
+###### Referencias
+
+- Petrov, Alex. (2019). Database Internals (First edition). Publisher. O’Reilly Media, Inc.
+    - Capitulo 10

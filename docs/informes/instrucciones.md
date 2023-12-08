@@ -11,9 +11,8 @@ Para configurar el cliente es necesario seguir los siguientes pasos:
    el sub-directorio `config`.
    Ejemplo:
 
-   ```sh
+   ```
    $ tree clients/
-
    clients/
    └── c1
        ├── config

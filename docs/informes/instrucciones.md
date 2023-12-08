@@ -75,7 +75,7 @@ Para ejecutar el sistema es necesario correr los siguientes comandos:
     ```
     - Este comando ejecuta el cliente, si se escogio un nombre distinto de
       `c1/` (como se ve en el ejemplo) para el directorio del cliente, se debe
-      indicar setenado la variable de entorno \$CLIENT_ID=<directorio>.
+      indicar setenado la variable de entorno \$CLIENT_ID=\<directorio\>.
 
 5. En caso de querer probar la tolerancia a fallos del sistema, se debe
    ejecutar el siguiente comando con la terminal sobre el root del proyecto:

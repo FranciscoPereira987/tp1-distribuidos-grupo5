@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const Prefetch = 100
 const MaxMessageSize = 8192
 const EofRoutingKey = "eof"
 const Workdir = "middleware"
@@ -67,6 +68,10 @@ func Dial(url string) (*Middleware, error) {
 		return nil, err
 	}
 	if err := ch.Confirm(false); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	if err := ch.Qos(Prefetch, 0, false); err != nil {
 		conn.Close()
 		return nil, err
 	}
